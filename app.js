@@ -60,3 +60,4 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pill) pill.textContent = "Offline Mode";
     console.warn("⚠️ Firebase not connected:", err);
   }
+  });
