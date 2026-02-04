@@ -4,6 +4,12 @@ const firebaseConfig = {
   projectId: "btcc-fantasy-2026",
   storageBucket: "btcc-fantasy-2026.firebasestorage.app",
   messagingSenderId: "497970010751",
-  appId: "1:497970010751:web:db60ec7d5467e4331abd4a",
-  measurementId: "G-0VYXDF89FW"
+  appId: "1:497970010751:web:db60ec7d5467e4331abd4a"
 };
+
+// Initialise Firebase
+firebase.initializeApp(firebaseConfig);
+
+// Expose services to app.js
+window.btccAuth = firebase.auth();
+window.btccDb = firebase.firestore();
