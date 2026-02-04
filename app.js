@@ -47,7 +47,15 @@ const firebaseStatus = document.querySelector("#firebase-status");
 
 const setFirebaseUI = (connected) => {
   if (pill) pill.textContent = connected ? "Firebase Connected" : "Offline Mode";
-  if (firebaseStatus) firebaseStatus.textContent = connected ? "Firebase connected" : "Firebase not connected yet";
+
+  if (firebaseStatus) {
+    firebaseStatus.textContent = connected
+      ? "Firebase connected"
+      : "Firebase not connected yet";
+
+    firebaseStatus.classList.toggle("ok", connected);
+    firebaseStatus.classList.toggle("warn", !connected);
+  }
 };
 
 try {
