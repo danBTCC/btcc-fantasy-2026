@@ -26,42 +26,43 @@ document.addEventListener("DOMContentLoaded", () => {
   if (stampEl) stampEl.textContent = stamp;
 
   // Tile shortcuts
-  document.querySelectorAll("[data-goto]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const route = btn.getAttribute("data-goto");
-      window.location.hash = `#${route}`;
-    });
+document.querySelectorAll("[data-goto]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const route = btn.getAttribute("data-goto");
+    window.location.hash = `#${route}`;
   });
+});
 
-  // Initial route
+// Initial route
+setActiveTab(getRouteFromHash());
+
+// Handle tab changes + back button
+window.addEventListener("hashchange", () => {
   setActiveTab(getRouteFromHash());
+});
 
-  // Handle tab changes + back button
-  window.addEventListener("hashchange", () => {
-    setActiveTab(getRouteFromHash());
-  });
+// Firebase status pill check
+const pill = document.querySelector(".pill"); // top-right pill
 
- document.addEventListener("DOMContentLoaded", () => {
-  const pill = document.querySelector(".pill"); // top-right pill
-  const statusList = document.querySelector("#status-list"); // if you have it
+const setPill = (text) => {
+  if (pill) pill.textContent = text;
+};
 
-  const setPill = (text) => {
-    if (pill) pill.textContent = text;
-  };
+try {
+  const isInit =
+    (typeof firebase !== "undefined") &&
+    firebase.apps &&
+    firebase.apps.length > 0;
 
-  try {
-    // If Firebase initialized, this will be true
-    const isInit = (typeof firebase !== "undefined") && firebase.apps && firebase.apps.length > 0;
-
-    if (isInit) {
-      setPill("Firebase Connected");
-      console.log("✅ Firebase connected (apps:", firebase.apps.length, ")");
-    } else {
-      setPill("Offline Mode");
-      console.warn("⚠️ Firebase not initialised");
-    }
-  } catch (err) {
+  if (isInit) {
+    setPill("Firebase Connected");
+    console.log("✅ Firebase connected (apps:", firebase.apps.length, ")");
+  } else {
     setPill("Offline Mode");
-    console.warn("⚠️ Firebase check failed:", err);
+    console.warn("⚠️ Firebase not initialised");
   }
+} catch (err) {
+  setPill("Offline Mode");
+  console.warn("⚠️ Firebase check failed:", err);
+}
 });
