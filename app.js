@@ -41,23 +41,27 @@ document.addEventListener("DOMContentLoaded", () => {
     setActiveTab(getRouteFromHash());
   });
 
-    // Firebase init (safe: only runs if config + scripts are present)
-  const pill = document.getElementById("pillStatus");
+ document.addEventListener("DOMContentLoaded", () => {
+  const pill = document.querySelector(".pill"); // top-right pill
+  const statusList = document.querySelector("#status-list"); // if you have it
+
+  const setPill = (text) => {
+    if (pill) pill.textContent = text;
+  };
 
   try {
-    if (!window.firebaseConfig) throw new Error("Missing firebaseConfig");
-    if (!window.firebase || !firebase?.initializeApp) throw new Error("Firebase scripts not loaded");
+    // If Firebase initialized, this will be true
+    const isInit = (typeof firebase !== "undefined") && firebase.apps && firebase.apps.length > 0;
 
-    firebase.initializeApp(window.firebaseConfig);
-
-    // Optional: create references so later segments can use them
-    window.btccAuth = firebase.auth();
-    window.btccDb = firebase.firestore();
-
-    if (pill) pill.textContent = "Firebase Connected";
-    console.log("✅ Firebase connected");
+    if (isInit) {
+      setPill("Firebase Connected");
+      console.log("✅ Firebase connected (apps:", firebase.apps.length, ")");
+    } else {
+      setPill("Offline Mode");
+      console.warn("⚠️ Firebase not initialised");
+    }
   } catch (err) {
-    if (pill) pill.textContent = "Offline Mode";
-    console.warn("⚠️ Firebase not connected:", err);
+    setPill("Offline Mode");
+    console.warn("⚠️ Firebase check failed:", err);
   }
-  });
+});
