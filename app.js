@@ -42,10 +42,12 @@ window.addEventListener("hashchange", () => {
 });
 
 // Firebase status pill check
-const pill = document.querySelector(".pill"); // top-right pill
+const pill = document.querySelector(".pill");
+const firebaseStatus = document.querySelector("#firebase-status");
 
-const setPill = (text) => {
-  if (pill) pill.textContent = text;
+const setFirebaseUI = (connected) => {
+  if (pill) pill.textContent = connected ? "Firebase Connected" : "Offline Mode";
+  if (firebaseStatus) firebaseStatus.textContent = connected ? "Firebase connected" : "Firebase not connected yet";
 };
 
 try {
@@ -55,14 +57,14 @@ try {
     firebase.apps.length > 0;
 
   if (isInit) {
-    setPill("Firebase Connected");
+    setFirebaseUI(true);
     console.log("✅ Firebase connected (apps:", firebase.apps.length, ")");
   } else {
-    setPill("Offline Mode");
+    setFirebaseUI(false);
     console.warn("⚠️ Firebase not initialised");
   }
 } catch (err) {
-  setPill("Offline Mode");
+  setFirebaseUI(false);
   console.warn("⚠️ Firebase check failed:", err);
 }
 });
