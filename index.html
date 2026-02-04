@@ -6,26 +6,141 @@
   <title>BTCC Fantasy League 2026</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
-  <header>
-    <h1>BTCC Fantasy League 2026</h1>
-    <p>Mobile-first fantasy league</p>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandMark">BTCC</div>
+      <div class="brandText">
+        <div class="brandTitle">Fantasy League</div>
+        <div class="brandSub">Season 2026 • v1</div>
+      </div>
+    </div>
+
+    <div class="rightBadge">
+      <span class="pill" id="pillStatus">Offline Mode</span>
+    </div>
   </header>
 
-  <main>
-    <section id="status">
-      <h2>Status</h2>
-      <p id="js-status">JavaScript not loaded</p>
+  <nav class="tabs" aria-label="Primary navigation">
+    <a class="tab" href="#home" data-route="home">Home</a>
+    <a class="tab" href="#submit" data-route="submit">Submit</a>
+    <a class="tab" href="#tables" data-route="tables">Tables</a>
+    <a class="tab" href="#news" data-route="news">News</a>
+    <a class="tab" href="#admin" data-route="admin">Admin</a>
+  </nav>
+
+  <main class="container">
+    <!-- HOME -->
+    <section class="view" id="view-home" data-view="home">
+      <div class="card">
+        <h1>Welcome 👋</h1>
+        <p class="muted">
+          This is the BTCC Fantasy League 2026 web app. Built to be simple, fast, and reliable.
+        </p>
+
+        <div class="grid">
+          <button class="tile" data-goto="submit">
+            <div class="tileTitle">Submit Team</div>
+            <div class="tileSub">Pick 3–6 drivers before lockout</div>
+          </button>
+
+          <button class="tile" data-goto="tables">
+            <div class="tileTitle">View Tables</div>
+            <div class="tileSub">Championship, budgets, driver values</div>
+          </button>
+
+          <button class="tile" data-goto="news">
+            <div class="tileTitle">News</div>
+            <div class="tileSub">Updates from Dan</div>
+          </button>
+
+          <button class="tile" data-goto="admin">
+            <div class="tileTitle">Admin</div>
+            <div class="tileSub">Results input and engine run</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Status</h2>
+        <ul class="list">
+          <li><span class="dot ok"></span> Netlify deployed</li>
+          <li><span class="dot ok"></span> Navigation working</li>
+          <li><span class="dot warn"></span> Firebase not connected yet</li>
+        </ul>
+        <p class="tiny muted">Build stamp: <span id="buildStamp"></span></p>
+      </div>
     </section>
-    <section>
-  <h2>Coming Soon</h2>
-  <ul>
-    <li>Driver selection</li>
-    <li>Budget management</li>
-    <li>Live standings</li>
-  </ul>
-</section>
+
+    <!-- SUBMIT -->
+    <section class="view" id="view-submit" data-view="submit" hidden>
+      <div class="card">
+        <h1>Submit</h1>
+        <p class="muted">
+          Coming next: login, budget, driver picker, and instant validation (budget/tiers/SLD/consecutive rule).
+        </p>
+        <div class="note">
+          For now this is a placeholder screen so the app structure is stable.
+        </div>
+      </div>
+    </section>
+
+    <!-- TABLES -->
+    <section class="view" id="view-tables" data-view="tables" hidden>
+      <div class="card">
+        <h1>Tables</h1>
+        <p class="muted">Coming next: read-only tables (championship, budgets, driver values, sub-tables).</p>
+
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr><th>Pos</th><th>Player</th><th>Pts</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>Example</td><td>0</td></tr>
+              <tr><td>2</td><td>Example</td><td>0</td></tr>
+              <tr><td>3</td><td>Example</td><td>0</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="tiny muted">These will pull from Firebase once we wire it up.</p>
+      </div>
+    </section>
+
+    <!-- NEWS -->
+    <section class="view" id="view-news" data-view="news" hidden>
+      <div class="card">
+        <h1>News</h1>
+        <p class="muted">Coming next: Dan can post news/updates and players can view read-only.</p>
+
+        <div class="newsItem">
+          <div class="newsTitle">Example post</div>
+          <div class="newsMeta">Date • Author</div>
+          <div class="newsBody">This is placeholder content.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section class="view" id="view-admin" data-view="admin" hidden>
+      <div class="card">
+        <h1>Admin</h1>
+        <p class="muted">
+          Coming next: protected admin access, add/edit drivers & players, enter results, preview, run engine, lock.
+        </p>
+
+        <div class="note warnNote">
+          Admin will be locked behind Firebase auth and role checks.
+        </div>
+      </div>
+    </section>
   </main>
+
+  <footer class="footer">
+    <span class="muted">BTCC Fantasy League 2026 • no-frills build</span>
+  </footer>
 
   <script src="app.js"></script>
 </body>
