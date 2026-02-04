@@ -41,7 +41,22 @@ document.addEventListener("DOMContentLoaded", () => {
     setActiveTab(getRouteFromHash());
   });
 
-  // Status pill (we’ll replace later when Firebase is wired)
+    // Firebase init (safe: only runs if config + scripts are present)
   const pill = document.getElementById("pillStatus");
-  if (pill) pill.textContent = "Offline Mode";
-});
+
+  try {
+    if (!window.firebaseConfig) throw new Error("Missing firebaseConfig");
+    if (!window.firebase || !firebase?.initializeApp) throw new Error("Firebase scripts not loaded");
+
+    firebase.initializeApp(window.firebaseConfig);
+
+    // Optional: create references so later segments can use them
+    window.btccAuth = firebase.auth();
+    window.btccDb = firebase.firestore();
+
+    if (pill) pill.textContent = "Firebase Connected";
+    console.log("✅ Firebase connected");
+  } catch (err) {
+    if (pill) pill.textContent = "Offline Mode";
+    console.warn("⚠️ Firebase not connected:", err);
+  }
