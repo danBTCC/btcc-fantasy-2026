@@ -172,9 +172,15 @@ th{ text-align:left; color:var(--muted); font-weight:800; }
   border-top:1px solid var(--border);
   text-align:center;
 }
+.status-item.ok {
+  color: #22c55e;
+  font-weight: 500;
+  background: none;
+}
+
 .status-item.ok::before {
   content: "● ";
-  color: #22c55e; /* green */
+  color: #22c55e;
 }
 
 .status-item.warn::before {
