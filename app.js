@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const stamp = new Date().toLocaleString();
   const stampEl = document.getElementById("buildStamp");
   if (stampEl) stampEl.textContent = stamp;
+  await loadDrivers();
 
   // Tile shortcuts
 document.querySelectorAll("[data-goto]").forEach(btn => {
@@ -110,5 +111,39 @@ try {
 } catch (err) {
   setFirebaseUI(false);
   console.warn("⚠️ Firebase check failed:", err);
+}
+async function loadDrivers() {
+  try {
+    if (!window.btccDb) return;
+
+    const el = document.getElementById("drivers-list");
+    if (!el) return;
+
+    el.textContent = "Loading drivers...";
+
+    const snap = await window.btccDb
+      .collection("drivers")
+      .where("active", "==", true)
+      .orderBy("name")
+      .get();
+
+    if (snap.empty) {
+      el.textContent = "No active drivers yet.";
+      return;
+    }
+
+    const items = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      const value = (typeof d.value === "number") ? d.value.toFixed(2) : "TBD";
+      const cat = d.category || "";
+      const tier = d.tier || "TBD";
+      items.push(`<li><strong>${d.name}</strong> (${cat}) — £${value} — Tier: ${tier}</li>`);
+    });
+
+    el.innerHTML = `<ul>${items.join("")}</ul>`;
+  } catch (err) {
+    console.warn("⚠️ loadDrivers failed:", err);
+  }
 }
 });
