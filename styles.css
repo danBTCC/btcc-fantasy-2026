@@ -187,3 +187,22 @@ th{ text-align:left; color:var(--muted); font-weight:800; }
   content: "● ";
   color: #facc15; /* amber */
 }
+/* Driver list styling */
+#drivers-list {
+  margin-top: 12px;
+}
+
+.driverRow {
+  padding: 10px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.driverRow:last-child {
+  border-bottom: none;
+}
+
+.driverRow strong {
+  font-weight: 600;
+}
