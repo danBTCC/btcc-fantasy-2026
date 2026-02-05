@@ -228,3 +228,31 @@ th{ text-align:left; color:var(--muted); font-weight:800; }
 #drivers-list li:last-child {
   border-bottom: none;
 }
+
+/* Trend icon styling */
+.trend {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.95em;
+  line-height: 1;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+
+.trend.up { color: #4ade80; }    /* green */
+.trend.down { color: #fb7185; }  /* red */
+.trend.same { color: #a3a3a3; }  /* grey */
+
+.driverMeta {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.money {
+  font-variant-numeric: tabular-nums;
+}

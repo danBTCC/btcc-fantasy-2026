@@ -60,22 +60,32 @@ async function loadDrivers() {
       return;
     }
 
-    const trendIcon = (t) =>
-      t === "up" ? "⬆️" : t === "down" ? "⬇️" : "➖";
+    const trendMeta = (t) => {
+  if (t === "up") return { icon: "⬆️", cls: "up" };
+  if (t === "down") return { icon: "⬇️", cls: "down" };
+  return { icon: "➖", cls: "same" };
+};
 
-    container.innerHTML = snap.docs
-      .map((doc) => {
-        const d = doc.data();
-        return `
-          <div class="driverRow">
-            <strong>${d.name}</strong> (${d.category})
-            — £${d.value.toFixed(2)}
-            — Tier: ${d.tier}
-            — ${trendIcon(d.trend)}
-          </div>
-        `;
-      })
-      .join("");
+container.innerHTML = snap.docs
+  .map((doc) => {
+    const d = doc.data();
+    const tr = trendMeta(d.trend);
+
+    return `
+      <li class="driverRow">
+        <span class="driverMain">
+          <strong>${d.name}</strong> <span class="muted">(${d.category})</span>
+        </span>
+
+        <span class="driverMeta">
+          <span class="money">£${Number(d.value).toFixed(2)}</span>
+          <span class="muted">• Tier: ${d.tier || "TBD"}</span>
+          <span class="trend ${tr.cls}" title="Trend">${tr.icon}</span>
+        </span>
+      </li>
+    `;
+  })
+  .join("");
 
   } catch (err) {
     console.error("❌ Driver load failed", err);
