@@ -19,7 +19,7 @@ function getRouteFromHash() {
   return allowed.has(raw) ? raw : "home";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // Build stamp so you can instantly confirm deploy updated
   const stamp = new Date().toLocaleString();
   const stampEl = document.getElementById("buildStamp");
@@ -67,7 +67,43 @@ try {
   if (isInit) {
     setFirebaseUI(true);
     console.log("✅ Firebase connected (apps:", firebase.apps.length, ")");
+  // Read one Firestore doc: meta/app
+try {
+  const db = firebase.firestore();
+  const snap = await db.collection("meta").doc("app").get();
+
+  if (!snap.exists) {
+    console.warn("⚠️ Firestore doc meta/app not found");
   } else {
+    const data = snap.data();
+    console.log("📦 Firestore meta/app:", data);
+
+    // Show on page (creates a small readout if it doesn't exist)
+    let el = document.querySelector("#meta-readout");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "meta-readout";
+      el.style.marginTop = "8px";
+      el.style.opacity = "0.85";
+      el.style.fontSize = "0.95rem";
+
+      // Try to tuck it into the Status card if we can find it
+      const statusSection =
+        document.querySelector("#status") ||
+        document.querySelector(".status") ||
+        document.querySelector("main");
+
+      (statusSection || document.body).appendChild(el);
+    }
+
+    const name = data.name ?? "BTCC Fantasy League";
+    const version = data.version ?? "";
+    el.textContent = `Firestore read OK: ${name} ${version}`.trim();
+  }
+} catch (err) {
+  console.warn("⚠️ Firestore read failed:", err);
+}
+} else {
     setFirebaseUI(false);
     console.warn("⚠️ Firebase not initialised");
   }
