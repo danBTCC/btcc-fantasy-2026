@@ -121,11 +121,10 @@ async function loadDrivers() {
 
     el.textContent = "Loading drivers...";
 
-    const snap = await window.btccDb
-      .collection("drivers")
-      .where("active", "==", true)
-      .orderBy("name")
-      .get();
+   const snap = await window.btccDb
+  .collection("drivers")
+  .orderBy("name")
+  .get();
 
     if (snap.empty) {
       el.textContent = "No active drivers yet.";
@@ -134,13 +133,21 @@ async function loadDrivers() {
 
     const items = [];
     snap.forEach(doc => {
-      const d = doc.data();
-      const value = (typeof d.value === "number") ? d.value.toFixed(2) : "TBD";
-      const cat = d.category || "";
-      const tier = d.tier || "TBD";
-      items.push(`<li><strong>${d.name}</strong> (${cat}) — £${value} — Tier: ${tier}</li>`);
-    });
+  const d = doc.data();
 
+  // manual filter to avoid needing indexes
+  if (d.active !== true) return;
+
+  const value = (typeof d.value === "number") ? d.value.toFixed(2) : "TBD";
+  const cat = d.category || "";
+  const tier = d.tier || "TBD";
+  items.push(`<li><strong>${d.name}</strong> (${cat}) — £${value} — Tier: ${tier}</li>`);
+});
+
+if (items.length === 0) {
+  el.textContent = "No active drivers yet.";
+  return;
+}
     el.innerHTML = `<ul>${items.join("")}</ul>`;
   } catch (err) {
     console.warn("⚠️ loadDrivers failed:", err);
