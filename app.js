@@ -42,6 +42,47 @@ window.addEventListener("hashchange", () => {
   setActiveTab(getRouteFromHash());
 });
 
+async function loadDrivers() {
+  const container = document.getElementById("drivers-list");
+  if (!container) return;
+
+  container.textContent = "Loading drivers...";
+
+  try {
+    const snap = await btccDb
+      .collection("drivers")
+      .where("active", "==", true)
+      .orderBy("name")
+      .get();
+
+    if (snap.empty) {
+      container.textContent = "No active drivers yet.";
+      return;
+    }
+
+    const trendIcon = (t) =>
+      t === "up" ? "⬆️" : t === "down" ? "⬇️" : "➖";
+
+    container.innerHTML = snap.docs
+      .map((doc) => {
+        const d = doc.data();
+        return `
+          <div class="driverRow">
+            <strong>${d.name}</strong> (${d.category})
+            — £${d.value.toFixed(2)}
+            — Tier: ${d.tier}
+            — ${trendIcon(d.trend)}
+          </div>
+        `;
+      })
+      .join("");
+
+  } catch (err) {
+    console.error("❌ Driver load failed", err);
+    container.textContent = "Failed to load drivers.";
+  }
+}
+
 // Firebase status pill check
 const pill = document.querySelector(".pill");
 const firebaseStatus = document.querySelector("#firebase-status");
