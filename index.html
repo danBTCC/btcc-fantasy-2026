@@ -22,11 +22,36 @@
     </div>
   </header>
 
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BTCC Fantasy League 2026</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandMark">BTCC</div>
+      <div class="brandText">
+        <div class="brandTitle">Fantasy League</div>
+        <div class="brandSub">Season 2026 • v1</div>
+      </div>
+    </div>
+
+    <div class="rightBadge">
+      <span class="pill" id="pillStatus">Offline Mode</span>
+    </div>
+  </header>
+
   <nav class="tabs" aria-label="Primary navigation">
     <a class="tab" href="#home" data-route="home">Home</a>
-    <a class="tab" href="#submit" data-route="submit">Submit</a>
-    <a class="tab" href="#tables" data-route="tables">Tables</a>
-    <a class="tab" href="#news" data-route="news">News</a>
+    <a class="tab" href="#players" data-route="players">Players</a>
+    <a class="tab" href="#drivers" data-route="drivers">Drivers</a>
+    <a class="tab" href="#standings" data-route="standings">Standings</a>
+    <a class="tab" href="#results" data-route="results">Results</a>
     <a class="tab" href="#admin" data-route="admin">Admin</a>
   </nav>
 
@@ -40,24 +65,29 @@
         </p>
 
         <div class="grid">
-          <button class="tile" data-goto="submit">
-            <div class="tileTitle">Submit Team</div>
-            <div class="tileSub">Pick 3–6 drivers before lockout</div>
+          <button class="tile" data-goto="players">
+            <div class="tileTitle">Players</div>
+            <div class="tileSub">Login, budget & team submission</div>
           </button>
 
-          <button class="tile" data-goto="tables">
-            <div class="tileTitle">View Tables</div>
-            <div class="tileSub">Championship, budgets, driver values</div>
+          <button class="tile" data-goto="drivers">
+            <div class="tileTitle">Drivers</div>
+            <div class="tileSub">Values, tiers and driver info</div>
           </button>
 
-          <button class="tile" data-goto="news">
-            <div class="tileTitle">News</div>
-            <div class="tileSub">Updates from Dan</div>
+          <button class="tile" data-goto="standings">
+            <div class="tileTitle">Standings</div>
+            <div class="tileSub">Championship + sub-tables</div>
+          </button>
+
+          <button class="tile" data-goto="results">
+            <div class="tileTitle">Results</div>
+            <div class="tileSub">Read-only event results</div>
           </button>
 
           <button class="tile" data-goto="admin">
             <div class="tileTitle">Admin</div>
-            <div class="tileSub">Results input and engine run</div>
+            <div class="tileSub">Result entry and engine run</div>
           </button>
         </div>
       </div>
@@ -73,55 +103,62 @@
       </div>
     </section>
 
-    <!-- SUBMIT -->
-    <section class="view" id="view-submit" data-view="submit" hidden>
+    <!-- PLAYERS -->
+    <section class="view" id="view-players" data-view="players" hidden>
       <div class="card">
-        <h1>Submit</h1>
+        <h1>Players</h1>
         <p class="muted">
-          Coming next: login, budget, driver picker, and instant validation (budget/tiers/SLD/consecutive rule).
+          Coming next: player login, your budget/boost, and team submission (3–6 drivers) with instant validation.
         </p>
         <div class="note">
-          For now this is a placeholder screen so the app structure is stable.
+          This will be your personal player area (Option A): once logged in, you only see your own info.
         </div>
       </div>
     </section>
 
-    <!-- TABLES -->
-   <section class="view" id="view-tables" data-view="tables" hidden>
-  <div class="card">
-    <h1>Tables</h1>
-    <p class="muted">Coming next: read-only tables (championship, budgets, driver values, sub-tables).</p>
-
-    <h3>Drivers</h3>
-    <div id="drivers-list">Loading drivers...</div>
-
-    <div class="tableWrap">
-      <table>
-        <thead>
-          <tr><th>Pos</th><th>Player</th><th>Pts</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>1</td><td>Example</td><td>0</td></tr>
-          <tr><td>2</td><td>Example</td><td>0</td></tr>
-          <tr><td>3</td><td>Example</td><td>0</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p class="tiny muted">These will pull from Firebase once we wire it up.</p>
-  </div>
-</section>
-
-    <!-- NEWS -->
-    <section class="view" id="view-news" data-view="news" hidden>
+    <!-- DRIVERS -->
+    <section class="view" id="view-drivers" data-view="drivers" hidden>
       <div class="card">
-        <h1>News</h1>
-        <p class="muted">Coming next: Dan can post news/updates and players can view read-only.</p>
+        <h1>Drivers</h1>
+        <p class="muted">Read-only driver list (values, tiers, categories). More stats later.</p>
 
-        <div class="newsItem">
-          <div class="newsTitle">Example post</div>
-          <div class="newsMeta">Date • Author</div>
-          <div class="newsBody">This is placeholder content.</div>
+        <div id="drivers-list">Loading drivers...</div>
+
+        <p class="tiny muted">This pulls from Firestore (read-only).</p>
+      </div>
+    </section>
+
+    <!-- STANDINGS -->
+    <section class="view" id="view-standings" data-view="standings" hidden>
+      <div class="card">
+        <h1>Standings</h1>
+        <p class="muted">Coming next: Championship, Wingfoot, Race 1/2/3, and other read-only tables.</p>
+
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr><th>Pos</th><th>Player</th><th>Pts</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>Example</td><td>0</td></tr>
+              <tr><td>2</td><td>Example</td><td>0</td></tr>
+              <tr><td>3</td><td>Example</td><td>0</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="tiny muted">These will pull from Firebase once we wire them up.</p>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="view" id="view-results" data-view="results" hidden>
+      <div class="card">
+        <h1>Results</h1>
+        <p class="muted">Coming next: read-only event results (Qualifying + Race 1/2/3) for transparency and trust.</p>
+
+        <div class="note">
+          Placeholder: results will be entered by Admin, then locked.
         </div>
       </div>
     </section>
@@ -142,7 +179,24 @@
   </main>
 
   <footer class="footer">
-    <span class="muted">BTCC Fantasy League 2026 • no-frills build</span>
+    <span class="muted">BTCC Fantasy League 2026</span>
+  </footer>
+
+<!-- Firebase SDKs (COMPAT versions) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- Firebase config -->
+<script src="./firebase-config.js"></script>
+
+<!-- App logic -->
+<script src="./app.js"></script>
+</body>
+</html>
+
+  <footer class="footer">
+    <span class="muted">BTCC Fantasy League 2026</span>
   </footer>
 
 <!-- Firebase SDKs (COMPAT versions) -->
