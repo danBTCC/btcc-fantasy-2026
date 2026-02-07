@@ -168,41 +168,67 @@ try {
   console.warn("⚠️ Firebase check failed:", err);
 }
 async function loadDrivers() {
+  const container = document.getElementById("drivers-list");
+  if (!container) return;
+
+  container.textContent = "Loading drivers...";
+
   try {
-    if (!window.btccDb) return;
+    // Sanity: make sure Firestore exists
+    if (!window.btccDb) throw new Error("btccDb is not defined");
 
-    el.textContent = "Loading drivers...";
+    const snap = await window.btccDb
+      .collection("drivers")
+      .where("active", "==", true)
+      .orderBy("name")
+      .get();
 
-   const snap = await window.btccDb
-  .collection("drivers")
-  .orderBy("name")
-  .get();
+    const trendMeta = (t) => {
+      if (t === "up") return { icon: "⬆️", cls: "up" };
+      if (t === "down") return { icon: "⬇️", cls: "down" };
+      return { icon: "➖", cls: "same" };
+    };
 
     if (snap.empty) {
-      el.textContent = "No active drivers yet.";
+      container.textContent = "No active drivers yet.";
       return;
     }
 
-    const items = [];
-    snap.forEach(doc => {
-  const d = doc.data();
+    container.innerHTML = `<ul class="driverList">
+      ${snap.docs.map((doc) => {
+        const d = doc.data();
 
-  // manual filter to avoid needing indexes
-  if (d.active !== true) return;
+        const cats = Array.isArray(d.categories)
+          ? d.categories.join(", ")
+          : (d.category || "");
 
-  const value = (typeof d.value === "number") ? d.value.toFixed(2) : "TBD";
-  const cat = d.category || "";
-  const tier = d.tier || "TBD";
-  items.push(`<li><strong>${d.name}</strong> (${cat}) — £${value} — Tier: ${tier}</li>`);
-});
+        const tr = trendMeta(d.trend);
 
-if (items.length === 0) {
-  el.textContent = "No active drivers yet.";
-  return;
-}
-    el.innerHTML = `<ul>${items.join("")}</ul>`;
+        return `
+          <li class="driverRow">
+            <span class="driverMain">
+              <strong>${d.name || "Unnamed"}</strong>
+              <span class="muted">(${cats})</span>
+            </span>
+
+            <span class="driverMeta">
+              <span class="money">£${Number(d.value || 0).toFixed(2)}</span>
+              <span class="muted">• Tier: ${d.tier || "TBD"}</span>
+              <span class="trend ${tr.cls}" title="Trend">${tr.icon}</span>
+            </span>
+          </li>
+        `;
+      }).join("")}
+    </ul>`;
+
+    console.log("✅ Drivers loaded:", snap.size);
   } catch (err) {
-    console.warn("⚠️ loadDrivers failed:", err);
+    console.error("❌ loadDrivers failed:", err);
+    container.innerHTML = `<div class="note warnNote">
+      Failed to load drivers.<br>
+      <span class="tiny muted">${err?.message || err}</span>
+    </div>`;
   }
+}
 }
 });
