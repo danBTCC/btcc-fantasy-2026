@@ -171,9 +171,6 @@ async function loadDrivers() {
   try {
     if (!window.btccDb) return;
 
-    const el = document.getElementById("drivers-list");
-    if (!el) return;
-
     el.textContent = "Loading drivers...";
 
    const snap = await window.btccDb
