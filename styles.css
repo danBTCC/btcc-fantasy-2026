@@ -1,3 +1,288 @@
+:root {
+    --btcc-blue: #0b3d91;
+    --bg: #061223;
+    --card: #0b1e3a;
+    --text: #eaf1ff;
+    --muted: #aab8d6;
+    --border: rgba(255, 255, 255, .10);
+    --radius: 14px;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    color: var(--text);
+    background:
+        radial-gradient(900px 500px at 30% 0%, rgba(11, 61, 145, .35), transparent 60%),
+        radial-gradient(800px 500px at 80% 20%, rgba(80, 160, 255, .18), transparent 60%),
+        var(--bg);
+}
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(6, 18, 35, .85);
+    backdrop-filter: blur(10px);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brandMark {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--btcc-blue), #072e6b);
+    border-radius: 12px;
+    font-weight: 900;
+    letter-spacing: .5px;
+}
+
+.brandTitle {
+    font-weight: 900;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.brandSub {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.pill {
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.tabs {
+    position: sticky;
+    top: 69px;
+    z-index: 19;
+    display: flex;
+    gap: 8px;
+    padding: 10px 10px;
+    overflow: auto;
+    border-bottom: 1px solid var(--border);
+    background: rgba(6, 18, 35, .92);
+    backdrop-filter: blur(10px);
+}
+
+.tab {
+    flex: 0 0 auto;
+    text-decoration: none;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 9px 12px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.tab.active {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, .25);
+    background: rgba(11, 61, 145, .35);
+}
+
+.container {
+    width: min(980px, 100%);
+    margin: 0 auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.card {
+    background: rgba(11, 30, 58, .88);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+}
+
+h1 {
+    margin: 0 0 8px 0;
+    font-size: 22px;
+}
+
+h2 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+.tiny {
+    font-size: 12px;
+}
+
+.grid {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+@media (min-width: 680px) {
+    .grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.tile {
+    width: 100%;
+    text-align: left;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    background: linear-gradient(135deg, rgba(11, 61, 145, .28), rgba(255, 255, 255, .03));
+    color: var(--text);
+    cursor: pointer;
+}
+
+.tileTitle {
+    font-weight: 900;
+    margin-bottom: 4px;
+}
+
+.tileSub {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.list li {
+    margin: 6px 0;
+}
+
+.dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.ok {
+    background: #2ecc71;
+}
+
+.warn {
+    background: #f1c40f;
+}
+
+.note {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px dashed rgba(255, 255, 255, .18);
+    border-radius: 12px;
+    color: var(--muted);
+}
+
+.warnNote {
+    border-style: solid;
+    border-color: rgba(241, 196, 15, .35);
+}
+
+.tableWrap {
+    overflow: auto;
+    margin-top: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th,
+td {
+    padding: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.newsItem {
+    margin-top: 10px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    border-radius: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, .02);
+}
+
+.newsTitle {
+    font-weight: 900;
+    margin-bottom: 4px;
+}
+
+.newsMeta {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.newsBody {
+    color: var(--text);
+}
+
+.footer {
+    padding: 16px 14px 22px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+.status-item.ok {
+    color: #22c55e;
+    font-weight: 500;
+    background: none;
+}
+
+.status-item.ok::before {
+    content: "● ";
+    color: #22c55e;
+}
+
+.status-item.warn::before {
+    content: "● ";
+    color: #facc15;
+    /* amber */
+}
+
 /* Drivers list (single source of truth) */
 #drivers-list {
   margin-top: 12px;
