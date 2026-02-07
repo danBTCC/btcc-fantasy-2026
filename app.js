@@ -91,9 +91,9 @@ async function checkFirebaseAndReadMeta() {
 
 // ---------- Drivers ----------
 function trendMeta(t) {
-  if (t === "up") return { icon: "⬆️", cls: "up" };
-  if (t === "down") return { icon: "⬇️", cls: "down" };
-  return { icon: "➖", cls: "same" };
+  if (t === "up") return { icon: "▲", cls: "up" };
+  if (t === "down") return { icon: "▼", cls: "down" };
+  return { icon: "==", cls: "same" };
 }
 
 async function loadDrivers() {
