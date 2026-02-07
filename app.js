@@ -68,13 +68,17 @@ async function loadDrivers() {
 
 container.innerHTML = snap.docs
   .map((doc) => {
-    const d = doc.data();
-    const tr = trendMeta(d.trend);
+   const d = doc.data();
+const tr = trendMeta(d.trend);
+
+const cats = Array.isArray(d.categories)
+  ? d.categories.join(", ")
+  : (d.category || "");
 
     return `
       <li class="driverRow">
         <span class="driverMain">
-          <strong>${d.name}</strong> <span class="muted">(${d.category})</span>
+         <strong>${d.name}</strong> <span class="muted">(${cats})</span>
         </span>
 
         <span class="driverMeta">
