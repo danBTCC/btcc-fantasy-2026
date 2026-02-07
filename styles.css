@@ -364,3 +364,55 @@ th {
 .money {
     font-variant-numeric: tabular-nums;
 }
+
+/* Driver list polish */
+.driverList {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 14px;
+}
+
+.driverRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 6px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.driverRow:first-child { border-top: 0; }
+
+.driverMain { font-weight: 600; }
+.driverMeta { display: flex; gap: 10px; align-items: center; }
+
+.money { font-variant-numeric: tabular-nums; }
+
+.trend {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 18px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  opacity: 0.95;
+}
+
+/* Trend colours */
+.trend.up {
+  color: #0b3;
+  background: rgba(0, 187, 51, 0.12);
+  border: 1px solid rgba(0, 187, 51, 0.22);
+}
+
+.trend.down {
+  color: #f55;
+  background: rgba(255, 85, 85, 0.10);
+  border: 1px solid rgba(255, 85, 85, 0.20);
+}
+
+.trend.same {
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+}
