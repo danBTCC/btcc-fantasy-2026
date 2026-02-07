@@ -1,4 +1,4 @@
-// js/pages/drivers.js
+// .js/pages/drivers.js
 // Exposes: window.loadDrivers()
 
 (function () {
