@@ -66,19 +66,19 @@ async function loadDrivers() {
   return { icon: "➖", cls: "same" };
 };
 
-container.innerHTML = snap.docs
-  .map((doc) => {
-   const d = doc.data();
-const tr = trendMeta(d.trend);
+container.innerHTML = `<ul class="driverList">
+  ${snap.docs.map((doc) => {
+    const d = doc.data();
+    const tr = trendMeta(d.trend);
 
-const cats = Array.isArray(d.categories)
-  ? d.categories.join(", ")
-  : (d.category || "");
+    const cats = Array.isArray(d.categories)
+      ? d.categories.join(", ")
+      : (d.category || "");
 
     return `
       <li class="driverRow">
         <span class="driverMain">
-         <strong>${d.name}</strong> <span class="muted">(${cats})</span>
+          <strong>${d.name}</strong> <span class="muted">(${cats})</span>
         </span>
 
         <span class="driverMeta">
@@ -88,8 +88,8 @@ const cats = Array.isArray(d.categories)
         </span>
       </li>
     `;
-  })
-  .join("");
+  }).join("")}
+</ul>`;
 
   } catch (err) {
     console.error("❌ Driver load failed", err);
