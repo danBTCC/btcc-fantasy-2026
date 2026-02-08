@@ -103,6 +103,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await window.loadDrivers();
   }
 
+ // Standings (from standings.js)
+  if (window.loadStandings) {
+    await window.loadStandings();
+  }
+
   // Tile shortcuts
   document.querySelectorAll("[data-goto]").forEach(btn => {
     btn.addEventListener("click", () => {
