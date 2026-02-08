@@ -5,10 +5,12 @@
   async function loadStandings() {
     const container = document.getElementById("standings-championship");
     const updatedEl = document.getElementById("standings-updated");
+    const playersEl = document.getElementById("standings-players");
 
     if (!container) return;
 
     container.textContent = "Loading…";
+        if (playersEl) playersEl.textContent = "Loading…";
 
     try {
       if (!window.btccDb) {
@@ -43,6 +45,42 @@
       }
 
       console.log("✅ Championship standings loaded:", snap.size);
+
+      // ---- Players standings ----
+      if (playersEl) {
+        const playersSnap = await window.btccDb
+          .collection("standings_players")
+          .orderBy("pos")
+          .get();
+
+        if (playersSnap.empty) {
+          playersEl.textContent = "No data yet";
+        } else {
+          playersEl.innerHTML = `
+            <ul class="list">
+              ${playersSnap.docs
+                .map(doc => {
+                  const d = doc.data();
+                  const budget = (d.budget ?? 0);
+                  const budgetText =
+                    (typeof budget === "number") ? budget.toFixed(2) : budget;
+
+                  return `
+                    <li>
+                      <strong>${d.pos ?? "—"}</strong>
+                      ${d.player ?? "Unnamed"} —
+                      <span class="muted">£${budgetText}</span> •
+                      <span class="muted">${d.pts ?? 0} pts</span>
+                    </li>
+                  `;
+                })
+                .join("")}
+            </ul>
+          `;
+        }
+
+        console.log("✅ Players standings loaded:", playersSnap.size);
+      }
 
       // ---- Last updated ----
       try {
