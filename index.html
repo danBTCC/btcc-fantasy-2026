@@ -114,23 +114,28 @@
    <section class="view" id="view-tables" data-view="tables" hidden>
   <div class="card">
     <h1>Standings</h1>
-    <p class="muted">Coming next: read-only tables (championship, budgets, driver values, sub-tables).</p>
+    <p class="muted">Read-only standings tables. (Wiring to Firebase comes next.)</p>
+    <p class="tiny muted">
+      Last updated: <span id="standings-updated">—</span>
+    </p>
+  </div>
 
+  <div class="card">
+    <h2>Championship</h2>
+    <div id="standings-championship">Loading…</div>
+    <p class="tiny muted">If empty, this will show “No data yet”.</p>
+  </div>
 
-    <div class="tableWrap">
-      <table>
-        <thead>
-          <tr><th>Pos</th><th>Player</th><th>Pts</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>1</td><td>Example</td><td>0</td></tr>
-          <tr><td>2</td><td>Example</td><td>0</td></tr>
-          <tr><td>3</td><td>Example</td><td>0</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <div class="card">
+    <h2>Players</h2>
+    <div id="standings-players">Loading…</div>
+    <p class="tiny muted">If empty, this will show “No data yet”.</p>
+  </div>
 
-    <p class="tiny muted">These will pull from Firebase once we wire it up.</p>
+  <div class="card">
+    <h2>Teams</h2>
+    <div id="standings-teams">Loading…</div>
+    <p class="tiny muted">If empty, this will show “No data yet”.</p>
   </div>
 </section>
 
