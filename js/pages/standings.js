@@ -6,11 +6,13 @@
     const container = document.getElementById("standings-championship");
     const updatedEl = document.getElementById("standings-updated");
     const playersEl = document.getElementById("standings-players");
+    const teamsEl = document.getElementById("standings-teams");
 
     if (!container) return;
 
     container.textContent = "Loading…";
         if (playersEl) playersEl.textContent = "Loading…";
+            if (teamsEl) teamsEl.textContent = "Loading…";
 
     try {
       if (!window.btccDb) {
@@ -80,6 +82,37 @@
         }
 
         console.log("✅ Players standings loaded:", playersSnap.size);
+      }
+
+      // ---- Teams standings ----
+      if (teamsEl) {
+        const teamsSnap = await window.btccDb
+          .collection("standings_teams")
+          .orderBy("pos")
+          .get();
+
+        if (teamsSnap.empty) {
+          teamsEl.textContent = "No data yet";
+        } else {
+          teamsEl.innerHTML = `
+            <ul class="list">
+              ${teamsSnap.docs
+                .map(doc => {
+                  const d = doc.data();
+                  return `
+                    <li>
+                      <strong>${d.pos ?? "—"}</strong>
+                      ${d.team ?? "Unnamed team"} —
+                      <span class="muted">${d.pts ?? 0} pts</span>
+                    </li>
+                  `;
+                })
+                .join("")}
+            </ul>
+          `;
+        }
+
+        console.log("✅ Teams standings loaded:", teamsSnap.size);
       }
 
       // ---- Last updated ----
