@@ -13,7 +13,7 @@ function setActiveTab(route) {
 
 function getRouteFromHash() {
   const raw = (window.location.hash || "#home").replace("#", "").trim().toLowerCase();
- const allowed = new Set(["home", "submit", "tables", "drivers", "news", "admin"]);
+ const allowed = new Set(["home", "submit", "tables", "drivers", "results", "news", "admin"]);
   return allowed.has(raw) ? raw : "home";
 }
 

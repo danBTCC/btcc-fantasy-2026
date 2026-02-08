@@ -24,9 +24,10 @@
 
   <nav class="tabs" aria-label="Primary navigation">
     <a class="tab" href="#home" data-route="home">Home</a>
+    <a class="tab" href="#submit" data-route="submit">Submit</a>
     <a class="tab" href="#drivers" data-route="drivers">Drivers</a>
     <a class="tab" href="#tables" data-route="tables">Standings</a>
-    <a class="tab" href="#submit" data-route="submit">Submit</a>
+    <a class="tab" href="#results" data-route="results">Results</a>
     <a class="tab" href="#news" data-route="news">News</a>
     <a class="tab" href="#admin" data-route="admin">Admin</a>
   </nav>
@@ -145,6 +146,19 @@
     <h1>Drivers</h1>
     <p class="muted">Live driver list from Firebase (read-only).</p>
     <div id="drivers-list">Loading drivers...</div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="view" id="view-results" data-view="results" hidden>
+  <div class="card">
+    <h1>Results</h1>
+    <p class="muted">
+      Read-only event list. Admin entry comes later.
+    </p>
+    <div class="note">
+      Placeholder: this page will show Events (Round / Venue / Date / Status) once wired to Firebase.
+    </div>
   </div>
 </section>
 
