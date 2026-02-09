@@ -131,15 +131,35 @@ async function loadEventsList() {
           const dates = (from !== "—" && to !== "—") ? `${from}–${to}` : (from !== "—" ? from : "—");
           const status = (d.status || "upcoming").toString();
           const rounds = (d.roundFrom && d.roundTo) ? `R${d.roundFrom}–${d.roundTo}` : "";
-          return `
-            <li>
-              <strong>Event ${d.eventNo ?? "—"}</strong> — ${d.venue ?? d.name ?? "Unnamed"}<br>
-              <span class="tiny muted">${rounds} • ${dates} • ${status}</span>
-            </li>
-          `;
+        return `
+  <li class="eventItem">
+    <div class="eventHeader" data-toggle="event-details">
+      <strong>Event ${d.eventNo ?? "—"}</strong> — ${d.venue ?? d.name ?? "Unnamed"}<br>
+      <span class="tiny muted">${rounds} • ${dates} • ${status}</span>
+      <div class="tiny muted">▾ Details</div>
+    </div>
+
+    <div class="eventDetails" hidden>
+      <ul class="list tiny">
+        <li>Qualifying: not available</li>
+        <li>Race 1: not available</li>
+        <li>Race 2: not available</li>
+        <li>Race 3: not available</li>
+      </ul>
+    </div>
+  </li>
+`;
         }).join("")}
       </ul>
     `;
+
+        // Toggle event details (UI-only)
+    el.querySelectorAll("[data-toggle='event-details']").forEach(header => {
+      header.addEventListener("click", () => {
+        const details = header.parentElement.querySelector(".eventDetails");
+        if (details) details.hidden = !details.hidden;
+      });
+    });
 
     console.log("✅ Events loaded:", snap.size);
   } catch (err) {
