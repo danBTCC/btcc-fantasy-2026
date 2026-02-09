@@ -23,6 +23,44 @@
     }
   }
 
+  async function handleCreateAccount(e, root) {
+  e.preventDefault();
+
+  const email = root.querySelector("#submit-email")?.value?.trim();
+  const pass = root.querySelector("#submit-pass")?.value;
+
+  const msg = root.querySelector("#submit-msg");
+  if (msg) msg.textContent = "";
+
+  try {
+    await firebase.auth().createUserWithEmailAndPassword(email, pass);
+    if (msg) msg.textContent = "Account created. You are now signed in.";
+  } catch (err) {
+    console.error("❌ Create account failed:", err);
+    if (msg) msg.textContent = err?.message || "Create account failed";
+  }
+}
+
+async function handleForgotPassword(root) {
+  const email = root.querySelector("#submit-email")?.value?.trim();
+
+  const msg = root.querySelector("#submit-msg");
+  if (msg) msg.textContent = "";
+
+  if (!email) {
+    if (msg) msg.textContent = "Enter your email first, then tap Forgot password.";
+    return;
+  }
+
+  try {
+    await firebase.auth().sendPasswordResetEmail(email);
+    if (msg) msg.textContent = "Password reset email sent (check inbox/spam).";
+  } catch (err) {
+    console.error("❌ Password reset failed:", err);
+    if (msg) msg.textContent = err?.message || "Password reset failed";
+  }
+}
+
   async function handleLogout() {
     try {
       await firebase.auth().signOut();
@@ -48,8 +86,21 @@
           <input id="submit-pass" type="password" autocomplete="current-password" required
                  style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" />
 
-          <button type="submit" class="tile" style="margin-top:6px;">Login</button>
-          <div id="submit-msg" class="tiny" style="color:#facc15;"></div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:6px;">
+  <button type="submit" class="tile">Login</button>
+
+  <button type="button" id="submit-create" class="tile"
+          style="background: linear-gradient(135deg, rgba(11, 61, 145, .18), rgba(255, 255, 255, .03));">
+    Create account
+  </button>
+
+  <button type="button" id="submit-forgot" class="tile"
+          style="background: rgba(255,255,255,.03);">
+    Forgot password
+  </button>
+
+  <div id="submit-msg" class="tiny" style="color:#facc15;"></div>
+</div>
         </div>
       </form>
 
@@ -62,6 +113,13 @@
     root.querySelector("#submit-login-form")?.addEventListener("submit", (e) =>
       handleLogin(e, root)
     );
+    root.querySelector("#submit-create")?.addEventListener("click", (e) =>
+  handleCreateAccount(e, root)
+);
+
+root.querySelector("#submit-forgot")?.addEventListener("click", () =>
+  handleForgotPassword(root)
+);
   }
 
   function renderLoggedIn(root, user) {
