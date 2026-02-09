@@ -131,15 +131,16 @@ root.querySelector("#submit-forgot")?.addEventListener("click", () =>
       <h1>Submit</h1>
       <p class="muted">Signed in as <strong>${email}</strong></p>
 
-      <div class="note" style="margin-top:12px;">
-        Profile summary wiring comes next.
-      </div>
+    <div class="note" style="margin-top:12px;" id="player-profile">
+  Loading profile…
+</div>
 
       <button id="submit-logout" class="tile" style="margin-top:12px;">Logout</button>
       `
     );
 
     root.querySelector("#submit-logout")?.addEventListener("click", handleLogout);
+    loadPlayerProfile(root, user.uid);
   }
 
   async function loadSubmit() {
@@ -156,6 +157,48 @@ root.querySelector("#submit-forgot")?.addEventListener("click", () =>
       `;
       return;
     }
+
+    async function loadPlayerProfile(root, uid) {
+  const box = root.querySelector("#player-profile");
+  if (!box) return;
+
+  box.textContent = "Loading profile…";
+
+  try {
+    const snap = await window.btccDb.collection("players").doc(uid).get();
+
+    if (!snap.exists) {
+      box.innerHTML = `
+        <strong>No profile found.</strong><br>
+        <span class="tiny muted">Ask admin to create players/${uid}.</span>
+      `;
+      return;
+    }
+
+    const d = snap.data() || {};
+    const name = d.displayName ?? "Unnamed";
+    const budget = (typeof d.budget === "number") ? d.budget : 0;
+    const penalties = (typeof d.penalties === "number") ? d.penalties : 0;
+    const last = (d.lastSubmission && String(d.lastSubmission).trim()) ? d.lastSubmission : "—";
+    const active = (d.active === false) ? "No" : "Yes";
+
+    box.innerHTML = `
+      <div><strong>${name}</strong></div>
+      <div class="tiny muted" style="margin-top:6px;">
+        Active: ${active}<br>
+        Budget: £${budget.toFixed(2)}<br>
+        Penalties: ${penalties}<br>
+        Last submission: ${last}
+      </div>
+    `;
+  } catch (err) {
+    console.error("❌ loadPlayerProfile failed:", err);
+    box.innerHTML = `
+      <strong>Failed to load profile.</strong><br>
+      <span class="tiny muted">${err?.message || err}</span>
+    `;
+  }
+}
 
     // Render immediately, then react to auth state.
     renderLoggedOut(card);
