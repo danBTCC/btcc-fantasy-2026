@@ -95,6 +95,7 @@ async function runPageLoaders() {
   if (window.loadStandings) await window.loadStandings();
   if (window.loadResults) await window.loadResults();
   if (window.loadAdmin) await window.loadAdmin();
+  if (window.loadSubmit) await window.loadSubmit();
 }
 
 // ---------- App Boot ----------
