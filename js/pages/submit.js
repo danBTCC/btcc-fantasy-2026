@@ -24,48 +24,97 @@
   }
 
   async function handleCreateAccount(e, root) {
-  e.preventDefault();
+    e.preventDefault();
 
-  const email = root.querySelector("#submit-email")?.value?.trim();
-  const pass = root.querySelector("#submit-pass")?.value;
+    const email = root.querySelector("#submit-email")?.value?.trim();
+    const pass = root.querySelector("#submit-pass")?.value;
 
-  const msg = root.querySelector("#submit-msg");
-  if (msg) msg.textContent = "";
+    const msg = root.querySelector("#submit-msg");
+    if (msg) msg.textContent = "";
 
-  try {
-    await firebase.auth().createUserWithEmailAndPassword(email, pass);
-    if (msg) msg.textContent = "Account created. You are now signed in.";
-  } catch (err) {
-    console.error("❌ Create account failed:", err);
-    if (msg) msg.textContent = err?.message || "Create account failed";
-  }
-}
-
-async function handleForgotPassword(root) {
-  const email = root.querySelector("#submit-email")?.value?.trim();
-
-  const msg = root.querySelector("#submit-msg");
-  if (msg) msg.textContent = "";
-
-  if (!email) {
-    if (msg) msg.textContent = "Enter your email first, then tap Forgot password.";
-    return;
+    try {
+      await firebase.auth().createUserWithEmailAndPassword(email, pass);
+      if (msg) msg.textContent = "Account created. You are now signed in.";
+    } catch (err) {
+      console.error("❌ Create account failed:", err);
+      if (msg) msg.textContent = err?.message || "Create account failed";
+    }
   }
 
-  try {
-    await firebase.auth().sendPasswordResetEmail(email);
-    if (msg) msg.textContent = "Password reset email sent (check inbox/spam).";
-  } catch (err) {
-    console.error("❌ Password reset failed:", err);
-    if (msg) msg.textContent = err?.message || "Password reset failed";
+  async function handleForgotPassword(root) {
+    const email = root.querySelector("#submit-email")?.value?.trim();
+
+    const msg = root.querySelector("#submit-msg");
+    if (msg) msg.textContent = "";
+
+    if (!email) {
+      if (msg) msg.textContent = "Enter your email first, then tap Forgot password.";
+      return;
+    }
+
+    try {
+      await firebase.auth().sendPasswordResetEmail(email);
+      if (msg) msg.textContent = "Password reset email sent (check inbox/spam).";
+    } catch (err) {
+      console.error("❌ Password reset failed:", err);
+      if (msg) msg.textContent = err?.message || "Password reset failed";
+    }
   }
-}
 
   async function handleLogout() {
     try {
       await firebase.auth().signOut();
     } catch (err) {
       console.error("❌ Logout failed:", err);
+    }
+  }
+
+  async function loadPlayerProfile(root, uid) {
+    const box = root.querySelector("#player-profile");
+    if (!box) return;
+
+    // Ensure Firestore is ready (window.btccDb is created in app boot)
+    if (!window.btccDb) {
+      box.textContent = "Waiting for database…";
+      setTimeout(() => loadPlayerProfile(root, uid), 300);
+      return;
+    }
+
+    box.textContent = "Loading profile…";
+
+    try {
+      const snap = await window.btccDb.collection("players").doc(uid).get();
+
+      if (!snap.exists) {
+        box.innerHTML = `
+          <strong>No profile found.</strong><br>
+          <span class="tiny muted">Ask admin to create players/${uid}.</span>
+        `;
+        return;
+      }
+
+      const d = snap.data() || {};
+      const name = d.displayName ?? "Unnamed";
+      const budget = typeof d.budget === "number" ? d.budget : 0;
+      const penalties = typeof d.penalties === "number" ? d.penalties : 0;
+      const last = d.lastSubmission && String(d.lastSubmission).trim() ? d.lastSubmission : "—";
+      const active = d.active === false ? "No" : "Yes";
+
+      box.innerHTML = `
+        <div><strong>${name}</strong></div>
+        <div class="tiny muted" style="margin-top:6px;">
+          Active: ${active}<br>
+          Budget: £${budget.toFixed(2)}<br>
+          Penalties: ${penalties}<br>
+          Last submission: ${last}
+        </div>
+      `;
+    } catch (err) {
+      console.error("❌ loadPlayerProfile failed:", err);
+      box.innerHTML = `
+        <strong>Failed to load profile.</strong><br>
+        <span class="tiny muted">${err?.message || err}</span>
+      `;
     }
   }
 
@@ -114,12 +163,12 @@ async function handleForgotPassword(root) {
       handleLogin(e, root)
     );
     root.querySelector("#submit-create")?.addEventListener("click", (e) =>
-  handleCreateAccount(e, root)
-);
+      handleCreateAccount(e, root)
+    );
 
-root.querySelector("#submit-forgot")?.addEventListener("click", () =>
-  handleForgotPassword(root)
-);
+    root.querySelector("#submit-forgot")?.addEventListener("click", () =>
+      handleForgotPassword(root)
+    );
   }
 
   function renderLoggedIn(root, user) {
@@ -157,48 +206,6 @@ root.querySelector("#submit-forgot")?.addEventListener("click", () =>
       `;
       return;
     }
-
-    async function loadPlayerProfile(root, uid) {
-  const box = root.querySelector("#player-profile");
-  if (!box) return;
-
-  box.textContent = "Loading profile…";
-
-  try {
-    const snap = await window.btccDb.collection("players").doc(uid).get();
-
-    if (!snap.exists) {
-      box.innerHTML = `
-        <strong>No profile found.</strong><br>
-        <span class="tiny muted">Ask admin to create players/${uid}.</span>
-      `;
-      return;
-    }
-
-    const d = snap.data() || {};
-    const name = d.displayName ?? "Unnamed";
-    const budget = (typeof d.budget === "number") ? d.budget : 0;
-    const penalties = (typeof d.penalties === "number") ? d.penalties : 0;
-    const last = (d.lastSubmission && String(d.lastSubmission).trim()) ? d.lastSubmission : "—";
-    const active = (d.active === false) ? "No" : "Yes";
-
-    box.innerHTML = `
-      <div><strong>${name}</strong></div>
-      <div class="tiny muted" style="margin-top:6px;">
-        Active: ${active}<br>
-        Budget: £${budget.toFixed(2)}<br>
-        Penalties: ${penalties}<br>
-        Last submission: ${last}
-      </div>
-    `;
-  } catch (err) {
-    console.error("❌ loadPlayerProfile failed:", err);
-    box.innerHTML = `
-      <strong>Failed to load profile.</strong><br>
-      <span class="tiny muted">${err?.message || err}</span>
-    `;
-  }
-}
 
     // Render immediately, then react to auth state.
     renderLoggedOut(card);
