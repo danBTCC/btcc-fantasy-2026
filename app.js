@@ -94,6 +94,7 @@ async function runPageLoaders() {
   if (window.loadDrivers) await window.loadDrivers();
   if (window.loadStandings) await window.loadStandings();
   if (window.loadResults) await window.loadResults();
+  if (window.loadAdmin) await window.loadAdmin();
 }
 
 // ---------- App Boot ----------
