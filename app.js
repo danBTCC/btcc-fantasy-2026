@@ -89,6 +89,13 @@ async function checkFirebaseAndReadMeta() {
   }
 }
 
+async function runPageLoaders() {
+  // Page modules expose these on window (see /js/pages/*.js)
+  if (window.loadDrivers) await window.loadDrivers();
+  if (window.loadStandings) await window.loadStandings();
+  if (window.loadResults) await window.loadResults();
+}
+
 // ---------- App Boot ----------
 document.addEventListener("DOMContentLoaded", async () => {
   // Build stamp
@@ -98,20 +105,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Firebase + Firestore meta read
   await checkFirebaseAndReadMeta();
 
-  // Drivers list (from drivers.js)
-  if (window.loadDrivers) {
-    await window.loadDrivers();
-  }
-
- // Standings (from standings.js)
-  if (window.loadStandings) {
-    await window.loadStandings();
-  }
-
-// Results (from results.js)
-if (window.loadResults) {
-  await window.loadResults();
-}
+  // Page data (read-only at this stage)
+  await runPageLoaders();
 
   // Tile shortcuts
   document.querySelectorAll("[data-goto]").forEach(btn => {
