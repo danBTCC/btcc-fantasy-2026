@@ -175,6 +175,7 @@
         const from = fmtDate(d.dateFrom);
         const to = fmtDate(d.dateTo);
         return {
+          id: doc.id,
           eventNo: d.eventNo ?? null,
           venue: d.venue ?? d.name ?? "Unnamed",
           roundFrom: d.roundFrom ?? null,
@@ -211,6 +212,15 @@
       if (lockout) lockout.setHours(15, 0, 0, 0);
 
       const open = lockout ? now < lockout : false;
+
+      // Store current event context for submission flow (Phase G6)
+      root.__eventContext = {
+        eventId: chosen.id,
+        eventNo: chosen.eventNo ?? null,
+        venue: chosen.venue ?? null,
+        lockout: lockout ? lockout.getTime() : null,
+        open,
+      };
 
       elName.textContent = `Event ${chosen.eventNo ?? "—"} — ${chosen.venue} (${rounds} • ${dateRange})`;
       elStatus.textContent = open ? "OPEN" : "LOCKED";
@@ -358,13 +368,15 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
     loadNextEventSummary(root);
 
     // Load picker using budget from player profile doc (read-only)
-window.btccDb.collection("players").doc(user.uid).get().then(s => {
-  const b = s.exists ? (s.data().budget ?? 0) : 0;
-  loadDriverPicker(root, b);
-});
+    window.btccDb.collection("players").doc(user.uid).get().then(s => {
+      const data = s.exists ? (s.data() || {}) : {};
+      const b = typeof data.budget === "number" ? data.budget : 0;
+      const name = data.displayName || (user.email || "Player");
+      loadDriverPicker(root, b, user.uid, name);
+    });
   }
 
-  async function loadDriverPicker(root, playerBudget) {
+  async function loadDriverPicker(root, playerBudget, uid, displayName) {
   const box = root.querySelector("#driver-picker");
   if (!box) return;
 
@@ -389,6 +401,117 @@ window.btccDb.collection("players").doc(user.uid).get().then(s => {
 
     const validationEl = root.querySelector("#team-validation");
     const saveBtn = root.querySelector("#team-save");
+
+    // Phase G6: save to Firestore (player's own submission doc)
+    if (saveBtn) {
+      saveBtn.textContent = "Save team";
+    }
+
+    const getEventContext = () => root.__eventContext || {};
+
+    // Load existing submission for this event (if any) and preselect drivers
+    async function loadExistingSubmission() {
+      const ctx = getEventContext();
+      const eventId = ctx.eventId;
+      if (!eventId || !uid) return;
+
+      try {
+        const subSnap = await window.btccDb
+          .collection("submissions")
+          .doc(eventId)
+          .collection("entries")
+          .doc(uid)
+          .get();
+
+        if (!subSnap.exists) return;
+
+        const sub = subSnap.data() || {};
+        const ids = Array.isArray(sub.driverIds) ? sub.driverIds : [];
+
+        ids.forEach((id) => {
+          const row = box.querySelector(`[data-driver-id="${id}"]`);
+          if (!row) return;
+          selected.add(id);
+          const btn = row.querySelector("[data-action='toggle']");
+          if (btn) btn.textContent = "Selected";
+          row.style.opacity = "1";
+        });
+
+        updateSummary();
+
+        if (saveBtn && sub.updatedAt) {
+          const d = typeof sub.updatedAt.toDate === "function" ? sub.updatedAt.toDate() : null;
+          if (d) saveBtn.textContent = `Saved ${d.toLocaleString("en-GB")}`;
+        }
+
+        console.log("✅ Loaded existing submission:", eventId, uid);
+      } catch (e) {
+        console.warn("⚠️ Could not load existing submission:", e);
+      }
+    }
+
+    async function saveSubmission() {
+      const ctx = getEventContext();
+      const eventId = ctx.eventId;
+
+      if (!eventId) {
+        if (validationEl) {
+          validationEl.hidden = false;
+          validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Event not ready yet. Try again in a moment.</span>`;
+        }
+        return;
+      }
+
+      // Client-side lockout enforcement for now
+      if (ctx.open === false) {
+        if (validationEl) {
+          validationEl.hidden = false;
+          validationEl.innerHTML = `<strong>Locked:</strong><br><span class="tiny muted">Submissions are closed for this event.</span>`;
+        }
+        return;
+      }
+
+      const driverIds = Array.from(selected);
+
+      // Compute total cost from rendered rows
+      const totalCost = driverIds.reduce((sum, id) => {
+        const price = Number(box.querySelector(`[data-driver-id="${id}"]`)?.dataset?.price || 0);
+        return sum + price;
+      }, 0);
+
+      const payload = {
+        uid,
+        displayName: displayName || "Player",
+        driverIds,
+        totalCost: Number(totalCost) || 0,
+        eventId,
+        eventNo: ctx.eventNo ?? null,
+        venue: ctx.venue ?? null,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+
+      const ref = window.btccDb.collection("submissions").doc(eventId).collection("entries").doc(uid);
+
+      try {
+        // If first time, set createdAt too (merge keeps it if already exists)
+        await ref.set({ ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+
+        if (validationEl) validationEl.hidden = true;
+        if (saveBtn) saveBtn.textContent = `Saved ${new Date().toLocaleString("en-GB")}`;
+
+        console.log("✅ Submission saved:", eventId, uid, payload);
+      } catch (err) {
+        console.error("❌ Submission save failed:", err);
+        if (validationEl) {
+          validationEl.hidden = false;
+          validationEl.innerHTML = `<strong>Save failed.</strong><br><span class="tiny muted">${err?.message || err}</span>`;
+        }
+      }
+    }
+
+    if (saveBtn) {
+      saveBtn.onclick = saveSubmission;
+    }
 
     // Phase G5: validation (UI-only)
     const MIN_DRIVERS = 3;
@@ -495,6 +618,9 @@ window.btccDb.collection("players").doc(user.uid).get().then(s => {
         updateSummary();
       });
     });
+
+    // Preload saved selection (if any)
+    await loadExistingSubmission();
 
     // Initial summary
     updateSummary();
