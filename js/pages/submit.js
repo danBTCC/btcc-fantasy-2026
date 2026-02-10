@@ -184,6 +184,19 @@
   Loading profile…
 </div>
 
+<div class="card" style="margin-top:12px;">
+  <h2 style="margin:0 0 6px 0;">Team Submission</h2>
+  <div class="tiny muted">
+    Next event: <strong>Loading…</strong><br>
+    Status: <strong>—</strong><br>
+    Lockout: <strong>—</strong>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    Team picker comes next (Phase G). This will allow 3–6 drivers within your £10.00 budget.
+  </div>
+</div>
+
       <button id="submit-logout" class="tile" style="margin-top:12px;">Logout</button>
       `
     );
