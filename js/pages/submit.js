@@ -215,15 +215,8 @@
       elName.textContent = `Event ${chosen.eventNo ?? "—"} — ${chosen.venue} (${rounds} • ${dateRange})`;
       elStatus.textContent = open ? "OPEN" : "LOCKED";
       elLockout.textContent = fmtDateTime(lockout);
-    } catch (err) {
-      console.error("❌ loadNextEventSummary failed:", err);
-      elName.textContent = "Failed to load";
-      elStatus.textContent = "—";
-      elLockout.textContent = "—";
-    }
-  }
-
-  function updateCountdown() {
+      // ---- Countdown timer ----
+function updateCountdown() {
   if (!lockout) {
     elLeft.textContent = "—";
     return;
@@ -247,13 +240,21 @@
   if (days > 0) parts.push(`${days}d`);
   parts.push(`${hrs}h`);
   parts.push(`${mins}m`);
+
   elLeft.textContent = parts.join(" ");
 }
 
-// run once immediately + then every 30s
+// run immediately + every 30s
 updateCountdown();
 clearInterval(root.__lockoutTimer);
 root.__lockoutTimer = setInterval(updateCountdown, 30000);
+    } catch (err) {
+      console.error("❌ loadNextEventSummary failed:", err);
+      elName.textContent = "Failed to load";
+      elStatus.textContent = "—";
+      elLockout.textContent = "—";
+    }
+  }
 
   function renderLoggedOut(root) {
     render(
