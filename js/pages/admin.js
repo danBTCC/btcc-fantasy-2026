@@ -97,8 +97,19 @@ const ADMIN_EMAILS = [
       <h1>Admin</h1>
       <p class="muted">Admin unlocked for <strong>${email}</strong></p>
 
-      <div class="note" style="margin-top:12px;">
-        Next: admin forms for results input + engine run (protected).
+      <div class="card" style="margin-top:12px;">
+        <h2 style="margin:0 0 6px 0;">Results Entry</h2>
+        <p class="tiny muted" style="margin:0;">
+          Enter qualifying and race results for events. Results will be locked once confirmed.
+        </p>
+
+        <div class="note" style="margin-top:10px;">
+          Event selection comes next.
+        </div>
+
+        <div id="admin-results-entry" class="tiny muted" style="margin-top:8px;">
+          Placeholder: results entry UI will render here.
+        </div>
       </div>
 
       <button id="admin-logout" class="tile" style="margin-top:12px;">Logout</button>
