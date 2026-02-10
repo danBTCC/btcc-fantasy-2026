@@ -118,6 +118,110 @@
     }
   }
 
+  async function loadNextEventSummary(root) {
+    const elName = root.querySelector("#submit-next-event");
+    const elStatus = root.querySelector("#submit-submission-status");
+    const elLockout = root.querySelector("#submit-lockout");
+
+    if (!elName || !elStatus || !elLockout) return;
+
+    if (!window.btccDb) {
+      elName.textContent = "Waiting for database…";
+      setTimeout(() => loadNextEventSummary(root), 300);
+      return;
+    }
+
+    const fmtDate = (v) => {
+      if (v && typeof v.toDate === "function") return v.toDate();
+      if (typeof v === "string" && v.length >= 10) {
+        const d = new Date(v);
+        if (!isNaN(d)) return d;
+      }
+      return null;
+    };
+
+    const fmtDateRange = (from, to) => {
+      const f = from ? from.toLocaleDateString("en-GB") : "—";
+      const t = to ? to.toLocaleDateString("en-GB") : "—";
+      return f !== "—" && t !== "—" ? `${f}–${t}` : f !== "—" ? f : "—";
+    };
+
+    const fmtDateTime = (d) =>
+      d
+        ? d.toLocaleString("en-GB", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "—";
+
+    try {
+      const snap = await window.btccDb.collection("events").orderBy("eventNo").get();
+
+      if (snap.empty) {
+        elName.textContent = "No events";
+        elStatus.textContent = "—";
+        elLockout.textContent = "—";
+        return;
+      }
+
+      const now = new Date();
+
+      const events = snap.docs.map((doc) => {
+        const d = doc.data() || {};
+        const from = fmtDate(d.dateFrom);
+        const to = fmtDate(d.dateTo);
+        return {
+          eventNo: d.eventNo ?? null,
+          venue: d.venue ?? d.name ?? "Unnamed",
+          roundFrom: d.roundFrom ?? null,
+          roundTo: d.roundTo ?? null,
+          from,
+          to,
+        };
+      });
+
+      const startOfDay = (d) => {
+        const x = new Date(d);
+        x.setHours(0, 0, 0, 0);
+        return x;
+      };
+
+      const endOfDay = (d) => {
+        const x = new Date(d);
+        x.setHours(23, 59, 59, 999);
+        return x;
+      };
+
+      const isInRange = (e) => e.from && e.to && now >= startOfDay(e.from) && now <= endOfDay(e.to);
+
+      const future = events
+        .filter((e) => e.from && startOfDay(e.from) >= startOfDay(now))
+        .sort((a, b) => a.from - b.from);
+
+      const chosen = events.find(isInRange) || future[0] || events[events.length - 1];
+
+      const rounds = chosen.roundFrom && chosen.roundTo ? `R${chosen.roundFrom}–${chosen.roundTo}` : "";
+      const dateRange = fmtDateRange(chosen.from, chosen.to);
+
+      let lockout = chosen.from ? new Date(chosen.from) : null;
+      if (lockout) lockout.setHours(15, 0, 0, 0);
+
+      const open = lockout ? now < lockout : false;
+
+      elName.textContent = `Event ${chosen.eventNo ?? "—"} — ${chosen.venue} (${rounds} • ${dateRange})`;
+      elStatus.textContent = open ? "OPEN" : "LOCKED";
+      elLockout.textContent = fmtDateTime(lockout);
+    } catch (err) {
+      console.error("❌ loadNextEventSummary failed:", err);
+      elName.textContent = "Failed to load";
+      elStatus.textContent = "—";
+      elLockout.textContent = "—";
+    }
+  }
+
   function renderLoggedOut(root) {
     render(
       root,
@@ -186,11 +290,11 @@
 
 <div class="card" style="margin-top:12px;">
   <h2 style="margin:0 0 6px 0;">Team Submission</h2>
-  <div class="tiny muted">
-    Next event: <strong>Loading…</strong><br>
-    Status: <strong>—</strong><br>
-    Lockout: <strong>—</strong>
-  </div>
+<div class="tiny muted">
+  Next event: <strong id="submit-next-event">Loading…</strong><br>
+  Status: <strong id="submit-submission-status">—</strong><br>
+  Lockout: <strong id="submit-lockout">—</strong>
+</div>
 
   <div class="note" style="margin-top:10px;">
     Team picker comes next (Phase G). This will allow 3–6 drivers within your £10.00 budget.
@@ -203,6 +307,7 @@
 
     root.querySelector("#submit-logout")?.addEventListener("click", handleLogout);
     loadPlayerProfile(root, user.uid);
+    loadNextEventSummary(root);
   }
 
   async function loadSubmit() {
