@@ -402,22 +402,22 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
     const validationEl = root.querySelector("#team-validation");
     const saveBtn = root.querySelector("#team-save");
 
-    // Phase G6: save to Firestore (player's own submission doc)
-if (saveBtn) {
-  saveBtn.textContent = isLocked ? "Locked" : "Save team";
-  if (isLocked) saveBtn.disabled = true;
-}
-
     const getEventContext = () => root.__eventContext || {};
 
     const ctx = getEventContext();
-const isLocked = ctx.open === false;
+    const isLocked = ctx.open === false;
 
-function showLockedMessage() {
-  if (!validationEl) return;
-  validationEl.hidden = false;
-  validationEl.innerHTML = `<strong>Locked:</strong><br><span class="tiny muted">Submissions are closed for this event.</span>`;
-}
+    function showLockedMessage() {
+      if (!validationEl) return;
+      validationEl.hidden = false;
+      validationEl.innerHTML = `<strong>Locked:</strong><br><span class="tiny muted">Submissions are closed for this event.</span>`;
+    }
+
+    // Phase G6: save to Firestore (player's own submission doc)
+    if (saveBtn) {
+      saveBtn.textContent = isLocked ? "Locked" : "Save team";
+      if (isLocked) saveBtn.disabled = true;
+    }
 
     // Load existing submission for this event (if any) and preselect drivers
     async function loadExistingSubmission() {
