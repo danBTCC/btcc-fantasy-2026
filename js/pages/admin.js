@@ -206,6 +206,47 @@ const ADMIN_EMAILS = [
     }
   }
 
+  async function loadAdminDrivers(root) {
+    const el = root.querySelector("#admin-drivers-status");
+    if (!el) return;
+
+    // Ensure Firestore is ready
+    if (!window.btccDb) {
+      el.textContent = "Drivers: Waiting for database…";
+      setTimeout(() => loadAdminDrivers(root), 300);
+      return;
+    }
+
+    el.textContent = "Drivers: Loading…";
+
+    try {
+      const snap = await window.btccDb.collection("drivers").orderBy("name").get();
+
+      if (snap.empty) {
+        el.textContent = "Drivers: none found";
+        root.__drivers = [];
+        return;
+      }
+
+      const list = snap.docs.map((doc) => {
+        const d = doc.data() || {};
+        return {
+          id: doc.id,
+          name: d.name ?? "Unnamed",
+          price: Number(d.price ?? d.cost ?? 0),
+        };
+      });
+
+      root.__drivers = list;
+      el.textContent = `Drivers loaded: ${list.length}`;
+      console.log("✅ Admin drivers loaded:", list.length);
+    } catch (err) {
+      console.error("❌ loadAdminDrivers failed:", err);
+      el.textContent = `Drivers: failed to load (${err?.message || err})`;
+      root.__drivers = [];
+    }
+  }
+
   function renderAdminUnlocked(root, email) {
     render(
       root,
@@ -224,6 +265,7 @@ const ADMIN_EMAILS = [
         </div>
 
         <div id="admin-results-entry" class="tiny muted" style="margin-top:8px;"></div>
+        <div id="admin-drivers-status" class="tiny muted" style="margin-top:10px;">Drivers: Loading…</div>
       </div>
 
       <button id="admin-logout" class="tile" style="margin-top:12px;">Logout</button>
@@ -232,6 +274,7 @@ const ADMIN_EMAILS = [
 
     root.querySelector("#admin-logout")?.addEventListener("click", handleLogout);
     loadAdminEventPicker(root);
+    loadAdminDrivers(root);
   }
 
   async function loadAdmin() {
