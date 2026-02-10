@@ -331,9 +331,14 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
   Time left: <strong id="submit-time-left">—</strong>
 </div>
 
-  <div class="note" style="margin-top:10px;">
-    Team picker comes next (Phase G). This will allow 3–6 drivers within your £10.00 budget.
-  </div>
+<div class="note" style="margin-top:10px;" id="team-summary">
+  Selected: <strong id="team-count">0</strong> •
+  Spend: <strong id="team-spend">£0.00</strong> •
+  Remaining: <strong id="team-remaining">£0.00</strong>
+</div>
+
+<div id="driver-picker" class="list" style="margin-top:10px;">
+  Loading drivers…
 </div>
 
       <button id="submit-logout" class="tile" style="margin-top:12px;">Logout</button>
@@ -343,7 +348,110 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
     root.querySelector("#submit-logout")?.addEventListener("click", handleLogout);
     loadPlayerProfile(root, user.uid);
     loadNextEventSummary(root);
+
+    // Load picker using budget from player profile doc (read-only)
+window.btccDb.collection("players").doc(user.uid).get().then(s => {
+  const b = s.exists ? (s.data().budget ?? 0) : 0;
+  loadDriverPicker(root, b);
+});
   }
+
+  async function loadDriverPicker(root, playerBudget) {
+  const box = root.querySelector("#driver-picker");
+  if (!box) return;
+
+  if (!window.btccDb) {
+    box.textContent = "Waiting for database…";
+    setTimeout(() => loadDriverPicker(root, playerBudget), 300);
+    return;
+  }
+
+  box.textContent = "Loading drivers…";
+
+  try {
+    const snap = await window.btccDb.collection("drivers").orderBy("name").get();
+
+    if (snap.empty) {
+      box.textContent = "No drivers yet";
+      return;
+    }
+
+    // Local selection state for now (UI-only)
+    const selected = new Set();
+
+    const fmtMoney = (n) => `£${(Number(n) || 0).toFixed(2)}`;
+
+    const updateSummary = () => {
+      const countEl = root.querySelector("#team-count");
+      const spendEl = root.querySelector("#team-spend");
+      const remEl = root.querySelector("#team-remaining");
+
+      const total = Array.from(selected).reduce((sum, id) => {
+        const price = Number(root.querySelector(`[data-driver-id="${id}"]`)?.dataset?.price || 0);
+        return sum + price;
+      }, 0);
+
+      if (countEl) countEl.textContent = String(selected.size);
+      if (spendEl) spendEl.textContent = fmtMoney(total);
+      if (remEl) remEl.textContent = fmtMoney((Number(playerBudget) || 0) - total);
+    };
+
+    box.innerHTML = `
+      <ul class="list">
+        ${snap.docs
+          .map((doc) => {
+            const d = doc.data() || {};
+            const name = d.name ?? "Unnamed";
+            const price = Number(d.price ?? d.cost ?? 0); // supports either field name
+            return `
+              <li class="driverPickRow" data-driver-id="${doc.id}" data-price="${price}">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                  <div>
+                    <strong>${name}</strong><br>
+                    <span class="tiny muted">${fmtMoney(price)}</span>
+                  </div>
+                  <button type="button" class="tile tinyBtn" data-action="toggle">Select</button>
+                </div>
+              </li>
+            `;
+          })
+          .join("")}
+      </ul>
+    `;
+
+    box.querySelectorAll("[data-action='toggle']").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const row = btn.closest("[data-driver-id]");
+        const id = row?.getAttribute("data-driver-id");
+        if (!id) return;
+
+        if (selected.has(id)) {
+          selected.delete(id);
+          btn.textContent = "Select";
+          row.style.opacity = "0.85";
+        } else {
+          selected.add(id);
+          btn.textContent = "Selected";
+          row.style.opacity = "1";
+        }
+
+        updateSummary();
+      });
+    });
+
+    // Initial summary
+    updateSummary();
+    console.log("✅ Driver picker loaded:", snap.size);
+  } catch (err) {
+    console.error("❌ loadDriverPicker failed:", err);
+    box.innerHTML = `
+      <div class="note warnNote">
+        Failed to load drivers.<br>
+        <span class="tiny muted">${err?.message || err}</span>
+      </div>
+    `;
+  }
+}
 
   async function loadSubmit() {
     const view = document.getElementById("view-submit");
