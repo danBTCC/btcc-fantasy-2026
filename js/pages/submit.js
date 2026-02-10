@@ -122,8 +122,9 @@
     const elName = root.querySelector("#submit-next-event");
     const elStatus = root.querySelector("#submit-submission-status");
     const elLockout = root.querySelector("#submit-lockout");
+    const elLeft = root.querySelector("#submit-time-left");
 
-    if (!elName || !elStatus || !elLockout) return;
+    if (!elName || !elStatus || !elLockout || !elLeft) return;
 
     if (!window.btccDb) {
       elName.textContent = "Waiting for database…";
@@ -222,6 +223,38 @@
     }
   }
 
+  function updateCountdown() {
+  if (!lockout) {
+    elLeft.textContent = "—";
+    return;
+  }
+
+  const now2 = new Date();
+  const ms = lockout - now2;
+
+  if (ms <= 0) {
+    elLeft.textContent = "Closed";
+    elStatus.textContent = "LOCKED";
+    return;
+  }
+
+  const totalMins = Math.floor(ms / 60000);
+  const days = Math.floor(totalMins / (60 * 24));
+  const hrs = Math.floor((totalMins - days * 60 * 24) / 60);
+  const mins = totalMins % 60;
+
+  const parts = [];
+  if (days > 0) parts.push(`${days}d`);
+  parts.push(`${hrs}h`);
+  parts.push(`${mins}m`);
+  elLeft.textContent = parts.join(" ");
+}
+
+// run once immediately + then every 30s
+updateCountdown();
+clearInterval(root.__lockoutTimer);
+root.__lockoutTimer = setInterval(updateCountdown, 30000);
+
   function renderLoggedOut(root) {
     render(
       root,
@@ -294,6 +327,7 @@
   Next event: <strong id="submit-next-event">Loading…</strong><br>
   Status: <strong id="submit-submission-status">—</strong><br>
   Lockout: <strong id="submit-lockout">—</strong>
+  Time left: <strong id="submit-time-left">—</strong>
 </div>
 
   <div class="note" style="margin-top:10px;">
