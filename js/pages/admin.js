@@ -447,6 +447,7 @@ const ADMIN_EMAILS = [
 
         <div id="admin-results-entry" class="tiny muted" style="margin-top:8px;"></div>
         <div id="admin-results-form" style="margin-top:10px;"></div>
+        <div id="admin-races-form" style="margin-top:10px;"></div>
         <div id="admin-drivers-status" class="tiny muted" style="margin-top:10px;">Drivers: Loading…</div>
       </div>
 
@@ -458,7 +459,116 @@ const ADMIN_EMAILS = [
     loadAdminEventPicker(root);
     loadAdminDrivers(root);
     renderQualifyingForm(root);
+    renderRaceForms(root);
+    renderRaceForms(root);
   }
+
+  function renderRaceForms(root) {
+  const mount = root.querySelector("#admin-races-form");
+  if (!mount) return;
+
+  const eventId = root.__selectedEventId;
+  const drivers = Array.isArray(root.__drivers) ? root.__drivers : [];
+
+  if (!eventId) {
+    mount.innerHTML = "";
+    return;
+  }
+
+  if (drivers.length === 0) {
+    mount.innerHTML = `
+      <div class="note warnNote" style="margin-top:10px;">
+        Drivers not loaded yet.
+      </div>
+    `;
+    return;
+  }
+
+  const N = drivers.length;
+  const options = drivers.map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+
+  const raceCard = (raceKey, title) => `
+    <div class="card" style="margin-top:10px;">
+      <h2 style="margin:0 0 6px 0;">${title} (UI only)</h2>
+      <div class="tiny muted" style="margin-bottom:10px;">
+        Event ID: <span class="tiny">${eventId}</span><br>
+        Enter finishing order. Saving comes next.
+      </div>
+
+      <div id="admin-${raceKey}-validation" class="note warnNote" hidden></div>
+
+      <div id="admin-${raceKey}-grid" style="display:flex; flex-direction:column; gap:10px;">
+        ${Array.from({ length: N }).map((_, i) => {
+          const pos = i + 1;
+          return `
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div style="min-width:64px;"><strong>P${pos}</strong></div>
+              <select data-${raceKey}-pos="${pos}" style="flex:1; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+                <option value="">Select driver…</option>
+                ${options}
+              </select>
+            </div>
+          `;
+        }).join("")}
+      </div>
+
+      <button type="button" id="admin-${raceKey}-save" class="tile" style="margin-top:12px;" disabled>
+        Save ${title} (next step)
+      </button>
+    </div>
+  `;
+
+  mount.innerHTML = `
+    ${raceCard("race1", "Race 1")}
+    ${raceCard("race2", "Race 2")}
+    ${raceCard("race3", "Race 3")}
+  `;
+
+  const wireValidation = (raceKey) => {
+    const validationEl = mount.querySelector(`#admin-${raceKey}-validation`);
+    const saveBtn = mount.querySelector(`#admin-${raceKey}-save`);
+
+    const validate = () => {
+      const selects = Array.from(mount.querySelectorAll(`select[data-${raceKey}-pos]`));
+      const chosen = selects.map(s => s.value).filter(Boolean);
+
+      const dupes = chosen.filter((v, idx) => chosen.indexOf(v) !== idx);
+      const missing = selects.filter(s => !s.value).length;
+
+      const issues = [];
+      if (missing > 0) issues.push(`Select a driver for all positions (${missing} missing).`);
+      if (dupes.length > 0) issues.push("Each driver can only appear once.");
+
+      const valid = issues.length === 0;
+
+      if (validationEl) {
+        if (valid) validationEl.hidden = true;
+        else {
+          validationEl.hidden = false;
+          validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">${issues.join("<br>")}</span>`;
+        }
+      }
+
+      if (saveBtn) saveBtn.disabled = !valid;
+
+      // Store drafts for next step (no Firestore write)
+      const draft = selects.map(s => s.value || null);
+      if (raceKey === "race1") root.__draftRace1 = draft;
+      if (raceKey === "race2") root.__draftRace2 = draft;
+      if (raceKey === "race3") root.__draftRace3 = draft;
+    };
+
+    mount.querySelectorAll(`select[data-${raceKey}-pos]`).forEach(sel => {
+      sel.addEventListener("change", validate);
+    });
+
+    validate();
+  };
+
+  wireValidation("race1");
+  wireValidation("race2");
+  wireValidation("race3");
+}
 
   async function loadAdmin() {
     const view = document.getElementById("view-admin");
