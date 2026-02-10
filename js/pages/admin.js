@@ -90,6 +90,122 @@ const ADMIN_EMAILS = [
     root.querySelector("#admin-logout")?.addEventListener("click", handleLogout);
   }
 
+  async function loadAdminEventPicker(root) {
+    const wrap = root.querySelector("#admin-results-entry");
+    if (!wrap) return;
+
+    // Ensure Firestore is ready
+    if (!window.btccDb) {
+      wrap.innerHTML = `<div class="tiny muted">Waiting for database…</div>`;
+      setTimeout(() => loadAdminEventPicker(root), 300);
+      return;
+    }
+
+    wrap.innerHTML = `<div class="tiny muted">Loading events…</div>`;
+
+    try {
+      const snap = await window.btccDb.collection("events").orderBy("eventNo").get();
+
+      if (snap.empty) {
+        wrap.innerHTML = `<div class="note warnNote">No events found.</div>`;
+        return;
+      }
+
+      const fmtDate = (v) => {
+        if (v && typeof v.toDate === "function") return v.toDate().toLocaleDateString("en-GB");
+        if (typeof v === "string" && v.length >= 10) {
+          const d = new Date(v);
+          if (!isNaN(d)) return d.toLocaleDateString("en-GB");
+          return v;
+        }
+        return "—";
+      };
+
+      const rows = snap.docs.map((doc) => {
+        const d = doc.data() || {};
+        const from = fmtDate(d.dateFrom);
+        const to = fmtDate(d.dateTo);
+        const dates = from !== "—" && to !== "—" ? `${from}–${to}` : from;
+        const rounds = d.roundFrom && d.roundTo ? `R${d.roundFrom}–${d.roundTo}` : "";
+        const status = (d.status || "upcoming").toString();
+        return {
+          id: doc.id,
+          eventNo: d.eventNo ?? "—",
+          title: d.venue ?? d.name ?? "Unnamed",
+          dates,
+          rounds,
+          status,
+        };
+      });
+
+      wrap.innerHTML = `
+        <div class="note" style="margin-top:10px;">
+          <strong>Select event</strong>
+          <div class="tiny muted" style="margin-top:6px;">Pick an event to start entering Qualifying and Race results (next steps).</div>
+        </div>
+
+        <ul class="list" id="admin-events-list" style="margin-top:10px;">
+          ${rows
+            .map(
+              (e) => `
+              <li class="eventItem" data-event-id="${e.id}">
+                <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
+                  <div>
+                    <strong>Event ${e.eventNo}</strong> — ${e.title}<br>
+                    <span class="tiny muted">${e.rounds} • ${e.dates} • ${e.status}</span>
+                  </div>
+                  <button type="button" class="tile tinyBtn" data-action="select-event">Select</button>
+                </div>
+              </li>
+            `
+            )
+            .join("")}
+        </ul>
+
+        <div id="admin-selected-event" class="note" style="margin-top:10px;" hidden>
+          <strong>Selected:</strong> <span id="admin-selected-event-label" class="tiny muted"></span>
+        </div>
+      `;
+
+      const selectedBox = wrap.querySelector("#admin-selected-event");
+      const selectedLabel = wrap.querySelector("#admin-selected-event-label");
+
+      wrap.querySelectorAll("[data-action='select-event']").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const li = btn.closest("[data-event-id]");
+          const eventId = li?.getAttribute("data-event-id");
+          if (!eventId) return;
+
+          const match = rows.find((r) => r.id === eventId);
+          root.__selectedEventId = eventId;
+
+          // Visual highlight
+          wrap.querySelectorAll("[data-event-id]").forEach((x) => {
+            x.style.outline = "none";
+          });
+          li.style.outline = "2px solid rgba(250, 204, 21, 0.45)";
+
+          if (selectedBox && selectedLabel && match) {
+            selectedBox.hidden = false;
+            selectedLabel.textContent = `Event ${match.eventNo} — ${match.title}`;
+          }
+
+          console.log("✅ Admin selected event:", eventId);
+        });
+      });
+
+      console.log("✅ Admin events loaded:", snap.size);
+    } catch (err) {
+      console.error("❌ loadAdminEventPicker failed:", err);
+      wrap.innerHTML = `
+        <div class="note warnNote">
+          Failed to load events.<br>
+          <span class="tiny muted">${err?.message || err}</span>
+        </div>
+      `;
+    }
+  }
+
   function renderAdminUnlocked(root, email) {
     render(
       root,
@@ -107,9 +223,7 @@ const ADMIN_EMAILS = [
           Event selection comes next.
         </div>
 
-        <div id="admin-results-entry" class="tiny muted" style="margin-top:8px;">
-          Placeholder: results entry UI will render here.
-        </div>
+        <div id="admin-results-entry" class="tiny muted" style="margin-top:8px;"></div>
       </div>
 
       <button id="admin-logout" class="tile" style="margin-top:12px;">Logout</button>
@@ -117,6 +231,7 @@ const ADMIN_EMAILS = [
     );
 
     root.querySelector("#admin-logout")?.addEventListener("click", handleLogout);
+    loadAdminEventPicker(root);
   }
 
   async function loadAdmin() {
