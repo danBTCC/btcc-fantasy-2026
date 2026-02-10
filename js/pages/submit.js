@@ -403,11 +403,21 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
     const saveBtn = root.querySelector("#team-save");
 
     // Phase G6: save to Firestore (player's own submission doc)
-    if (saveBtn) {
-      saveBtn.textContent = "Save team";
-    }
+if (saveBtn) {
+  saveBtn.textContent = isLocked ? "Locked" : "Save team";
+  if (isLocked) saveBtn.disabled = true;
+}
 
     const getEventContext = () => root.__eventContext || {};
+
+    const ctx = getEventContext();
+const isLocked = ctx.open === false;
+
+function showLockedMessage() {
+  if (!validationEl) return;
+  validationEl.hidden = false;
+  validationEl.innerHTML = `<strong>Locked:</strong><br><span class="tiny muted">Submissions are closed for this event.</span>`;
+}
 
     // Load existing submission for this event (if any) and preselect drivers
     async function loadExistingSubmission() {
@@ -566,7 +576,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         }
       }
 
-      if (saveBtn) saveBtn.disabled = !valid;
+      if (saveBtn) saveBtn.disabled = isLocked ? true : !valid;
     };
 
     box.innerHTML = `
@@ -583,7 +593,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
                     <strong>${name}</strong><br>
                     <span class="tiny muted">${fmtMoney(price)}</span>
                   </div>
-                  <button type="button" class="tile tinyBtn" data-action="toggle">Select</button>
+                  <button type="button" class="tile tinyBtn" data-action="toggle" ${isLocked ? "disabled" : ""}>Select</button>
                 </div>
               </li>
             `;
@@ -594,6 +604,10 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
     box.querySelectorAll("[data-action='toggle']").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (isLocked) {
+  showLockedMessage();
+  return;
+}
         const row = btn.closest("[data-driver-id]");
         const id = row?.getAttribute("data-driver-id");
         if (!id) return;
@@ -621,6 +635,10 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
     // Preload saved selection (if any)
     await loadExistingSubmission();
+
+    if (isLocked) {
+  showLockedMessage();
+}
 
     // Initial summary
     updateSummary();
