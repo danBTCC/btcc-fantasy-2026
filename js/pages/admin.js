@@ -178,6 +178,7 @@ const ADMIN_EMAILS = [
 
           const match = rows.find((r) => r.id === eventId);
           root.__selectedEventId = eventId;
+          renderQualifyingForm(root);
 
           // Visual highlight
           wrap.querySelectorAll("[data-event-id]").forEach((x) => {
@@ -247,6 +248,109 @@ const ADMIN_EMAILS = [
     }
   }
 
+  function renderQualifyingForm(root) {
+    const mount = root.querySelector("#admin-results-form");
+    if (!mount) return;
+
+    const eventId = root.__selectedEventId;
+    const drivers = Array.isArray(root.__drivers) ? root.__drivers : [];
+
+    if (!eventId) {
+      mount.innerHTML = `
+        <div class="note" style="margin-top:10px;">
+          <strong>Qualifying</strong><br>
+          <span class="tiny muted">Select an event above to start entering qualifying positions.</span>
+        </div>
+      `;
+      return;
+    }
+
+    if (drivers.length === 0) {
+      mount.innerHTML = `
+        <div class="note warnNote" style="margin-top:10px;">
+          Drivers not loaded yet.
+        </div>
+      `;
+      return;
+    }
+
+    // For v1 UI, we enter positions for all drivers in the current test set.
+    const N = drivers.length;
+
+    const options = drivers
+      .map((d) => `<option value="${d.id}">${d.name}</option>`)
+      .join("");
+
+    mount.innerHTML = `
+      <div class="card" style="margin-top:10px;">
+        <h2 style="margin:0 0 6px 0;">Qualifying (UI only)</h2>
+        <div class="tiny muted" style="margin-bottom:10px;">
+          Event ID: <span class="tiny">${eventId}</span><br>
+          Enter finishing order. No saving yet (next step).
+        </div>
+
+        <div id="admin-quali-validation" class="note warnNote" hidden></div>
+
+        <div id="admin-quali-grid" style="display:flex; flex-direction:column; gap:10px;">
+          ${Array.from({ length: N }).map((_, i) => {
+            const pos = i + 1;
+            return `
+              <div style="display:flex; gap:10px; align-items:center;">
+                <div style="min-width:64px;"><strong>P${pos}</strong></div>
+                <select data-quali-pos="${pos}" style="flex:1; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+                  <option value="">Select driver…</option>
+                  ${options}
+                </select>
+              </div>
+            `;
+          }).join("")}
+        </div>
+
+        <button type="button" id="admin-quali-preview" class="tile" style="margin-top:12px;" disabled>
+          Preview qualifying (next step)
+        </button>
+      </div>
+    `;
+
+    const validationEl = mount.querySelector("#admin-quali-validation");
+    const previewBtn = mount.querySelector("#admin-quali-preview");
+
+    const validate = () => {
+      const selects = Array.from(mount.querySelectorAll("select[data-quali-pos]"));
+      const chosen = selects.map((s) => s.value).filter(Boolean);
+
+      const dupes = chosen.filter((v, idx) => chosen.indexOf(v) !== idx);
+      const missing = selects.filter((s) => !s.value).length;
+
+      const issues = [];
+      if (missing > 0) issues.push(`Select a driver for all positions (${missing} missing).`);
+      if (dupes.length > 0) issues.push("Each driver can only appear once.");
+
+      const valid = issues.length === 0;
+
+      if (validationEl) {
+        if (valid) {
+          validationEl.hidden = true;
+        } else {
+          validationEl.hidden = false;
+          validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">${issues.join("<br>")}</span>`;
+        }
+      }
+
+      if (previewBtn) previewBtn.disabled = !valid;
+
+      // Store draft for next step (no Firestore write)
+      root.__draftQuali = selects.map((s) => s.value || null);
+    };
+
+    mount.querySelectorAll("select[data-quali-pos]").forEach((sel) => {
+      sel.addEventListener("change", validate);
+    });
+
+    // Initial validation state
+    validate();
+  }
+
   function renderAdminUnlocked(root, email) {
     render(
       root,
@@ -265,6 +369,7 @@ const ADMIN_EMAILS = [
         </div>
 
         <div id="admin-results-entry" class="tiny muted" style="margin-top:8px;"></div>
+        <div id="admin-results-form" style="margin-top:10px;"></div>
         <div id="admin-drivers-status" class="tiny muted" style="margin-top:10px;">Drivers: Loading…</div>
       </div>
 
@@ -275,6 +380,7 @@ const ADMIN_EMAILS = [
     root.querySelector("#admin-logout")?.addEventListener("click", handleLogout);
     loadAdminEventPicker(root);
     loadAdminDrivers(root);
+    renderQualifyingForm(root);
   }
 
   async function loadAdmin() {
