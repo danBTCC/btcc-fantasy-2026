@@ -337,6 +337,14 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
   Remaining: <strong id="team-remaining">£0.00</strong>
 </div>
 
+<div id="team-validation" class="note warnNote" style="margin-top:10px;" hidden>
+  Validation message
+</div>
+
+<button id="team-save" class="tile" style="margin-top:10px;" disabled>
+  Save team (next step)
+</button>
+
 <div id="driver-picker" class="list" style="margin-top:10px;">
   Loading drivers…
 </div>
@@ -379,6 +387,13 @@ window.btccDb.collection("players").doc(user.uid).get().then(s => {
     // Local selection state for now (UI-only)
     const selected = new Set();
 
+    const validationEl = root.querySelector("#team-validation");
+    const saveBtn = root.querySelector("#team-save");
+
+    // Phase G5: validation (UI-only)
+    const MIN_DRIVERS = 3;
+    const MAX_DRIVERS = 6;
+
     const fmtMoney = (n) => `£${(Number(n) || 0).toFixed(2)}`;
 
     const updateSummary = () => {
@@ -391,9 +406,44 @@ window.btccDb.collection("players").doc(user.uid).get().then(s => {
         return sum + price;
       }, 0);
 
+      const budgetNum = Number(playerBudget) || 0;
+      const remaining = budgetNum - total;
+
       if (countEl) countEl.textContent = String(selected.size);
       if (spendEl) spendEl.textContent = fmtMoney(total);
-      if (remEl) remEl.textContent = fmtMoney((Number(playerBudget) || 0) - total);
+      if (remEl) remEl.textContent = fmtMoney(remaining);
+
+      // Validation rules (UI-only)
+      const issues = [];
+
+      if (budgetNum <= 0) {
+        issues.push("Budget not set yet.");
+      }
+
+      if (selected.size < MIN_DRIVERS) {
+        issues.push(`Select at least ${MIN_DRIVERS} drivers.`);
+      }
+
+      if (selected.size > MAX_DRIVERS) {
+        issues.push(`Maximum ${MAX_DRIVERS} drivers allowed.`);
+      }
+
+      if (remaining < 0) {
+        issues.push(`Over budget by ${fmtMoney(Math.abs(remaining))}.`);
+      }
+
+      const valid = issues.length === 0;
+
+      if (validationEl) {
+        if (valid) {
+          validationEl.hidden = true;
+        } else {
+          validationEl.hidden = false;
+          validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">${issues.join("<br>")}</span>`;
+        }
+      }
+
+      if (saveBtn) saveBtn.disabled = !valid;
     };
 
     box.innerHTML = `
@@ -430,6 +480,13 @@ window.btccDb.collection("players").doc(user.uid).get().then(s => {
           btn.textContent = "Select";
           row.style.opacity = "0.85";
         } else {
+          if (selected.size >= MAX_DRIVERS) {
+            if (validationEl) {
+              validationEl.hidden = false;
+              validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Maximum ${MAX_DRIVERS} drivers allowed.</span>`;
+            }
+            return;
+          }
           selected.add(id);
           btn.textContent = "Selected";
           row.style.opacity = "1";
