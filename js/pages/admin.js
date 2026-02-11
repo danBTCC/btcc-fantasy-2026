@@ -181,6 +181,7 @@ const ADMIN_EMAILS = [
           root.__draftQuali = null;
           root.__eventLocked = false;
           renderQualifyingForm(root);
+          renderRaceForms(root);
 
           // Visual highlight
           wrap.querySelectorAll("[data-event-id]").forEach((x) => {
