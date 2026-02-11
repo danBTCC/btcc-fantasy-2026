@@ -459,6 +459,7 @@ const ADMIN_EMAILS = [
     loadAdminEventPicker(root);
     loadAdminDrivers(root);
     renderQualifyingForm(root);
+    renderRaceForms(root);
   }
 
   function renderRaceForms(root) {
