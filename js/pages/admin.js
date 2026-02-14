@@ -755,7 +755,63 @@ const ADMIN_EMAILS = [
         ${section("Race 1", race1Names)}
         ${section("Race 2", race2Names)}
         ${section("Race 3", race3Names)}
-        <div class="tiny muted" style="margin-top:12px;">Locking comes next (H7.2). Preview is read-only.</div>
+        <div id="admin-lock-msg" class="note warnNote" hidden style="margin-top:12px;"></div>
+
+        ${meta?.resultsLocked === true
+          ? `<div class="note" style="margin-top:12px;"><strong>Locked</strong><br><span class="tiny muted">This event is locked. Unlock comes next (H7.4).</span></div>`
+          : `<button type="button" id="admin-lock-results" class="tile" style="margin-top:12px;">Lock results (set complete)</button>`
+        }
+
+        <div class="tiny muted" style="margin-top:10px;">H7.2 writes lock + status to events/${eventId}. Inputs are still editable until H7.3.</div>
       </div>
     `;
+
+    // H7.2: Lock results (writes to events/{eventId})
+    const lockBtn = mount.querySelector("#admin-lock-results");
+    const lockMsg = mount.querySelector("#admin-lock-msg");
+
+    if (lockBtn) {
+      lockBtn.onclick = async () => {
+        if (!window.btccDb) return;
+        const eid = root.__selectedEventId;
+        if (!eid) return;
+
+        const ok = window.confirm("Lock results for this event? This will mark the event as COMPLETE.\n\n(You can unlock later with a reason.)");
+        if (!ok) return;
+
+        try {
+          lockBtn.disabled = true;
+          lockBtn.textContent = "Locking…";
+          if (lockMsg) { lockMsg.hidden = true; lockMsg.innerHTML = ""; }
+
+          const user = firebase.auth().currentUser;
+          const who = user?.email || "admin";
+
+          await window.btccDb.collection("events").doc(eid).set(
+            {
+              resultsLocked: true,
+              status: "complete",
+              resultsLockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              resultsLockedBy: who,
+            },
+            { merge: true }
+          );
+
+          // Refresh preview/meta from Firestore
+          root.__eventLocked = true;
+          await loadSelectedEventMetaAndResults(root);
+
+          console.log("✅ Results locked:", eid);
+        } catch (e) {
+          console.error("❌ Lock results failed:", e);
+          if (lockMsg) {
+            lockMsg.hidden = false;
+            lockMsg.innerHTML = `<strong>Lock failed.</strong><br><span class=\"tiny muted\">${e?.message || e}</span>`;
+          }
+          lockBtn.textContent = "Lock results (set complete)";
+        } finally {
+          lockBtn.disabled = false;
+        }
+      };
+    }
   }
