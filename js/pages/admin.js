@@ -358,6 +358,13 @@ const ADMIN_EMAILS = [
     // Initial validation state
     validate();
 
+    // H7.3 — disable qualifying inputs if locked
+if (root.__eventMeta?.resultsLocked === true) {
+  mount.querySelectorAll("select").forEach(s => s.disabled = true);
+  const saveBtn = mount.querySelector("#admin-quali-preview");
+  if (saveBtn) saveBtn.disabled = true;
+}
+
     btn?.addEventListener("click", async () => {
       // Guard
       if (!window.btccDb) {
@@ -450,12 +457,12 @@ const ADMIN_EMAILS = [
           Event selection comes next.
         </div>
 
-        <div id="admin-results-entry" class="tiny muted" style="margin-top:8px;"></div>
-        <div id="admin-results-form" style="margin-top:10px;"></div>
-        <div id="admin-races-form" style="margin-top:10px;"></div>
-        <div id="admin-results-preview" style="margin-top:10px;"></div>
-        <div id="admin-drivers-status" class="tiny muted" style="margin-top:10px;">Drivers: Loading…</div>
-      </div>
+        <div id="admin-lock-banner" class="note warnNote" hidden style="margin-top:10px;"></div>
+<div id="admin-results-entry" class="tiny muted" style="margin-top:8px;"></div>
+<div id="admin-results-form" style="margin-top:10px;"></div>
+<div id="admin-races-form" style="margin-top:10px;"></div>
+<div id="admin-results-preview" style="margin-top:10px;"></div>
+<div id="admin-drivers-status" class="tiny muted" style="margin-top:10px;">Drivers: Loading…</div>
 
       <button id="admin-logout" class="tile" style="margin-top:12px;">Logout</button>
       `
@@ -575,6 +582,12 @@ const ADMIN_EMAILS = [
   wireValidation("race1");
   wireValidation("race2");
   wireValidation("race3");
+}
+
+// H7.3 — disable race inputs if locked
+if (root.__eventMeta?.resultsLocked === true) {
+  mount.querySelectorAll("select").forEach(s => s.disabled = true);
+  mount.querySelectorAll("button[id^='admin-race']").forEach(b => b.disabled = true);
 }
 
   async function loadAdmin() {
@@ -722,6 +735,16 @@ const ADMIN_EMAILS = [
 
     const status = meta?.status || "—";
     const locked = meta?.resultsLocked === true ? "Yes" : "No";
+    const banner = root.querySelector("#admin-lock-banner");
+if (banner) {
+  if (meta?.resultsLocked === true) {
+    banner.hidden = false;
+    banner.innerHTML = `<strong>LOCKED:</strong><br><span class="tiny muted">This event is locked. Editing is disabled.</span>`;
+  } else {
+    banner.hidden = true;
+    banner.innerHTML = "";
+  }
+}
     const updatedAt = fmtTs(meta?.resultsUpdatedAt);
     const updatedBy = meta?.resultsUpdatedBy || "—";
     const savedUpdatedAt = fmtTs(saved?.updatedAt);
