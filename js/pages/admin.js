@@ -582,12 +582,12 @@ if (root.__eventMeta?.resultsLocked === true) {
   wireValidation("race1");
   wireValidation("race2");
   wireValidation("race3");
-}
 
-// H7.3 — disable race inputs if locked
-if (root.__eventMeta?.resultsLocked === true) {
-  mount.querySelectorAll("select").forEach(s => s.disabled = true);
-  mount.querySelectorAll("button[id^='admin-race']").forEach(b => b.disabled = true);
+  // H7.3 — disable race inputs if locked
+  if (root.__eventMeta?.resultsLocked === true) {
+    mount.querySelectorAll("select").forEach(s => s.disabled = true);
+    mount.querySelectorAll("button[id^='admin-race']").forEach(b => b.disabled = true);
+  }
 }
 
   async function loadAdmin() {
@@ -626,7 +626,7 @@ if (root.__eventMeta?.resultsLocked === true) {
   }
 
   window.loadAdmin = loadAdmin;
-})();
+
   // --- H7.1: Admin Results Preview panel (read-only, no lock/unlock writes) ---
   async function loadSelectedEventMetaAndResults(root) {
     const eventId = root.__selectedEventId;
@@ -838,3 +838,4 @@ if (banner) {
       };
     }
   }
+})();
