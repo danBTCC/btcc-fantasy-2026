@@ -781,11 +781,25 @@ if (banner) {
         <div id="admin-lock-msg" class="note warnNote" hidden style="margin-top:12px;"></div>
 
         ${meta?.resultsLocked === true
-          ? `<div class="note" style="margin-top:12px;"><strong>Locked</strong><br><span class="tiny muted">This event is locked. Unlock comes next (H7.4).</span></div>`
+          ? `
+            <div class="note" style="margin-top:12px;">
+              <strong>Locked</strong><br>
+              <span class="tiny muted">Editing is disabled. Use Unlock only if you must correct something.</span>
+            </div>
+
+            <div class="note warnNote" style="margin-top:10px;">
+              <strong>Unlock (requires reason)</strong>
+              <div class="tiny muted" style="margin-top:6px;">This will re-enable editing and will be recorded in the event audit fields.</div>
+              <label class="tiny muted" style="display:block; margin-top:10px;">Reason</label>
+              <textarea id="admin-unlock-reason" rows="3" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" placeholder="e.g. Correction: wrong driver in P3 of Race 2"></textarea>
+              <button type="button" id="admin-unlock-results" class="tile" style="margin-top:10px;">Unlock results</button>
+              <div id="admin-unlock-msg" class="tiny" style="margin-top:8px; color:#facc15;"></div>
+            </div>
+          `
           : `<button type="button" id="admin-lock-results" class="tile" style="margin-top:12px;">Lock results (set complete)</button>`
         }
 
-        <div class="tiny muted" style="margin-top:10px;">H7.2 writes lock + status to events/${eventId}. Inputs are still editable until H7.3.</div>
+        <div class="tiny muted" style="margin-top:10px;">H7.4 records unlock reason + timestamp on events/${eventId}.</div>
       </div>
     `;
 
@@ -834,6 +848,61 @@ if (banner) {
           lockBtn.textContent = "Lock results (set complete)";
         } finally {
           lockBtn.disabled = false;
+        }
+      };
+    }
+
+    // H7.4: Unlock results (requires reason)
+    const unlockBtn = mount.querySelector("#admin-unlock-results");
+    const unlockReason = mount.querySelector("#admin-unlock-reason");
+    const unlockMsg = mount.querySelector("#admin-unlock-msg");
+
+    if (unlockBtn) {
+      unlockBtn.onclick = async () => {
+        if (!window.btccDb) return;
+        const eid = root.__selectedEventId;
+        if (!eid) return;
+
+        const reason = (unlockReason?.value || "").trim();
+        if (!reason) {
+          if (unlockMsg) unlockMsg.textContent = "Please enter a reason before unlocking.";
+          return;
+        }
+
+        const ok = window.confirm("Unlock results for this event?\n\nThis will re-enable editing and record your reason in Firestore.");
+        if (!ok) return;
+
+        try {
+          unlockBtn.disabled = true;
+          unlockBtn.textContent = "Unlocking…";
+          if (unlockMsg) unlockMsg.textContent = "";
+
+          const user = firebase.auth().currentUser;
+          const who = user?.email || "admin";
+
+          await window.btccDb.collection("events").doc(eid).set(
+            {
+              resultsLocked: false,
+              resultsUnlockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              resultsUnlockedBy: who,
+              resultsUnlockReason: reason,
+            },
+            { merge: true }
+          );
+
+          // Refresh meta/results and re-render forms (H7.3 will enable inputs)
+          root.__eventLocked = false;
+          await loadSelectedEventMetaAndResults(root);
+          renderQualifyingForm(root);
+          renderRaceForms(root);
+
+          console.log("✅ Results unlocked:", eid);
+        } catch (e) {
+          console.error("❌ Unlock results failed:", e);
+          if (unlockMsg) unlockMsg.textContent = e?.message || String(e);
+        } finally {
+          unlockBtn.disabled = false;
+          unlockBtn.textContent = "Unlock results";
         }
       };
     }
