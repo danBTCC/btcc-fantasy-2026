@@ -182,6 +182,7 @@ const ADMIN_EMAILS = [
           root.__eventLocked = false;
           renderQualifyingForm(root);
           renderRaceForms(root);
+          loadSelectedEventMetaAndResults(root);
 
           // Visual highlight
           wrap.querySelectorAll("[data-event-id]").forEach((x) => {
@@ -242,6 +243,8 @@ const ADMIN_EMAILS = [
       });
 
       root.__drivers = list;
+      // Re-render preview now that we can map driverIds -> names
+      renderResultsPreview(root);
       el.textContent = `Drivers loaded: ${list.length}`;
       console.log("✅ Admin drivers loaded:", list.length);
     } catch (err) {
@@ -345,6 +348,7 @@ const ADMIN_EMAILS = [
 
       // Store draft for next step (no Firestore write)
       root.__draftQuali = selects.map((s) => s.value || null);
+      renderResultsPreview(root);
     };
 
     mount.querySelectorAll("select[data-quali-pos]").forEach((sel) => {
@@ -449,6 +453,7 @@ const ADMIN_EMAILS = [
         <div id="admin-results-entry" class="tiny muted" style="margin-top:8px;"></div>
         <div id="admin-results-form" style="margin-top:10px;"></div>
         <div id="admin-races-form" style="margin-top:10px;"></div>
+        <div id="admin-results-preview" style="margin-top:10px;"></div>
         <div id="admin-drivers-status" class="tiny muted" style="margin-top:10px;">Drivers: Loading…</div>
       </div>
 
@@ -461,6 +466,7 @@ const ADMIN_EMAILS = [
     loadAdminDrivers(root);
     renderQualifyingForm(root);
     renderRaceForms(root);
+    renderResultsPreview(root);
   }
 
   function renderRaceForms(root) {
@@ -556,6 +562,7 @@ const ADMIN_EMAILS = [
       if (raceKey === "race1") root.__draftRace1 = draft;
       if (raceKey === "race2") root.__draftRace2 = draft;
       if (raceKey === "race3") root.__draftRace3 = draft;
+      renderResultsPreview(root);
     };
 
     mount.querySelectorAll(`select[data-${raceKey}-pos]`).forEach(sel => {
@@ -607,3 +614,148 @@ const ADMIN_EMAILS = [
 
   window.loadAdmin = loadAdmin;
 })();
+  // --- H7.1: Admin Results Preview panel (read-only, no lock/unlock writes) ---
+  async function loadSelectedEventMetaAndResults(root) {
+    const eventId = root.__selectedEventId;
+    if (!eventId) {
+      root.__eventMeta = null;
+      root.__savedResults = null;
+      renderResultsPreview(root);
+      return;
+    }
+
+    if (!window.btccDb) {
+      root.__eventMeta = null;
+      root.__savedResults = null;
+      renderResultsPreview(root);
+      return;
+    }
+
+    try {
+      const [eventSnap, resultsSnap] = await Promise.all([
+        window.btccDb.collection("events").doc(eventId).get(),
+        window.btccDb.collection("results").doc(eventId).get(),
+      ]);
+
+      root.__eventMeta = eventSnap.exists ? (eventSnap.data() || {}) : null;
+      root.__savedResults = resultsSnap.exists ? (resultsSnap.data() || {}) : null;
+
+      // NOTE: H7.1 is preview only; we do NOT enforce lock behaviour yet.
+      renderResultsPreview(root);
+    } catch (err) {
+      console.error("❌ loadSelectedEventMetaAndResults failed:", err);
+      root.__eventMeta = null;
+      root.__savedResults = null;
+      renderResultsPreview(root, err);
+    }
+  }
+
+  function renderResultsPreview(root, err) {
+    const mount = root.querySelector("#admin-results-preview");
+    if (!mount) return;
+
+    const eventId = root.__selectedEventId;
+    const drivers = Array.isArray(root.__drivers) ? root.__drivers : [];
+    const driverNameById = new Map(drivers.map((d) => [d.id, d.name]));
+
+    const meta = root.__eventMeta || null;
+    const saved = root.__savedResults || null;
+
+    const fmtTs = (v) => {
+      try {
+        if (!v) return "—";
+        if (typeof v.toDate === "function") return v.toDate().toLocaleString("en-GB");
+        const d = new Date(v);
+        if (!isNaN(d)) return d.toLocaleString("en-GB");
+        return String(v);
+      } catch {
+        return "—";
+      }
+    };
+
+    const idsToNames = (arr) => {
+      const list = Array.isArray(arr) ? arr : [];
+      return list.map((id) => driverNameById.get(id) || (id ? `Unknown (${id})` : "—"));
+    };
+
+    // Choose source: saved if present, otherwise drafts
+    const qualiIds = (saved && Array.isArray(saved.qualifying) && saved.qualifying.length)
+      ? saved.qualifying
+      : (Array.isArray(root.__draftQuali) ? root.__draftQuali : []);
+
+    const race1Ids = (saved && Array.isArray(saved.race1) && saved.race1.length)
+      ? saved.race1
+      : (Array.isArray(root.__draftRace1) ? root.__draftRace1 : []);
+
+    const race2Ids = (saved && Array.isArray(saved.race2) && saved.race2.length)
+      ? saved.race2
+      : (Array.isArray(root.__draftRace2) ? root.__draftRace2 : []);
+
+    const race3Ids = (saved && Array.isArray(saved.race3) && saved.race3.length)
+      ? saved.race3
+      : (Array.isArray(root.__draftRace3) ? root.__draftRace3 : []);
+
+    const qualiNames = idsToNames(qualiIds);
+    const race1Names = idsToNames(race1Ids);
+    const race2Names = idsToNames(race2Ids);
+    const race3Names = idsToNames(race3Ids);
+
+    if (!eventId) {
+      mount.innerHTML = `
+        <div class="card" style="margin-top:10px;">
+          <h2 style="margin:0 0 6px 0;">Preview Results</h2>
+          <div class="tiny muted">Select an event above to preview Qualifying and Race results before locking.</div>
+        </div>
+      `;
+      return;
+    }
+
+    if (drivers.length === 0) {
+      mount.innerHTML = `
+        <div class="card" style="margin-top:10px;">
+          <h2 style="margin:0 0 6px 0;">Preview Results</h2>
+          <div class="tiny muted">Loading drivers…</div>
+        </div>
+      `;
+      return;
+    }
+
+    const status = meta?.status || "—";
+    const locked = meta?.resultsLocked === true ? "Yes" : "No";
+    const updatedAt = fmtTs(meta?.resultsUpdatedAt);
+    const updatedBy = meta?.resultsUpdatedBy || "—";
+    const savedUpdatedAt = fmtTs(saved?.updatedAt);
+
+    const section = (title, names) => {
+      const filled = Array.isArray(names) && names.some((n) => n && n !== "—");
+      return `
+        <div class="note" style="margin-top:10px;">
+          <strong>${title}</strong>
+          <div class="tiny muted" style="margin-top:6px;">${filled ? "Full order preview." : "Not available yet."}</div>
+          <div style="max-height:260px; overflow:auto; margin-top:10px; border:1px solid var(--border); border-radius:12px; padding:10px; background:rgba(255,255,255,.02);">
+            <ol class="list" style="margin:0; padding-left:18px;">
+              ${names.map((n, i) => `<li class="tiny" style="margin:6px 0;">${i + 1}. ${n}</li>`).join("")}
+            </ol>
+          </div>
+        </div>
+      `;
+    };
+
+    mount.innerHTML = `
+      <div class="card" style="margin-top:10px;">
+        <h2 style="margin:0 0 6px 0;">Preview Results</h2>
+        <div class="tiny muted" style="margin-bottom:10px;">
+          Event ID: <span class="tiny">${eventId}</span><br>
+          Status: <span class="tiny">${status}</span> • Locked: <span class="tiny">${locked}</span><br>
+          Last updated: <span class="tiny">${updatedAt}</span> by <span class="tiny">${updatedBy}</span><br>
+          Results doc updatedAt: <span class="tiny">${savedUpdatedAt}</span>
+        </div>
+        ${err ? `<div class="note warnNote"><strong>Preview note:</strong><br><span class="tiny muted">${err?.message || err}</span></div>` : ""}
+        ${section("Qualifying", qualiNames)}
+        ${section("Race 1", race1Names)}
+        ${section("Race 2", race2Names)}
+        ${section("Race 3", race3Names)}
+        <div class="tiny muted" style="margin-top:12px;">Locking comes next (H7.2). Preview is read-only.</div>
+      </div>
+    `;
+  }
