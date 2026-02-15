@@ -800,6 +800,18 @@ if (banner) {
         }
 
         <div class="tiny muted" style="margin-top:10px;">H7.4 records unlock reason + timestamp on events/${eventId}.</div>
+
+        <div class="card" style="margin-top:12px;">
+          <h2 style="margin:0 0 6px 0;">Engine (I1 test)</h2>
+          <div class="tiny muted" style="margin:0;">
+            Writes derived docs to <span class="tiny">event_scores/${eventId}/players/*</span> (overwrite-safe).<br>
+            Wiring runs next step (I1.2).
+          </div>
+          <button type="button" id="admin-run-engine-i1" class="tile" style="margin-top:10px;">
+            Run engine for selected event
+          </button>
+          <div id="admin-engine-msg" class="tiny muted" style="margin-top:8px;"></div>
+        </div>
       </div>
     `;
 
