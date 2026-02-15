@@ -918,5 +918,82 @@ if (banner) {
         }
       };
     }
+
+    // I1.2: Engine dry run (read-only)
+    const engineBtn = mount.querySelector("#admin-run-engine-i1");
+    const engineMsg = mount.querySelector("#admin-engine-msg");
+
+    const setEngineMsg = (t) => {
+      if (engineMsg) engineMsg.textContent = t;
+    };
+
+    if (engineBtn) {
+      engineBtn.onclick = async () => {
+        try {
+          if (!window.btccDb) throw new Error("Database not ready");
+
+          const eid = root.__selectedEventId;
+          if (!eid) throw new Error("No event selected");
+
+          // Require locked results before engine can run
+          const metaNow = root.__eventMeta || {};
+          if (metaNow.resultsLocked !== true) {
+            throw new Error("Results must be LOCKED before running the engine");
+          }
+
+          engineBtn.disabled = true;
+          engineBtn.textContent = "Running dry run…";
+          setEngineMsg("Checking inputs…");
+
+          // Read results doc
+          const resultsSnap = await window.btccDb.collection("results").doc(eid).get();
+          const hasResults = resultsSnap.exists;
+
+          // Read entries (primary path)
+          const entriesRefA = window.btccDb.collection("entries").doc(eid).collection("entries");
+          const entriesSnapA = await entriesRefA.get();
+
+          // Fallback (if you used a different parent collection name earlier)
+          let entriesSnap = entriesSnapA;
+          let entriesPathUsed = `entries/${eid}/entries`;
+
+          if (entriesSnapA.empty) {
+            const entriesRefB = window.btccDb.collection("submissions").doc(eid).collection("entries");
+            const entriesSnapB = await entriesRefB.get();
+            if (!entriesSnapB.empty) {
+              entriesSnap = entriesSnapB;
+              entriesPathUsed = `submissions/${eid}/entries`;
+            }
+          }
+
+          const entryCount = entriesSnap.size;
+          const uids = entriesSnap.docs.map(d => d.id);
+
+          console.log("🧠 Engine I1 dry run:");
+          console.log("- eventId:", eid);
+          console.log("- results doc exists:", hasResults);
+          console.log("- entries path:", entriesPathUsed);
+          console.log("- entries count:", entryCount);
+          console.log("- uids:", uids);
+
+          setEngineMsg(`Dry run OK. results=${hasResults ? "yes" : "no"}, entries=${entryCount} (path: ${entriesPathUsed})`);
+
+          if (!hasResults) {
+            console.warn("⚠️ No results doc found. Save qualifying/races before running engine.");
+          }
+          if (entryCount === 0) {
+            console.warn("⚠️ No entries found for this event.");
+          }
+        } catch (e) {
+          console.error("❌ Engine dry run failed:", e);
+          setEngineMsg(e?.message || String(e));
+        } finally {
+          if (engineBtn) {
+            engineBtn.disabled = false;
+            engineBtn.textContent = "Run engine for selected event";
+          }
+        }
+      };
+    }
   }
 })();
