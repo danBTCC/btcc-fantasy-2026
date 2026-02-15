@@ -526,7 +526,7 @@ if (root.__eventMeta?.resultsLocked === true) {
       </div>
 
       <button type="button" id="admin-${raceKey}-save" class="tile" style="margin-top:12px;" disabled>
-        Save ${title} (next step)
+        ${raceKey === "race1" ? `Save ${title}` : `Save ${title} (next step)`}
       </button>
     </div>
   `;
@@ -577,6 +577,89 @@ if (root.__eventMeta?.resultsLocked === true) {
     });
 
     validate();
+
+    // H6.2: Save Race 1 only (Race 2/3 remain UI-only)
+    if (raceKey === "race1" && saveBtn) {
+      saveBtn.addEventListener("click", async () => {
+        const validationEl2 = mount.querySelector(`#admin-${raceKey}-validation`);
+
+        // Guards
+        if (!window.btccDb) {
+          if (validationEl2) {
+            validationEl2.hidden = false;
+            validationEl2.innerHTML = `<strong>Save failed.</strong><br><span class="tiny muted">Database not ready.</span>`;
+          }
+          return;
+        }
+
+        const eid = root.__selectedEventId;
+        if (!eid) return;
+
+        // Enforce lock
+        if (root.__eventMeta?.resultsLocked === true) {
+          if (validationEl2) {
+            validationEl2.hidden = false;
+            validationEl2.innerHTML = `<strong>Locked:</strong><br><span class="tiny muted">Results are locked for this event.</span>`;
+          }
+          return;
+        }
+
+        // Read draft
+        const draft = Array.isArray(root.__draftRace1) ? root.__draftRace1 : [];
+        const ids = draft.filter(Boolean);
+        const hasDupes = ids.some((v, i) => ids.indexOf(v) !== i);
+        const hasMissing = draft.some((v) => !v);
+
+        if (hasMissing || hasDupes) {
+          if (validationEl2) {
+            validationEl2.hidden = false;
+            validationEl2.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Please complete the grid with no duplicates.</span>`;
+          }
+          return;
+        }
+
+        try {
+          saveBtn.disabled = true;
+          saveBtn.textContent = "Saving…";
+
+          const resultsRef = window.btccDb.collection("results").doc(eid);
+          await resultsRef.set(
+            {
+              race1: draft,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+
+          const user = firebase.auth().currentUser;
+          const who = user?.email || "admin";
+
+          await window.btccDb.collection("events").doc(eid).set(
+            {
+              resultsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              resultsUpdatedBy: who,
+            },
+            { merge: true }
+          );
+
+          // Refresh saved results for preview panel
+          await loadSelectedEventMetaAndResults(root);
+
+          saveBtn.textContent = `Saved ${new Date().toLocaleString("en-GB")}`;
+          console.log("✅ Race 1 saved:", eid, draft);
+        } catch (err) {
+          console.error("❌ Save Race 1 failed:", err);
+          if (validationEl2) {
+            validationEl2.hidden = false;
+            validationEl2.innerHTML = `<strong>Save failed.</strong><br><span class="tiny muted">${err?.message || err}</span>`;
+          }
+          saveBtn.textContent = "Save Race 1";
+        } finally {
+          saveBtn.disabled = false;
+        }
+      });
+    }
   };
 
   wireValidation("race1");
@@ -586,7 +669,7 @@ if (root.__eventMeta?.resultsLocked === true) {
   // H7.3 — disable race inputs if locked
   if (root.__eventMeta?.resultsLocked === true) {
     mount.querySelectorAll("select").forEach(s => s.disabled = true);
-    mount.querySelectorAll("button[id^='admin-race']").forEach(b => b.disabled = true);
+    mount.querySelectorAll("button[id$='-save']").forEach(b => b.disabled = true);
   }
 }
 
