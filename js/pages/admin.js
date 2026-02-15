@@ -968,6 +968,7 @@ if (banner) {
 
           const entryCount = entriesSnap.size;
           const uids = entriesSnap.docs.map(d => d.id);
+          const entryDocs = entriesSnap.docs.map(d => ({ id: d.id, data: d.data() || {} }));
 
           console.log("🧠 Engine I1 dry run:");
           console.log("- eventId:", eid);
@@ -983,6 +984,69 @@ if (banner) {
           }
           if (entryCount === 0) {
             console.warn("⚠️ No entries found for this event.");
+          }
+
+          // I1.3: Write overwrite-safe event scores (placeholder points)
+          if (hasResults && entryCount > 0) {
+            // Confirm before writing
+            const okWrite = window.confirm(
+              `Write event_scores for ${eid}?\n\nThis is overwrite-safe: it will REPLACE existing docs for this event.`
+            );
+            if (!okWrite) {
+              setEngineMsg("Dry run complete (write cancelled)." );
+              return;
+            }
+
+            setEngineMsg(`Writing event_scores for ${entryCount} player(s)…`);
+
+            const resultsData = resultsSnap.data() || {};
+            const srcUpdatedAt = resultsData.updatedAt || null;
+
+            const batch = window.btccDb.batch();
+            const baseRef = window.btccDb.collection("event_scores").doc(eid);
+
+            entryDocs.forEach(({ id: uid, data }) => {
+              const displayName = (data.displayName || data.name || "Unnamed").toString();
+              const docRef = baseRef.collection("players").doc(uid);
+
+              batch.set(
+                docRef,
+                {
+                  uid,
+                  eventId: eid,
+                  displayName,
+                  pointsTotal: 0,
+                  breakdown: {
+                    qualifying: 0,
+                    race1: 0,
+                    race2: 0,
+                    race3: 0,
+                  },
+                  sourceResultsUpdatedAt: srcUpdatedAt,
+                  computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  engineVersion: "I1.3",
+                },
+                { merge: true }
+              );
+            });
+
+            // Record a simple engine run audit doc
+            batch.set(
+              window.btccDb.collection("engine_runs").doc(eid),
+              {
+                eventId: eid,
+                mode: "I1",
+                entryCount,
+                sourceResultsUpdatedAt: srcUpdatedAt,
+                ranAt: firebase.firestore.FieldValue.serverTimestamp(),
+              },
+              { merge: true }
+            );
+
+            await batch.commit();
+
+            console.log("✅ Engine I1 wrote event_scores (overwrite-safe):", eid, entryCount);
+            setEngineMsg(`Wrote event_scores for ${entryCount} player(s). Re-run to confirm overwrite.`);
           }
         } catch (e) {
           console.error("❌ Engine dry run failed:", e);
