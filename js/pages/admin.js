@@ -1,6 +1,37 @@
 // js/pages/admin.js
 // Exposes: window.loadAdmin()
 
+// ============================================================
+// ADMIN.JS STRUCTURE INDEX (Phase H / I)
+// ============================================================
+// 1. Auth + Access Control
+//    - isAdminEmail
+//    - handleLogin / handleLogout
+//    - renderLoggedOut / renderNoAccess
+//
+// 2. Admin Bootstrap
+//    - loadAdmin
+//    - renderAdminUnlocked
+//
+// 3. Event + Driver Loading
+//    - loadAdminEventPicker
+//    - loadAdminDrivers
+//
+// 4. Results Entry UI
+//    - renderQualifyingForm
+//    - renderRaceForms
+//
+// 5. Results Preview + Locking (H7)
+//    - loadSelectedEventMetaAndResults
+//    - renderResultsPreview
+//    - Lock / Unlock handlers
+//
+// 6. Engine (Phase I)
+//    - I1 Dry Run + Write
+//    - I2 Scoring Rules
+//    - loadEventScoresPreview
+// ============================================================
+
 (function () {
 const ADMIN_EMAILS = [
   "dmillward85@icloud.com"
@@ -254,6 +285,9 @@ const ADMIN_EMAILS = [
     }
   }
 
+  // ============================================================
+  // SECTION 4A: QUALIFYING ENTRY UI
+  // ============================================================
   function renderQualifyingForm(root) {
     const mount = root.querySelector("#admin-results-form");
     if (!mount) return;
@@ -440,6 +474,9 @@ if (root.__eventMeta?.resultsLocked === true) {
     });
   }
 
+  // ============================================================
+  // SECTION 2: ADMIN BOOTSTRAP (Unlocked View)
+  // ============================================================
   function renderAdminUnlocked(root, email) {
     render(
       root,
@@ -476,6 +513,9 @@ if (root.__eventMeta?.resultsLocked === true) {
     renderResultsPreview(root);
   }
 
+  // ============================================================
+  // SECTION 4B: RACE ENTRY UI (Race 1–3)
+  // ============================================================
   function renderRaceForms(root) {
   const mount = root.querySelector("#admin-races-form");
   if (!mount) return;
@@ -876,6 +916,9 @@ if (root.__eventMeta?.resultsLocked === true) {
   window.loadAdmin = loadAdmin;
 
   // --- H7.1: Admin Results Preview panel (read-only, no lock/unlock writes) ---
+  // ============================================================
+  // SECTION 5: RESULTS PREVIEW + LOCK / UNLOCK (H7)
+  // ============================================================
   async function loadSelectedEventMetaAndResults(root) {
     const eventId = root.__selectedEventId;
     if (!eventId) {
@@ -1180,6 +1223,9 @@ if (banner) {
       };
     }
 
+    // ============================================================
+    // SECTION 6: ENGINE (Phase I – Event Scoring)
+    // ============================================================
     // I1.2: Engine dry run (read-only)
     const engineBtn = mount.querySelector("#admin-run-engine-i1");
     const engineMsg = mount.querySelector("#admin-engine-msg");
