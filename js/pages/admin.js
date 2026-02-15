@@ -1019,6 +1019,63 @@ if (banner) {
             const resultsData = resultsSnap.data() || {};
             const srcUpdatedAt = resultsData.updatedAt || null;
 
+            const qualiOrder = Array.isArray(resultsData.qualifying) ? resultsData.qualifying : [];
+            const race1Order = Array.isArray(resultsData.race1) ? resultsData.race1 : [];
+            const race2Order = Array.isArray(resultsData.race2) ? resultsData.race2 : [];
+            const race3Order = Array.isArray(resultsData.race3) ? resultsData.race3 : [];
+
+            // --- I2.1 scoring helpers (locked rules) ---
+            // Race scoring: full-grid linear (1st=26 .. 26th=1, DNF/DNS=0)
+            // Qualifying (weekend/championship): top 6 only (6..1), rest 0
+            // Source: "Finalised 2026 Scoring System" (LOCKED)
+
+            const racePointsForPos = (pos1) => {
+              // pos1 is 1-based
+              if (!pos1 || pos1 < 1 || pos1 > 26) return 0;
+              return 27 - pos1; // 1->26, 2->25, ..., 26->1
+            };
+
+            const qualiWeekendPointsForPos = (pos1) => {
+              if (!pos1 || pos1 < 1 || pos1 > 6) return 0;
+              return 7 - pos1; // 1->6, 2->5, ..., 6->1
+            };
+
+            const safeTeamIdsFromEntry = (entry) => {
+              // Try a few likely shapes, but always return an array of driverIds
+              const candidates = [
+                entry?.team,
+                entry?.drivers,
+                entry?.selectedDrivers,
+                entry?.driverIds,
+                entry?.picks,
+                entry?.selection,
+              ];
+
+              const arr = candidates.find((x) => Array.isArray(x));
+              const ids = Array.isArray(arr) ? arr.filter(Boolean).map(String) : [];
+
+              // Enforce min/max team size (3–6) at engine time (invalid => 0 points)
+              if (ids.length < 3 || ids.length > 6) return [];
+              // Remove duplicates (shouldn't exist, but keep it safe)
+              return Array.from(new Set(ids));
+            };
+
+            const scoreOrderForTeam = (teamIds, orderArr, pointsForPosFn) => {
+              if (!Array.isArray(teamIds) || teamIds.length === 0) return { total: 0, perDriver: {} };
+              const perDriver = {};
+              let total = 0;
+
+              teamIds.forEach((driverId) => {
+                const idx = Array.isArray(orderArr) ? orderArr.indexOf(driverId) : -1;
+                const pos1 = idx >= 0 ? (idx + 1) : null;
+                const pts = pos1 ? pointsForPosFn(pos1) : 0;
+                perDriver[driverId] = pts;
+                total += pts;
+              });
+
+              return { total, perDriver };
+            };
+
             const batch = window.btccDb.batch();
             const baseRef = window.btccDb.collection("event_scores").doc(eid);
 
@@ -1026,36 +1083,56 @@ if (banner) {
               const displayName = (data.displayName || data.name || "Unnamed").toString();
               const docRef = baseRef.collection("players").doc(uid);
 
+              const teamIds = safeTeamIdsFromEntry(data);
+
+              // If invalid/no team, this player scores 0 for the event (matches missed/invalid philosophy)
+              const quali = scoreOrderForTeam(teamIds, qualiOrder, qualiWeekendPointsForPos);
+              const r1 = scoreOrderForTeam(teamIds, race1Order, racePointsForPos);
+              const r2 = scoreOrderForTeam(teamIds, race2Order, racePointsForPos);
+              const r3 = scoreOrderForTeam(teamIds, race3Order, racePointsForPos);
+
+              const breakdown = {
+                qualifying: quali.total,
+                race1: r1.total,
+                race2: r2.total,
+                race3: r3.total,
+              };
+
+              const pointsTotal = breakdown.qualifying + breakdown.race1 + breakdown.race2 + breakdown.race3;
+
               batch.set(
                 docRef,
                 {
                   uid,
                   eventId: eid,
                   displayName,
-                  pointsTotal: 0,
-                  breakdown: {
-                    qualifying: 0,
-                    race1: 0,
-                    race2: 0,
-                    race3: 0,
+                  teamIds,
+                  pointsTotal,
+                  breakdown,
+                  perDriver: {
+                    qualifying: quali.perDriver,
+                    race1: r1.perDriver,
+                    race2: r2.perDriver,
+                    race3: r3.perDriver,
                   },
                   sourceResultsUpdatedAt: srcUpdatedAt,
                   computedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                  engineVersion: "I1.3",
+                  engineVersion: "I2.1",
                 },
-                { merge: true }
+                { merge: false }
               );
             });
 
-            // Record a simple engine run audit doc
+            // Record engine run audit doc
             batch.set(
               window.btccDb.collection("engine_runs").doc(eid),
               {
                 eventId: eid,
-                mode: "I1",
+                mode: "I2",
                 entryCount,
                 sourceResultsUpdatedAt: srcUpdatedAt,
                 ranAt: firebase.firestore.FieldValue.serverTimestamp(),
+                engineVersion: "I2.1",
               },
               { merge: true }
             );
