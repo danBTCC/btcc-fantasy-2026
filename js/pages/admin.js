@@ -948,8 +948,12 @@ if (banner) {
           const eid = root.__selectedEventId;
           if (!eid) throw new Error("No event selected");
 
-          // Require locked results before engine can run
-          const metaNow = root.__eventMeta || {};
+          // Require locked results before engine can run (source of truth = Firestore)
+          const eventSnapNow = await window.btccDb.collection("events").doc(eid).get();
+          const metaNow = eventSnapNow.exists ? (eventSnapNow.data() || {}) : {};
+          // Keep in memory so the UI banner stays in sync
+          root.__eventMeta = metaNow;
+
           if (metaNow.resultsLocked !== true) {
             throw new Error("Results must be LOCKED before running the engine");
           }
