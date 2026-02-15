@@ -811,9 +811,22 @@ if (banner) {
             Run engine for selected event
           </button>
           <div id="admin-engine-msg" class="tiny muted" style="margin-top:8px;"></div>
+          <button type="button" id="admin-refresh-event-scores" class="tile tinyBtn" style="margin-top:10px;">Refresh event scores</button>
+          <div id="admin-event-scores-preview" class="note" style="margin-top:10px;" hidden></div>
         </div>
       </div>
     `;
+
+    // I1.4: Event scores preview (read-only)
+    const scoresBtn = mount.querySelector("#admin-refresh-event-scores");
+    if (scoresBtn) {
+      scoresBtn.onclick = async () => {
+        await loadEventScoresPreview(root);
+      };
+    }
+
+    // Auto-refresh preview when panel renders (best-effort)
+    loadEventScoresPreview(root);
 
     // H7.2: Lock results (writes to events/{eventId})
     const lockBtn = mount.querySelector("#admin-lock-results");
@@ -1047,6 +1060,7 @@ if (banner) {
 
             console.log("✅ Engine I1 wrote event_scores (overwrite-safe):", eid, entryCount);
             setEngineMsg(`Wrote event_scores for ${entryCount} player(s). Re-run to confirm overwrite.`);
+            await loadEventScoresPreview(root);
           }
         } catch (e) {
           console.error("❌ Engine dry run failed:", e);
@@ -1059,5 +1073,78 @@ if (banner) {
         }
       };
     }
+  // END renderResultsPreview
+  
+
+  // I1.4: Read-only preview of event_scores/{eventId}/players/*
+  async function loadEventScoresPreview(root) {
+    const mount = root.querySelector("#admin-event-scores-preview");
+    if (!mount) return;
+
+    const eid = root.__selectedEventId;
+    if (!eid) {
+      mount.hidden = true;
+      mount.innerHTML = "";
+      return;
+    }
+
+    if (!window.btccDb) {
+      mount.hidden = false;
+      mount.innerHTML = `<strong>Event scores</strong><br><span class="tiny muted">Waiting for database…</span>`;
+      return;
+    }
+
+    mount.hidden = false;
+    mount.innerHTML = `<strong>Event scores</strong><br><span class="tiny muted">Loading…</span>`;
+
+    try {
+      const snap = await window.btccDb
+        .collection("event_scores")
+        .doc(eid)
+        .collection("players")
+        .orderBy("pointsTotal", "desc")
+        .get();
+
+      if (snap.empty) {
+        mount.innerHTML = `<strong>Event scores</strong><br><span class="tiny muted">No event_scores found yet for this event. Run Engine (I1) to create them.</span>`;
+        return;
+      }
+
+      const fmtTs = (v) => {
+        try {
+          if (!v) return "—";
+          if (typeof v.toDate === "function") return v.toDate().toLocaleString("en-GB");
+          const d = new Date(v);
+          if (!isNaN(d)) return d.toLocaleString("en-GB");
+          return String(v);
+        } catch {
+          return "—";
+        }
+      };
+
+      const rows = snap.docs.map(d => {
+        const x = d.data() || {};
+        return {
+          uid: d.id,
+          name: x.displayName || x.name || "Unnamed",
+          pts: Number(x.pointsTotal || 0),
+          at: fmtTs(x.computedAt),
+        };
+      });
+
+      mount.innerHTML = `
+        <strong>Event scores</strong>
+        <div class="tiny muted" style="margin-top:6px;">Showing ${rows.length} player(s) from event_scores/${eid}/players</div>
+        <div style="margin-top:10px; border:1px solid var(--border); border-radius:12px; padding:10px; background:rgba(255,255,255,.02);">
+          <ol class="list" style="margin:0; padding-left:18px;">
+            ${rows.map((r,i) => `<li class="tiny" style="margin:6px 0;">${i+1}. ${r.name} — ${r.pts} pts <span class="muted">(computed ${r.at})</span></li>`).join("")}
+          </ol>
+        </div>
+      `;
+    } catch (e) {
+      console.error("❌ loadEventScoresPreview failed:", e);
+      mount.innerHTML = `<strong>Event scores</strong><br><span class="tiny muted">Failed to load: ${e?.message || e}</span>`;
+    }
+  }
   }
 })();
