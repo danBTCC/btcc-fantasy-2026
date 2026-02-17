@@ -1105,11 +1105,20 @@ if (banner) {
           <div id="admin-event-scores-preview" class="note" style="margin-top:10px;" hidden></div>
           <div class="note" style="margin-top:12px;">
             <strong>Standings rebuild (I3)</strong><br>
-            <span class="tiny muted">Rebuilds season standings from event_scores for events up to the selected event (overwrite-safe)."</span>
-            <button type="button" id="admin-rebuild-standings-i3" class="tile" style="margin-top:10px;">Rebuild standings up to selected event</button>
+            <span class="tiny muted">Rebuilds season standings from event_scores for events up to the selected event (overwrite-safe).</span>
+            <button type="button" id="admin-rebuild-standings-i3" class="tile" style="margin-top:10px;">Rebuild PLAYER standings up to selected event</button>
             <div id="admin-standings-msg" class="tiny muted" style="margin-top:8px;"></div>
-            <button type="button" id="admin-refresh-standings" class="tile tinyBtn" style="margin-top:10px;">Refresh standings preview</button>
+            <button type="button" id="admin-refresh-standings" class="tile tinyBtn" style="margin-top:10px;">Refresh player standings preview</button>
             <div id="admin-standings-preview" class="note" style="margin-top:10px;" hidden></div>
+
+            <div style="height:10px;"></div>
+
+            <strong>Teams standings rebuild (I3.2)</strong><br>
+            <span class="tiny muted">Aggregates player standings into team totals (sum of players in the same teamId). Overwrite-safe.</span>
+            <button type="button" id="admin-rebuild-teams-i3" class="tile" style="margin-top:10px;">Rebuild TEAM standings up to selected event</button>
+            <div id="admin-teams-msg" class="tiny muted" style="margin-top:8px;"></div>
+            <button type="button" id="admin-refresh-teams" class="tile tinyBtn" style="margin-top:10px;">Refresh teams standings preview</button>
+            <div id="admin-teams-preview" class="note" style="margin-top:10px;" hidden></div>
           </div>
         </div>
       </div>
@@ -1129,9 +1138,17 @@ if (banner) {
         await loadStandingsPlayersPreview(root);
       };
     }
+    // Teams standings preview (I3.2)
+    const teamsRefreshBtn = mount.querySelector("#admin-refresh-teams");
+    if (teamsRefreshBtn) {
+      teamsRefreshBtn.onclick = async () => {
+        await loadStandingsTeamsPreview(root);
+      };
+    }
     // Auto-refresh preview when panel renders (best-effort)
     loadEventScoresPreview(root);
     loadStandingsPlayersPreview(root);
+    loadStandingsTeamsPreview(root);
 
     // H7.2: Lock results (writes to events/{eventId})
     const lockBtn = mount.querySelector("#admin-lock-results");
@@ -1267,6 +1284,30 @@ if (banner) {
           setStandingsMsg(e?.message || String(e));
         } finally {
           standingsBtn.disabled = false;
+        }
+      };
+    }
+    // Teams standings rebuild (I3.2)
+    const teamsBtn = mount.querySelector("#admin-rebuild-teams-i3");
+    const teamsMsg = mount.querySelector("#admin-teams-msg");
+    const setTeamsMsg = (t) => {
+      if (teamsMsg) teamsMsg.textContent = t;
+    };
+    if (teamsBtn) {
+      teamsBtn.onclick = async () => {
+        try {
+          if (!window.btccDb) throw new Error("Database not ready");
+          const eid = root.__selectedEventId;
+          if (!eid) throw new Error("No event selected");
+          teamsBtn.disabled = true;
+          setTeamsMsg("Rebuilding team standings…");
+          const result = await rebuildStandingsTeamsI3_2(root);
+          setTeamsMsg(`Rebuilt team standings for ${result.teamCount} team(s) through Event ${result.throughEventNo}.`);
+          await loadStandingsTeamsPreview(root);
+        } catch (e) {
+          setTeamsMsg(e?.message || String(e));
+        } finally {
+          teamsBtn.disabled = false;
         }
       };
     }
@@ -1700,5 +1741,198 @@ if (banner) {
     } catch (e) {
       console.error("❌ loadStandingsPlayersPreview failed:", e);
       mount.innerHTML = `<strong>Standings</strong><br><span class="tiny muted">Failed to load: ${e?.message || e}</span>`;
+    }
+  }
+
+  // I3.2: Rebuild standings_teams/season_2026/teams/* from standings_players + players team mapping
+  async function rebuildStandingsTeamsI3_2(root) {
+    if (!window.btccDb) throw new Error("Database not ready");
+    const eid = root.__selectedEventId;
+    if (!eid) throw new Error("No event selected");
+
+    // Determine throughEventNo from selected event
+    const eventSnap = await window.btccDb.collection("events").doc(eid).get();
+    if (!eventSnap.exists) throw new Error("Selected event not found");
+    const eventData = eventSnap.data() || {};
+    const throughEventNo = eventData.eventNo;
+    if (typeof throughEventNo !== "number") throw new Error("Selected event missing eventNo");
+
+    // Read player standings (already overwrite-safe)
+    const standingsSnap = await window.btccDb
+      .collection("standings_players")
+      .doc("season_2026")
+      .collection("players")
+      .get();
+
+    if (standingsSnap.empty) {
+      // Nothing to aggregate yet
+      return { teamCount: 0, throughEventNo };
+    }
+
+    // Fetch players/{uid} docs for teamId/teamName
+    const standingRows = standingsSnap.docs.map(d => ({ uid: d.id, ...(d.data() || {}) }));
+    const playerDocs = await Promise.all(
+      standingRows.map(r => window.btccDb.collection("players").doc(r.uid).get().catch(() => null))
+    );
+
+    const teamMap = new Map();
+
+    standingRows.forEach((row, idx) => {
+      const pSnap = playerDocs[idx];
+      const pData = pSnap && pSnap.exists ? (pSnap.data() || {}) : {};
+
+      const teamId = (pData.teamId || row.teamId || "unassigned").toString();
+      const teamName = (pData.teamName || row.teamName || (teamId === "unassigned" ? "Unassigned" : teamId)).toString();
+
+      const displayName = (row.displayName || pData.displayName || "Unnamed").toString();
+      const points = Number(row.pointsTotal || 0);
+
+      let rec = teamMap.get(teamId);
+      if (!rec) {
+        rec = {
+          teamId,
+          teamName,
+          pointsTotal: 0,
+          players: [],
+        };
+        teamMap.set(teamId, rec);
+      }
+
+      rec.pointsTotal += points;
+      rec.players.push({ uid: row.uid, displayName, points });
+
+      // Prefer a real human-readable teamName if later rows have it
+      if (teamName && teamName !== teamId) rec.teamName = teamName;
+    });
+
+    // Sort players within each team (desc points), and sort teams (desc points)
+    const teamArr = Array.from(teamMap.values()).map(t => {
+      t.players.sort((a, b) => (b.points || 0) - (a.points || 0));
+      return t;
+    });
+    teamArr.sort((a, b) => (b.pointsTotal || 0) - (a.pointsTotal || 0));
+
+    // Write standings_teams/season_2026/teams/{teamId}
+    const batchLimit = 400;
+    for (let i = 0; i < teamArr.length; i += batchLimit) {
+      const batch = window.btccDb.batch();
+      const chunk = teamArr.slice(i, i + batchLimit);
+
+      chunk.forEach((t) => {
+        const docRef = window.btccDb
+          .collection("standings_teams")
+          .doc("season_2026")
+          .collection("teams")
+          .doc(t.teamId);
+
+        batch.set(
+          docRef,
+          {
+            teamId: t.teamId,
+            teamName: t.teamName,
+            pointsTotal: t.pointsTotal,
+            players: t.players,
+            throughEventNo,
+            throughEventId: eid,
+            computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            engineVersion: "I3.2",
+          },
+          { merge: false }
+        );
+      });
+
+      await batch.commit();
+    }
+
+    // Write audit meta
+    await window.btccDb
+      .collection("standings_teams")
+      .doc("season_2026")
+      .collection("meta")
+      .doc("meta")
+      .set(
+        {
+          lastRebuildAt: firebase.firestore.FieldValue.serverTimestamp(),
+          throughEventNo,
+          throughEventId: eid,
+          teamCount: teamArr.length,
+          engineVersion: "I3.2",
+        },
+        { merge: true }
+      );
+
+    return { teamCount: teamArr.length, throughEventNo };
+  }
+
+  // I3.2: Preview standings_teams/season_2026/teams (top 25)
+  async function loadStandingsTeamsPreview(root) {
+    const mount = root.querySelector("#admin-teams-preview");
+    if (!mount) return;
+
+    if (!window.btccDb) {
+      mount.hidden = false;
+      mount.innerHTML = `<strong>Teams standings</strong><br><span class="tiny muted">Waiting for database…</span>`;
+      return;
+    }
+
+    mount.hidden = false;
+    mount.innerHTML = `<strong>Teams standings</strong><br><span class="tiny muted">Loading…</span>`;
+
+    try {
+      const snap = await window.btccDb
+        .collection("standings_teams")
+        .doc("season_2026")
+        .collection("teams")
+        .orderBy("pointsTotal", "desc")
+        .limit(25)
+        .get();
+
+      if (snap.empty) {
+        mount.innerHTML = `<strong>Teams standings</strong><br><span class="tiny muted">No team standings found yet. Rebuild to create them.</span>`;
+        return;
+      }
+
+      const fmtTs = (v) => {
+        try {
+          if (!v) return "—";
+          if (typeof v.toDate === "function") return v.toDate().toLocaleString("en-GB");
+          const d = new Date(v);
+          if (!isNaN(d)) return d.toLocaleString("en-GB");
+          return String(v);
+        } catch {
+          return "—";
+        }
+      };
+
+      const rows = snap.docs.map(d => {
+        const x = d.data() || {};
+        return {
+          id: d.id,
+          name: x.teamName || x.teamId || "Unnamed",
+          pts: Number(x.pointsTotal || 0),
+          at: fmtTs(x.computedAt),
+          players: Array.isArray(x.players) ? x.players : [],
+        };
+      });
+
+      mount.innerHTML = `
+        <strong>Teams standings</strong>
+        <div class="tiny muted" style="margin-top:6px;">Showing top ${rows.length} team(s) from standings_teams/season_2026/teams</div>
+        <div style="margin-top:10px; border:1px solid var(--border); border-radius:12px; padding:10px; background:rgba(255,255,255,.02);">
+          <ol class="list" style="margin:0; padding-left:18px;">
+            ${rows.map((r,i) => {
+              const topPlayers = r.players.slice(0, 5).map(p => `${p.displayName || p.uid} (${Number(p.points||0)} pts)`).join(", ");
+              const tail = r.players.length > 5 ? ` +${r.players.length - 5} more` : "";
+              return `<li class="tiny" style="margin:8px 0;">
+                <strong>${i+1}. ${r.name}</strong> — ${r.pts} pts <span class="muted">(as of ${r.at})</span><br>
+                <span class="muted">Players:</span> <span class="tiny muted">${topPlayers || "—"}${tail}</span>
+              </li>`;
+            }).join("")}
+          </ol>
+        </div>
+      `;
+    } catch (e) {
+      console.error("❌ loadStandingsTeamsPreview failed:", e);
+      mount.innerHTML = `<strong>Teams standings</strong><br><span class="tiny muted">Failed to load: ${e?.message || e}</span>`;
     }
   }
