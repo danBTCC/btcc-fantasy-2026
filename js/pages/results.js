@@ -45,6 +45,56 @@
       .map((x) => escapeHtml(x))
       .join(", ")}</span></li>`;
   };
+  const renderDriverResultsTable = (rows) => {
+    // rows: [{ driverId, name, qPos, r1Pos, r2Pos, r3Pos }]
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return `<div class="note">No results published yet.</div>`;
+    }
+
+    const n = (v) => (typeof v === "number" && v > 0 ? v : "—");
+
+    const sorted = rows
+      .slice()
+      .sort((a, b) => {
+        // Primary: Qualifying position (asc), then R1/R2/R3 (asc), then name
+        const ax = [a.qPos, a.r1Pos, a.r2Pos, a.r3Pos].map((x) => (typeof x === "number" ? x : 999));
+        const bx = [b.qPos, b.r1Pos, b.r2Pos, b.r3Pos].map((x) => (typeof x === "number" ? x : 999));
+        for (let i = 0; i < ax.length; i++) {
+          if (ax[i] !== bx[i]) return ax[i] - bx[i];
+        }
+        return String(a.name || "").localeCompare(String(b.name || ""));
+      });
+
+    const head = `
+      <table class="table tiny" style="width:100%; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:6px;">Driver</th>
+            <th style="text-align:right; padding:6px;">Q</th>
+            <th style="text-align:right; padding:6px;">R1</th>
+            <th style="text-align:right; padding:6px;">R2</th>
+            <th style="text-align:right; padding:6px;">R3</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    const body = sorted
+      .map((r) => {
+        return `
+          <tr>
+            <td style="padding:6px;">${escapeHtml(r.name || r.driverId)}</td>
+            <td style="padding:6px; text-align:right;">${n(r.qPos)}</td>
+            <td style="padding:6px; text-align:right;">${n(r.r1Pos)}</td>
+            <td style="padding:6px; text-align:right;">${n(r.r2Pos)}</td>
+            <td style="padding:6px; text-align:right;">${n(r.r3Pos)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    return head + body + `</tbody></table>`;
+  };
 
   const renderPlayerScoresTable = (rows) => {
     if (!rows.length) {
@@ -264,28 +314,33 @@
             if (!rdata) {
               if (resultsSlot) resultsSlot.innerHTML = `<div class="note">No results published yet.</div>`;
             } else {
-              const q = rdata.qualifying;
-              const r1 = rdata.race1;
-              const r2 = rdata.race2;
-              const r3 = rdata.race3;
+              const q = Array.isArray(rdata.qualifying) ? rdata.qualifying : [];
+              const r1 = Array.isArray(rdata.race1) ? rdata.race1 : [];
+              const r2 = Array.isArray(rdata.race2) ? rdata.race2 : [];
+              const r3 = Array.isArray(rdata.race3) ? rdata.race3 : [];
 
-              const mapName = (id) => driverNameById[id] || id;
-              const listLine = (label, arr) => {
-                if (!Array.isArray(arr) || arr.length === 0) {
-                  return `<li>${escapeHtml(label)}: <span class="muted">not available</span></li>`;
-                }
-                return `<li>${escapeHtml(label)}: <span class="muted">${arr.map(mapName).map(escapeHtml).join(", ")}</span></li>`;
+              const addPositions = (arr, key, map) => {
+                arr.forEach((driverId, idx) => {
+                  if (!driverId) return;
+                  const cur = map.get(driverId) || { driverId };
+                  cur[key] = idx + 1;
+                  map.set(driverId, cur);
+                });
               };
 
+              const posMap = new Map();
+              addPositions(q, "qPos", posMap);
+              addPositions(r1, "r1Pos", posMap);
+              addPositions(r2, "r2Pos", posMap);
+              addPositions(r3, "r3Pos", posMap);
+
+              const rows = Array.from(posMap.values()).map((r) => ({
+                ...r,
+                name: driverNameById[r.driverId] || r.driverId,
+              }));
+
               if (resultsSlot) {
-                resultsSlot.innerHTML = `
-                  <ul class="list tiny" style="margin:0;">
-                    ${listLine("Qualifying", q)}
-                    ${listLine("Race 1", r1)}
-                    ${listLine("Race 2", r2)}
-                    ${listLine("Race 3", r3)}
-                  </ul>
-                `;
+                resultsSlot.innerHTML = renderDriverResultsTable(rows);
               }
             }
           } catch (e) {
