@@ -404,19 +404,40 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
     const getEventContext = () => root.__eventContext || {};
 
-    const ctx = getEventContext();
-    const isLocked = ctx.open === false;
+    // Lock state must be evaluated dynamically because the countdown can cross the lockout
+    // while the user is on the page.
+    const isLockedNow = () => {
+      const ctx = getEventContext();
+      if (ctx.open === false) return true;
+      if (ctx.lockout && typeof ctx.lockout === "number") {
+        return Date.now() >= ctx.lockout;
+      }
+      return false;
+    };
 
     function showLockedMessage() {
       if (!validationEl) return;
       validationEl.hidden = false;
       validationEl.innerHTML = `<strong>Locked:</strong><br><span class="tiny muted">Submissions are closed for this event.</span>`;
+      if (saveBtn) {
+        saveBtn.textContent = "Locked";
+        saveBtn.disabled = true;
+      }
     }
 
-    // Phase G6: save to Firestore (player's own submission doc)
+    // Separate label for last-saved so the button can always stay as an action.
+    let lastSavedEl = root.querySelector("#team-last-saved");
+    if (!lastSavedEl) {
+      lastSavedEl = document.createElement("div");
+      lastSavedEl.id = "team-last-saved";
+      lastSavedEl.className = "tiny muted";
+      lastSavedEl.style.marginTop = "6px";
+      saveBtn?.insertAdjacentElement("afterend", lastSavedEl);
+    }
+
     if (saveBtn) {
-      saveBtn.textContent = isLocked ? "Locked" : "Save team";
-      if (isLocked) saveBtn.disabled = true;
+      saveBtn.textContent = isLockedNow() ? "Locked" : "Save changes";
+      if (isLockedNow()) saveBtn.disabled = true;
     }
 
     // Load existing submission for this event (if any) and preselect drivers
@@ -449,9 +470,14 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
         updateSummary();
 
-        if (saveBtn && sub.updatedAt) {
+        if (sub.updatedAt) {
           const d = typeof sub.updatedAt.toDate === "function" ? sub.updatedAt.toDate() : null;
-          if (d) saveBtn.textContent = `Saved ${d.toLocaleString("en-GB")}`;
+          if (d && lastSavedEl) lastSavedEl.textContent = `Last saved: ${d.toLocaleString("en-GB")}`;
+        }
+
+        if (saveBtn && !isLockedNow()) {
+          saveBtn.textContent = "Save changes";
+          saveBtn.disabled = false;
         }
 
         console.log("✅ Loaded existing submission:", eventId, uid);
@@ -473,7 +499,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       }
 
       // Client-side lockout enforcement for now
-      if (ctx.open === false) {
+      if (isLockedNow()) {
         if (validationEl) {
           validationEl.hidden = false;
           validationEl.innerHTML = `<strong>Locked:</strong><br><span class="tiny muted">Submissions are closed for this event.</span>`;
@@ -507,7 +533,11 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         await ref.set({ ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
 
         if (validationEl) validationEl.hidden = true;
-        if (saveBtn) saveBtn.textContent = `Saved ${new Date().toLocaleString("en-GB")}`;
+        if (lastSavedEl) lastSavedEl.textContent = `Last saved: ${new Date().toLocaleString("en-GB")}`;
+        if (saveBtn && !isLockedNow()) {
+          saveBtn.textContent = "Save changes";
+          saveBtn.disabled = false;
+        }
 
         console.log("✅ Submission saved:", eventId, uid, payload);
       } catch (err) {
@@ -576,7 +606,15 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         }
       }
 
-      if (saveBtn) saveBtn.disabled = isLocked ? true : !valid;
+      if (saveBtn) {
+        if (isLockedNow()) {
+          saveBtn.disabled = true;
+          saveBtn.textContent = "Locked";
+        } else {
+          saveBtn.disabled = !valid;
+          saveBtn.textContent = "Save changes";
+        }
+      }
     };
 
     box.innerHTML = `
@@ -593,7 +631,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
                     <strong>${name}</strong><br>
                     <span class="tiny muted">${fmtMoney(price)}</span>
                   </div>
-                  <button type="button" class="tile tinyBtn" data-action="toggle" ${isLocked ? "disabled" : ""}>Select</button>
+                  <button type="button" class="tile tinyBtn" data-action="toggle" ${isLockedNow() ? "disabled" : ""}>Select</button>
                 </div>
               </li>
             `;
@@ -604,10 +642,10 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
     box.querySelectorAll("[data-action='toggle']").forEach((btn) => {
       btn.addEventListener("click", () => {
-        if (isLocked) {
-  showLockedMessage();
-  return;
-}
+        if (isLockedNow()) {
+          showLockedMessage();
+          return;
+        }
         const row = btn.closest("[data-driver-id]");
         const id = row?.getAttribute("data-driver-id");
         if (!id) return;
@@ -636,9 +674,9 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
     // Preload saved selection (if any)
     await loadExistingSubmission();
 
-    if (isLocked) {
-  showLockedMessage();
-}
+    if (isLockedNow()) {
+      showLockedMessage();
+    }
 
     // Initial summary
     updateSummary();
