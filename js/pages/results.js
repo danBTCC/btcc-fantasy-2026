@@ -72,19 +72,22 @@
     const body = rows
       .map((r) => {
         const q = r.breakdown?.q ?? r.breakdown?.qualifying;
-       const r1 = r.breakdown?.r1 ?? r.breakdown?.race1;
-       const r2 = r.breakdown?.r2 ?? r.breakdown?.race2;
-       const r3 = r.breakdown?.r3 ?? r.breakdown?.race3;
+        const r1 = r.breakdown?.r1 ?? r.breakdown?.race1;
+        const r2 = r.breakdown?.r2 ?? r.breakdown?.race2;
+        const r3 = r.breakdown?.r3 ?? r.breakdown?.race3;
 
-       const num = (v) => (typeof v === "number" ? v : 0);
+        const n = (v) => (typeof v === "number" ? v : 0);
 
-const computedTotal = num(q) + num(r1) + num(r2) + num(r3);
+        const computedTotal = n(q) + n(r1) + n(r2) + n(r3);
 
-const total =
-  typeof r.points === "number" ? r.points :
-  typeof r.total === "number" ? r.total :
-  typeof r.breakdown?.total === "number" ? r.breakdown.total :
-  computedTotal;
+        const total =
+          typeof r.points === "number"
+            ? r.points
+            : typeof r.total === "number"
+              ? r.total
+              : typeof r.breakdown?.total === "number"
+                ? r.breakdown.total
+                : computedTotal;
 
         return `
           <tr>
@@ -93,7 +96,7 @@ const total =
             <td style="padding:6px; text-align:right;">${n(r1)}</td>
             <td style="padding:6px; text-align:right;">${n(r2)}</td>
             <td style="padding:6px; text-align:right;">${n(r3)}</td>
-            <td style="padding:6px; text-align:right;"><strong>${escapeHtml(total)}</strong></td>
+            <td style="padding:6px; text-align:right;"><strong>${n(total)}</strong></td>
           </tr>
         `;
       })
