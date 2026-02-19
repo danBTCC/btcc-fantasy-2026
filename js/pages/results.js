@@ -148,7 +148,11 @@
     const maxR3 = Math.max(0, ...sorted.map((r) => Number(r.__r3) || 0));
     const maxT = Math.max(0, ...sorted.map((r) => Number(r.__total) || 0));
 
-    const hi = (val, max) => (Number(val) === Number(max) && Number(max) > 0 ? ' style="font-weight:700;"' : "");
+    // Highlight the top value per column using a subtle BTCC-yellow tint (no bold).
+    const hi = (val, max) =>
+      Number(val) === Number(max) && Number(max) > 0
+        ? ' style="background:#ffd40033; border-radius:4px;"'
+        : "";
 
     const body = sorted
       .map((r) => {
@@ -190,7 +194,11 @@
     const maxR3 = Math.max(0, ...nums.map((x) => x.r3));
     const maxT = Math.max(0, ...nums.map((x) => x.t));
 
-    const hi = (val, max) => (Number(val) === Number(max) && Number(max) > 0 ? ' style="font-weight:700;"' : "");
+    // Highlight the top value per column using a subtle BTCC-yellow tint (no bold).
+    const hi = (val, max) =>
+      Number(val) === Number(max) && Number(max) > 0
+        ? ' style="background:#ffd40033; border-radius:4px;"'
+        : "";
 
     const head = `
       <table class="table tiny" style="width:100%; border-collapse: collapse;">
