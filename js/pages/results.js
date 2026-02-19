@@ -1,9 +1,6 @@
 // js/pages/results.js
 // Exposes: window.loadResults()
 
-// js/pages/results.js
-// Exposes: window.loadResults()
-
 (function () {
   // ---- helpers ----
   const escapeHtml = (s) =>
@@ -69,14 +66,16 @@
         <tbody>
     `;
 
-    const body = rows
+    // Sort rows by Total (desc) so the table is always in standings order.
+    // We compute totals from breakdown if needed.
+    const n = (v) => (typeof v === "number" ? v : 0);
+
+    const sorted = (rows || [])
       .map((r) => {
         const q = r.breakdown?.q ?? r.breakdown?.qualifying;
         const r1 = r.breakdown?.r1 ?? r.breakdown?.race1;
         const r2 = r.breakdown?.r2 ?? r.breakdown?.race2;
         const r3 = r.breakdown?.r3 ?? r.breakdown?.race3;
-
-        const n = (v) => (typeof v === "number" ? v : 0);
 
         const computedTotal = n(q) + n(r1) + n(r2) + n(r3);
 
@@ -89,14 +88,27 @@
                 ? r.breakdown.total
                 : computedTotal;
 
+        return {
+          ...r,
+          __q: n(q),
+          __r1: n(r1),
+          __r2: n(r2),
+          __r3: n(r3),
+          __total: n(total),
+        };
+      })
+      .sort((a, b) => (b.__total || 0) - (a.__total || 0));
+
+    const body = sorted
+      .map((r) => {
         return `
           <tr>
             <td style="padding:6px;">${escapeHtml(r.displayName || r.playerName || r.uid || "Player")}</td>
-            <td style="padding:6px; text-align:right;">${n(q)}</td>
-            <td style="padding:6px; text-align:right;">${n(r1)}</td>
-            <td style="padding:6px; text-align:right;">${n(r2)}</td>
-            <td style="padding:6px; text-align:right;">${n(r3)}</td>
-            <td style="padding:6px; text-align:right;"><strong>${n(total)}</strong></td>
+            <td style="padding:6px; text-align:right;">${r.__q}</td>
+            <td style="padding:6px; text-align:right;">${r.__r1}</td>
+            <td style="padding:6px; text-align:right;">${r.__r2}</td>
+            <td style="padding:6px; text-align:right;">${r.__r3}</td>
+            <td style="padding:6px; text-align:right;"><strong>${r.__total}</strong></td>
           </tr>
         `;
       })
