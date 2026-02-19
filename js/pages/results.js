@@ -54,16 +54,8 @@
     const n = (v) => (typeof v === "number" && v > 0 ? v : "—");
 
     const sorted = rows
-      .slice()
-      .sort((a, b) => {
-        // Primary: Qualifying position (asc), then R1/R2/R3 (asc), then name
-        const ax = [a.qPos, a.r1Pos, a.r2Pos, a.r3Pos].map((x) => (typeof x === "number" ? x : 999));
-        const bx = [b.qPos, b.r1Pos, b.r2Pos, b.r3Pos].map((x) => (typeof x === "number" ? x : 999));
-        for (let i = 0; i < ax.length; i++) {
-          if (ax[i] !== bx[i]) return ax[i] - bx[i];
-        }
-        return String(a.name || "").localeCompare(String(b.name || ""));
-      });
+  .slice()
+  .sort((a, b) => String(a.name || a.driverId || "").localeCompare(String(b.name || b.driverId || "")));
 
     const head = `
       <table class="table tiny" style="width:100%; border-collapse: collapse;">
@@ -171,7 +163,7 @@
   const renderDriverFantasyTable = (rows) => {
     // rows: [{driverId, name?, q?, r1?, r2?, r3?, total}]
     if (!rows.length) {
-      return `<div class="note">No driver breakdown available yet.</div>`;
+      return `<div class="note">No driver results available yet.</div>`;
     }
 
     const head = `
@@ -266,20 +258,23 @@
                   </div>
 
                   <div class="eventDetails" hidden>
-                    <div class="tiny" style="margin: 6px 0;">${officialLink}</div>
+  <div class="tiny" style="margin: 6px 0;">${officialLink}</div>
 
-                    <div class="note" data-slot="results">Loading results…</div>
+  <div style="margin-top:10px;">
+    <div class="tiny muted" style="margin-bottom:6px;">Driver finishing positions (official order)</div>
+    <div class="note" data-slot="results">Loading results…</div>
+  </div>
 
-                    <div style="margin-top:10px;">
-                      <div class="tiny muted" style="margin-bottom:6px;">Player points (this event)</div>
-                      <div data-slot="playerScores">Loading…</div>
-                    </div>
+  <div style="margin-top:10px;">
+    <div class="tiny muted" style="margin-bottom:6px;">Player points (this event)</div>
+    <div data-slot="playerScores">Loading…</div>
+  </div>
 
-                    <div style="margin-top:10px;">
-                      <div class="tiny muted" style="margin-bottom:6px;">Driver points breakdown (from fantasy scoring data)</div>
-                      <div data-slot="driverScores">Loading…</div>
-                    </div>
-                  </div>
+  <div style="margin-top:10px;">
+    <div class="tiny muted" style="margin-bottom:6px;">Driver fantasy points (this event)</div>
+    <div data-slot="driverScores">Loading…</div>
+  </div>
+</div>
                 </li>
               `;
             })
