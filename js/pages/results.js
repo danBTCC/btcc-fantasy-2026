@@ -78,12 +78,13 @@
 
        const num = (v) => (typeof v === "number" ? v : 0);
 
-       const computedTotal = num(q) + num(r1) + num(r2) + num(r3);
-       const total =
-         typeof r.points === "number" ? r.points :
-         typeof r.total === "number" ? r.total :
-         typeof r.breakdown?.total === "number" ? r.breakdown.total :
-         computedTotal;
+const computedTotal = num(q) + num(r1) + num(r2) + num(r3);
+
+const total =
+  typeof r.points === "number" ? r.points :
+  typeof r.total === "number" ? r.total :
+  typeof r.breakdown?.total === "number" ? r.breakdown.total :
+  computedTotal;
 
         return `
           <tr>
