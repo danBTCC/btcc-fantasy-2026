@@ -275,13 +275,15 @@
           let scoreDocs = [];
           try {
             const psnap = await window.btccDb
-              .collection("event_scores")
-              .doc(eventId)
-              .collection("players")
-              .orderBy("points", "desc")
-              .get();
+  .collection("event_scores")
+  .doc(eventId)
+  .collection("players")
+  .get();
 
-            scoreDocs = psnap.docs.map((d) => ({ uid: d.id, ...(d.data() || {}) }));
+scoreDocs = psnap.docs.map((d) => ({ uid: d.id, ...(d.data() || {}) }));
+
+// Sort locally (robust even if some docs have missing points)
+scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
 
             if (playerScoresSlot) {
               playerScoresSlot.innerHTML = renderPlayerScoresTable(scoreDocs);
