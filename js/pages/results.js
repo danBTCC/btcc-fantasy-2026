@@ -148,11 +148,16 @@
     const maxR3 = Math.max(0, ...sorted.map((r) => Number(r.__r3) || 0));
     const maxT = Math.max(0, ...sorted.map((r) => Number(r.__total) || 0));
 
-    // Highlight the top value per column using a subtle BTCC-yellow tint (no bold).
-    const hi = (val, max) =>
-      Number(val) === Number(max) && Number(max) > 0
-        ? ' style="background:#ffd40033; border-radius:4px;"'
-        : "";
+    // Highlight the top value per column using BTCC-yellow tint + text colour.
+    // Use !important so it wins against table/theme CSS.
+    const hi = (val, max) => {
+      const v = Number(val);
+      const m = Number(max);
+      if (v === m && m > 0) {
+        return ' style="background-color: rgba(255, 212, 0, 0.22) !important; color: #ffd400 !important;"';
+      }
+      return "";
+    };
 
     const body = sorted
       .map((r) => {
@@ -163,7 +168,7 @@
             <td style="padding:6px; text-align:right;"${hi(r.__r1, maxR1)}>${r.__r1}</td>
             <td style="padding:6px; text-align:right;"${hi(r.__r2, maxR2)}>${r.__r2}</td>
             <td style="padding:6px; text-align:right;"${hi(r.__r3, maxR3)}>${r.__r3}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.__total, maxT)}><strong>${r.__total}</strong></td>
+            <td style="padding:6px; text-align:right;"${hi(r.__total, maxT)}>${r.__total}</td>
           </tr>
         `;
       })
@@ -194,11 +199,16 @@
     const maxR3 = Math.max(0, ...nums.map((x) => x.r3));
     const maxT = Math.max(0, ...nums.map((x) => x.t));
 
-    // Highlight the top value per column using a subtle BTCC-yellow tint (no bold).
-    const hi = (val, max) =>
-      Number(val) === Number(max) && Number(max) > 0
-        ? ' style="background:#ffd40033; border-radius:4px;"'
-        : "";
+    // Highlight the top value per column using BTCC-yellow tint + text colour.
+    // Use !important so it wins against table/theme CSS.
+    const hi = (val, max) => {
+      const v = Number(val);
+      const m = Number(max);
+      if (v === m && m > 0) {
+        return ' style="background-color: rgba(255, 212, 0, 0.22) !important; color: #ffd400 !important;"';
+      }
+      return "";
+    };
 
     const head = `
       <table class="table tiny" style="width:100%; border-collapse: collapse;">
@@ -226,7 +236,7 @@
             <td style="padding:6px; text-align:right;"${hi(r.r1, maxR1)}>${n(r.r1)}</td>
             <td style="padding:6px; text-align:right;"${hi(r.r2, maxR2)}>${n(r.r2)}</td>
             <td style="padding:6px; text-align:right;"${hi(r.r3, maxR3)}>${n(r.r3)}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.total, maxT)}><strong>${escapeHtml(r.total ?? 0)}</strong></td>
+            <td style="padding:6px; text-align:right;"${hi(r.total, maxT)}>${escapeHtml(r.total ?? 0)}</td>
           </tr>
         `;
       })
