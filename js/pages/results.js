@@ -75,9 +75,15 @@
         const r1 = r.breakdown?.r1 ?? r.breakdown?.race1;
         const r2 = r.breakdown?.r2 ?? r.breakdown?.race2;
         const r3 = r.breakdown?.r3 ?? r.breakdown?.race3;
-        const total = r.points ?? r.total ?? r.breakdown?.total ?? 0;
+       const num = (v) => (typeof v === "number" ? v : 0);
 
-        const n = (v) => (typeof v === "number" ? v : "—");
+const computedTotal = num(q) + num(r1) + num(r2) + num(r3);
+
+const total =
+  typeof r.points === "number" ? r.points :
+  typeof r.total === "number" ? r.total :
+  typeof r.breakdown?.total === "number" ? r.breakdown.total :
+  computedTotal;
 
         return `
           <tr>
