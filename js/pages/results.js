@@ -141,16 +141,25 @@
       })
       .sort((a, b) => (b.__total || 0) - (a.__total || 0));
 
+    // Compute maxima for each column
+    const maxQ = Math.max(0, ...sorted.map((r) => Number(r.__q) || 0));
+    const maxR1 = Math.max(0, ...sorted.map((r) => Number(r.__r1) || 0));
+    const maxR2 = Math.max(0, ...sorted.map((r) => Number(r.__r2) || 0));
+    const maxR3 = Math.max(0, ...sorted.map((r) => Number(r.__r3) || 0));
+    const maxT = Math.max(0, ...sorted.map((r) => Number(r.__total) || 0));
+
+    const hi = (val, max) => (Number(val) === Number(max) && Number(max) > 0 ? ' style="font-weight:700;"' : "");
+
     const body = sorted
       .map((r) => {
         return `
           <tr>
             <td style="padding:6px;">${escapeHtml(r.displayName || r.playerName || r.uid || "Player")}</td>
-            <td style="padding:6px; text-align:right;">${r.__q}</td>
-            <td style="padding:6px; text-align:right;">${r.__r1}</td>
-            <td style="padding:6px; text-align:right;">${r.__r2}</td>
-            <td style="padding:6px; text-align:right;">${r.__r3}</td>
-            <td style="padding:6px; text-align:right;"><strong>${r.__total}</strong></td>
+            <td style="padding:6px; text-align:right;"${hi(r.__q, maxQ)}>${r.__q}</td>
+            <td style="padding:6px; text-align:right;"${hi(r.__r1, maxR1)}>${r.__r1}</td>
+            <td style="padding:6px; text-align:right;"${hi(r.__r2, maxR2)}>${r.__r2}</td>
+            <td style="padding:6px; text-align:right;"${hi(r.__r3, maxR3)}>${r.__r3}</td>
+            <td style="padding:6px; text-align:right;"${hi(r.__total, maxT)}><strong>${r.__total}</strong></td>
           </tr>
         `;
       })
@@ -165,6 +174,23 @@
     if (!rows.length) {
       return `<div class="note">No driver results available yet.</div>`;
     }
+
+    // Compute maxima for each column
+    const nums = (rows || []).map((r) => ({
+      q: typeof r.q === "number" ? r.q : 0,
+      r1: typeof r.r1 === "number" ? r.r1 : 0,
+      r2: typeof r.r2 === "number" ? r.r2 : 0,
+      r3: typeof r.r3 === "number" ? r.r3 : 0,
+      t: typeof r.total === "number" ? r.total : Number(r.total) || 0,
+    }));
+
+    const maxQ = Math.max(0, ...nums.map((x) => x.q));
+    const maxR1 = Math.max(0, ...nums.map((x) => x.r1));
+    const maxR2 = Math.max(0, ...nums.map((x) => x.r2));
+    const maxR3 = Math.max(0, ...nums.map((x) => x.r3));
+    const maxT = Math.max(0, ...nums.map((x) => x.t));
+
+    const hi = (val, max) => (Number(val) === Number(max) && Number(max) > 0 ? ' style="font-weight:700;"' : "");
 
     const head = `
       <table class="table tiny" style="width:100%; border-collapse: collapse;">
@@ -188,11 +214,11 @@
         return `
           <tr>
             <td style="padding:6px;">${escapeHtml(r.name || r.driverId)}</td>
-            <td style="padding:6px; text-align:right;">${n(r.q)}</td>
-            <td style="padding:6px; text-align:right;">${n(r.r1)}</td>
-            <td style="padding:6px; text-align:right;">${n(r.r2)}</td>
-            <td style="padding:6px; text-align:right;">${n(r.r3)}</td>
-            <td style="padding:6px; text-align:right;"><strong>${escapeHtml(r.total ?? 0)}</strong></td>
+            <td style="padding:6px; text-align:right;"${hi(r.q, maxQ)}>${n(r.q)}</td>
+            <td style="padding:6px; text-align:right;"${hi(r.r1, maxR1)}>${n(r.r1)}</td>
+            <td style="padding:6px; text-align:right;"${hi(r.r2, maxR2)}>${n(r.r2)}</td>
+            <td style="padding:6px; text-align:right;"${hi(r.r3, maxR3)}>${n(r.r3)}</td>
+            <td style="padding:6px; text-align:right;"${hi(r.total, maxT)}><strong>${escapeHtml(r.total ?? 0)}</strong></td>
           </tr>
         `;
       })
