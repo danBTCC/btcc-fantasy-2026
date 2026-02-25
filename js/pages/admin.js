@@ -1471,6 +1471,21 @@ if (banner) {
 
               const pointsTotal = breakdown.qualifying + breakdown.race1 + breakdown.race2 + breakdown.race3;
 
+              // Build driver-level breakdown + totals (for Results tab driver fantasy points table)
+              const perDriverBreakdown = {};
+              const perDriverTotals = {};
+
+              teamIds.forEach((driverId) => {
+                const qPts = Number(quali.perDriver?.[driverId] || 0);
+                const r1Pts = Number(r1.perDriver?.[driverId] || 0);
+                const r2Pts = Number(r2.perDriver?.[driverId] || 0);
+                const r3Pts = Number(r3.perDriver?.[driverId] || 0);
+                const tPts = qPts + r1Pts + r2Pts + r3Pts;
+
+                perDriverBreakdown[driverId] = { q: qPts, r1: r1Pts, r2: r2Pts, r3: r3Pts, total: tPts };
+                perDriverTotals[driverId] = tPts;
+              });
+
               batch.set(
                 docRef,
                 {
@@ -1480,7 +1495,12 @@ if (banner) {
                   teamIds,
                   pointsTotal,
                   breakdown,
-                  perDriver: {
+                  // Totals map: driverId -> total fantasy points (what Results tab reads)
+                  perDriver: perDriverTotals,
+                  // Breakdown map: driverId -> { q, r1, r2, r3, total }
+                  perDriverBreakdown,
+                  // Keep the old per-session maps for debugging / future use
+                  perDriverBySession: {
                     qualifying: quali.perDriver,
                     race1: r1.perDriver,
                     race2: r2.perDriver,
