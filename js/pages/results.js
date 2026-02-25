@@ -141,34 +141,16 @@
       })
       .sort((a, b) => (b.__total || 0) - (a.__total || 0));
 
-    // Compute maxima for each column
-    const maxQ = Math.max(0, ...sorted.map((r) => Number(r.__q) || 0));
-    const maxR1 = Math.max(0, ...sorted.map((r) => Number(r.__r1) || 0));
-    const maxR2 = Math.max(0, ...sorted.map((r) => Number(r.__r2) || 0));
-    const maxR3 = Math.max(0, ...sorted.map((r) => Number(r.__r3) || 0));
-    const maxT = Math.max(0, ...sorted.map((r) => Number(r.__total) || 0));
-
-    // Highlight the top value per column using BTCC-yellow tint + text colour.
-    // Use !important so it wins against table/theme CSS.
-    const hi = (val, max) => {
-      const v = Number(val);
-      const m = Number(max);
-      if (v === m && m > 0) {
-        return ' style="background-color: rgba(255, 212, 0, 0.22) !important; color: #ffd400 !important;"';
-      }
-      return "";
-    };
-
     const body = sorted
       .map((r) => {
         return `
           <tr>
             <td style="padding:6px;">${escapeHtml(r.displayName || r.playerName || r.uid || "Player")}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.__q, maxQ)}>${r.__q}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.__r1, maxR1)}>${r.__r1}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.__r2, maxR2)}>${r.__r2}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.__r3, maxR3)}>${r.__r3}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.__total, maxT)}>${r.__total}</td>
+            <td style="padding:6px; text-align:right;">${r.__q}</td>
+            <td style="padding:6px; text-align:right;">${r.__r1}</td>
+            <td style="padding:6px; text-align:right;">${r.__r2}</td>
+            <td style="padding:6px; text-align:right;">${r.__r3}</td>
+            <td style="padding:6px; text-align:right;">${r.__total}</td>
           </tr>
         `;
       })
@@ -183,32 +165,6 @@
     if (!rows.length) {
       return `<div class="note">No driver results available yet.</div>`;
     }
-
-    // Compute maxima for each column
-    const nums = (rows || []).map((r) => ({
-      q: typeof r.q === "number" ? r.q : 0,
-      r1: typeof r.r1 === "number" ? r.r1 : 0,
-      r2: typeof r.r2 === "number" ? r.r2 : 0,
-      r3: typeof r.r3 === "number" ? r.r3 : 0,
-      t: typeof r.total === "number" ? r.total : Number(r.total) || 0,
-    }));
-
-    const maxQ = Math.max(0, ...nums.map((x) => x.q));
-    const maxR1 = Math.max(0, ...nums.map((x) => x.r1));
-    const maxR2 = Math.max(0, ...nums.map((x) => x.r2));
-    const maxR3 = Math.max(0, ...nums.map((x) => x.r3));
-    const maxT = Math.max(0, ...nums.map((x) => x.t));
-
-    // Highlight the top value per column using BTCC-yellow tint + text colour.
-    // Use !important so it wins against table/theme CSS.
-    const hi = (val, max) => {
-      const v = Number(val);
-      const m = Number(max);
-      if (v === m && m > 0) {
-        return ' style="background-color: rgba(255, 212, 0, 0.22) !important; color: #ffd400 !important;"';
-      }
-      return "";
-    };
 
     const head = `
       <table class="table tiny" style="width:100%; border-collapse: collapse;">
@@ -232,11 +188,11 @@
         return `
           <tr>
             <td style="padding:6px;">${escapeHtml(r.name || r.driverId)}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.q, maxQ)}>${n(r.q)}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.r1, maxR1)}>${n(r.r1)}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.r2, maxR2)}>${n(r.r2)}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.r3, maxR3)}>${n(r.r3)}</td>
-            <td style="padding:6px; text-align:right;"${hi(r.total, maxT)}>${escapeHtml(r.total ?? 0)}</td>
+            <td style="padding:6px; text-align:right;">${n(r.q)}</td>
+            <td style="padding:6px; text-align:right;">${n(r.r1)}</td>
+            <td style="padding:6px; text-align:right;">${n(r.r2)}</td>
+            <td style="padding:6px; text-align:right;">${n(r.r3)}</td>
+            <td style="padding:6px; text-align:right;">${escapeHtml(r.total ?? 0)}</td>
           </tr>
         `;
       })
@@ -414,22 +370,45 @@ scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
           // Supports either:
           //   - doc.perDriver: {driverId: totalPts}
           //   - doc.perDriverBreakdown: {driverId: {q,r1,r2,r3,total}}
+          //   - doc.perDriverBySession: {driverId: {q,r1,r2,r3}}
           try {
             const agg = new Map();
 
             for (const sd of scoreDocs) {
               const perDriverBreakdown = sd.perDriverBreakdown;
+              const perDriverBySession = sd.perDriverBySession;
               const perDriver = sd.perDriver;
 
-              if (perDriverBreakdown && typeof perDriverBreakdown === "object") {
-                Object.entries(perDriverBreakdown).forEach(([driverId, b]) => {
+              const applyBreakdownObject = (obj) => {
+                if (!obj || typeof obj !== "object") return;
+                Object.entries(obj).forEach(([driverId, b]) => {
                   if (!driverId) return;
                   const cur = agg.get(driverId) || { driverId, q: 0, r1: 0, r2: 0, r3: 0, total: 0 };
-                  const q = typeof b?.q === "number" ? b.q : typeof b?.qualifying === "number" ? b.qualifying : 0;
-                  const r1 = typeof b?.r1 === "number" ? b.r1 : typeof b?.race1 === "number" ? b.race1 : 0;
-                  const r2 = typeof b?.r2 === "number" ? b.r2 : typeof b?.race2 === "number" ? b.race2 : 0;
-                  const r3 = typeof b?.r3 === "number" ? b.r3 : typeof b?.race3 === "number" ? b.race3 : 0;
-                  const t = typeof b?.total === "number" ? b.total : typeof b === "number" ? b : q + r1 + r2 + r3;
+
+                  const q = typeof b?.q === "number" ? b.q
+                    : typeof b?.Q === "number" ? b.Q
+                    : typeof b?.qualifying === "number" ? b.qualifying
+                    : typeof b?.quali === "number" ? b.quali
+                    : 0;
+
+                  const r1 = typeof b?.r1 === "number" ? b.r1
+                    : typeof b?.R1 === "number" ? b.R1
+                    : typeof b?.race1 === "number" ? b.race1
+                    : 0;
+
+                  const r2 = typeof b?.r2 === "number" ? b.r2
+                    : typeof b?.R2 === "number" ? b.R2
+                    : typeof b?.race2 === "number" ? b.race2
+                    : 0;
+
+                  const r3 = typeof b?.r3 === "number" ? b.r3
+                    : typeof b?.R3 === "number" ? b.R3
+                    : typeof b?.race3 === "number" ? b.race3
+                    : 0;
+
+                  const t = typeof b?.total === "number" ? b.total
+                    : typeof b === "number" ? b
+                    : q + r1 + r2 + r3;
 
                   cur.q += q;
                   cur.r1 += r1;
@@ -438,6 +417,23 @@ scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
                   cur.total += t;
                   agg.set(driverId, cur);
                 });
+              };
+
+              if (perDriverBreakdown && typeof perDriverBreakdown === "object") {
+                applyBreakdownObject(perDriverBreakdown);
+              } else if (perDriverBySession && typeof perDriverBySession === "object") {
+                // Some engine versions store session points here.
+                applyBreakdownObject(perDriverBySession);
+                // If we also have perDriver totals, prefer that for total.
+                if (perDriver && typeof perDriver === "object") {
+                  Object.entries(perDriver).forEach(([driverId, t]) => {
+                    if (!driverId) return;
+                    if (typeof t !== "number") return;
+                    const cur = agg.get(driverId) || { driverId, q: 0, r1: 0, r2: 0, r3: 0, total: 0 };
+                    cur.total += 0; // total already included via sessions; leave as-is
+                    agg.set(driverId, cur);
+                  });
+                }
               } else if (perDriver && typeof perDriver === "object") {
                 Object.entries(perDriver).forEach(([driverId, t]) => {
                   if (!driverId) return;
