@@ -17,14 +17,36 @@
 
       // ---- Players standings ----
       if (playersEl) {
-        const playersSnap = await window.btccDb
+        let playersDocs = [];
+
+        // Prefer server-side sort if points exists
+        const orderedSnap = await window.btccDb
           .collection("standings_players")
           .doc("season_2026")
           .collection("players")
           .orderBy("points", "desc")
           .get();
 
-        if (playersSnap.empty) {
+        if (!orderedSnap.empty) {
+          playersDocs = orderedSnap.docs;
+        } else {
+          // Fallback: fetch all, then sort locally (handles missing points field)
+          const allSnap = await window.btccDb
+            .collection("standings_players")
+            .doc("season_2026")
+            .collection("players")
+            .get();
+
+          playersDocs = allSnap.docs
+            .slice()
+            .sort((a, b) => {
+              const ap = Number(a.data()?.points ?? 0);
+              const bp = Number(b.data()?.points ?? 0);
+              return bp - ap;
+            });
+        }
+
+        if (!playersDocs.length) {
           playersEl.textContent = "No data yet";
         } else {
           playersEl.innerHTML = `
@@ -37,7 +59,7 @@
                 </tr>
               </thead>
               <tbody>
-                ${playersSnap.docs
+                ${playersDocs
                   .map((doc, idx) => {
                     const d = doc.data() || {};
                     return `
@@ -54,19 +76,39 @@
           `;
         }
 
-        console.log("✅ Players standings loaded:", playersSnap.size);
+        console.log("✅ Players standings loaded:", playersDocs.length);
       }
 
       // ---- Teams standings ----
       if (teamsEl) {
-        const teamsSnap = await window.btccDb
+        let teamsDocs = [];
+
+        const orderedSnap = await window.btccDb
           .collection("standings_teams")
           .doc("season_2026")
           .collection("teams")
           .orderBy("points", "desc")
           .get();
 
-        if (teamsSnap.empty) {
+        if (!orderedSnap.empty) {
+          teamsDocs = orderedSnap.docs;
+        } else {
+          const allSnap = await window.btccDb
+            .collection("standings_teams")
+            .doc("season_2026")
+            .collection("teams")
+            .get();
+
+          teamsDocs = allSnap.docs
+            .slice()
+            .sort((a, b) => {
+              const ap = Number(a.data()?.points ?? 0);
+              const bp = Number(b.data()?.points ?? 0);
+              return bp - ap;
+            });
+        }
+
+        if (!teamsDocs.length) {
           teamsEl.textContent = "No data yet";
         } else {
           teamsEl.innerHTML = `
@@ -79,7 +121,7 @@
                 </tr>
               </thead>
               <tbody>
-                ${teamsSnap.docs
+                ${teamsDocs
                   .map((doc, idx) => {
                     const d = doc.data() || {};
                     return `
@@ -96,7 +138,7 @@
           `;
         }
 
-        console.log("✅ Teams standings loaded:", teamsSnap.size);
+        console.log("✅ Teams standings loaded:", teamsDocs.length);
       }
 
       // ---- Last updated ----
