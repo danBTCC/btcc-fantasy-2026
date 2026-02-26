@@ -380,6 +380,22 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
   const box = root.querySelector("#driver-picker");
   if (!box) return;
 
+  // Ensure event context is available (loadNextEventSummary sets root.__eventContext async)
+  const waitForEventContext = async () => {
+    for (let i = 0; i < 30; i++) { // up to ~3s
+      const ctx = root.__eventContext || {};
+      if (ctx.eventId) return ctx;
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return root.__eventContext || {};
+  };
+
+  const initialCtx = await waitForEventContext();
+  if (!initialCtx.eventId) {
+    box.innerHTML = `<div class="note warnNote">Waiting for event…</div>`;
+    return;
+  }
+
   if (!window.btccDb) {
     box.textContent = "Waiting for database…";
     setTimeout(() => loadDriverPicker(root, playerBudget), 300);
@@ -457,7 +473,12 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         if (!subSnap.exists) return;
 
         const sub = subSnap.data() || {};
-        const ids = Array.isArray(sub.driverIds) ? sub.driverIds : [];
+        // Support both current (driverIds) and older naming (teamIds)
+        const ids = Array.isArray(sub.driverIds)
+          ? sub.driverIds
+          : Array.isArray(sub.teamIds)
+          ? sub.teamIds
+          : [];
 
         ids.forEach((id) => {
           const row = box.querySelector(`[data-driver-id="${id}"]`);
@@ -519,6 +540,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         uid,
         displayName: displayName || "Player",
         driverIds,
+        teamIds: driverIds, // compatibility mirror
         totalCost: Number(totalCost) || 0,
         eventId,
         eventNo: ctx.eventNo ?? null,
