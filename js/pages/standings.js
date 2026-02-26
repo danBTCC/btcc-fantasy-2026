@@ -3,81 +3,54 @@
 
 (function () {
   async function loadStandings() {
-    const container = document.getElementById("standings-championship");
     const updatedEl = document.getElementById("standings-updated");
     const playersEl = document.getElementById("standings-players");
     const teamsEl = document.getElementById("standings-teams");
 
-    if (!container) return;
-
-    container.textContent = "Loading…";
-        if (playersEl) playersEl.textContent = "Loading…";
-            if (teamsEl) teamsEl.textContent = "Loading…";
+    if (playersEl) playersEl.textContent = "Loading…";
+    if (teamsEl) teamsEl.textContent = "Loading…";
 
     try {
       if (!window.btccDb) {
         throw new Error("btccDb not available");
       }
 
-      // ---- Championship standings ----
-      const snap = await window.btccDb
-        .collection("standings_championship")
-        .orderBy("pos")
-        .get();
-
-      if (snap.empty) {
-        container.textContent = "No data yet";
-      } else {
-        container.innerHTML = `
-          <ul class="list">
-            ${snap.docs
-              .map(doc => {
-                const d = doc.data();
-                return `
-                  <li>
-                    <strong>${d.pos ?? "—"}</strong>
-                    ${d.player ?? "Unnamed"} — 
-                    <span class="muted">${d.pts ?? 0} pts</span>
-                  </li>
-                `;
-              })
-              .join("")}
-          </ul>
-        `;
-      }
-
-      console.log("✅ Championship standings loaded:", snap.size);
-
       // ---- Players standings ----
       if (playersEl) {
         const playersSnap = await window.btccDb
           .collection("standings_players")
-          .orderBy("pos")
+          .doc("season_2026")
+          .collection("players")
+          .orderBy("points", "desc")
           .get();
 
         if (playersSnap.empty) {
           playersEl.textContent = "No data yet";
         } else {
           playersEl.innerHTML = `
-            <ul class="list">
-              ${playersSnap.docs
-                .map(doc => {
-                  const d = doc.data();
-                  const budget = (d.budget ?? 0);
-                  const budgetText =
-                    (typeof budget === "number") ? budget.toFixed(2) : budget;
-
-                  return `
-                    <li>
-                      <strong>${d.pos ?? "—"}</strong>
-                      ${d.player ?? "Unnamed"} —
-                      <span class="muted">£${budgetText}</span> •
-                      <span class="muted">${d.pts ?? 0} pts</span>
-                    </li>
-                  `;
-                })
-                .join("")}
-            </ul>
+            <table class="table tiny" style="width:100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:6px;">Pos</th>
+                  <th style="text-align:left; padding:6px;">Player</th>
+                  <th style="text-align:right; padding:6px;">Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${playersSnap.docs
+                  .map((doc, idx) => {
+                    const d = doc.data() || {};
+                    return `
+                      <tr>
+                        <td style="padding:6px;">${idx + 1}</td>
+                        <td style="padding:6px;">${d.displayName || "Unnamed"}</td>
+                        <td style="padding:6px; text-align:right;">${d.points ?? 0}</td>
+                      </tr>
+                    `;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
           `;
         }
 
@@ -88,27 +61,38 @@
       if (teamsEl) {
         const teamsSnap = await window.btccDb
           .collection("standings_teams")
-          .orderBy("pos")
+          .doc("season_2026")
+          .collection("teams")
+          .orderBy("points", "desc")
           .get();
 
         if (teamsSnap.empty) {
           teamsEl.textContent = "No data yet";
         } else {
           teamsEl.innerHTML = `
-            <ul class="list">
-              ${teamsSnap.docs
-                .map(doc => {
-                  const d = doc.data();
-                  return `
-                    <li>
-                      <strong>${d.pos ?? "—"}</strong>
-                      ${d.team ?? "Unnamed team"} —
-                      <span class="muted">${d.pts ?? 0} pts</span>
-                    </li>
-                  `;
-                })
-                .join("")}
-            </ul>
+            <table class="table tiny" style="width:100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:6px;">Pos</th>
+                  <th style="text-align:left; padding:6px;">Team</th>
+                  <th style="text-align:right; padding:6px;">Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${teamsSnap.docs
+                  .map((doc, idx) => {
+                    const d = doc.data() || {};
+                    return `
+                      <tr>
+                        <td style="padding:6px;">${idx + 1}</td>
+                        <td style="padding:6px;">${d.teamName || "Unnamed team"}</td>
+                        <td style="padding:6px; text-align:right;">${d.points ?? 0}</td>
+                      </tr>
+                    `;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
           `;
         }
 
@@ -134,12 +118,22 @@
 
     } catch (err) {
       console.error("❌ loadStandings failed:", err);
-      container.innerHTML = `
-        <div class="note warnNote">
-          Failed to load standings.<br>
-          <span class="tiny muted">${err.message}</span>
-        </div>
-      `;
+      if (playersEl) {
+        playersEl.innerHTML = `
+          <div class="note warnNote">
+            Failed to load standings.<br>
+            <span class="tiny muted">${err.message}</span>
+          </div>
+        `;
+      }
+      if (teamsEl) {
+        teamsEl.innerHTML = `
+          <div class="note warnNote">
+            Failed to load standings.<br>
+            <span class="tiny muted">${err.message}</span>
+          </div>
+        `;
+      }
     }
   }
 
