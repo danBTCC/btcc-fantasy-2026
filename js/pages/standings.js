@@ -19,18 +19,18 @@
       if (playersEl) {
         let playersDocs = [];
 
-        // Prefer server-side sort if points exists
+        // Prefer server-side sort if pointsTotal exists
         const orderedSnap = await window.btccDb
           .collection("standings_players")
           .doc("season_2026")
           .collection("players")
-          .orderBy("points", "desc")
+          .orderBy("pointsTotal", "desc")
           .get();
 
         if (!orderedSnap.empty) {
           playersDocs = orderedSnap.docs;
         } else {
-          // Fallback: fetch all, then sort locally (handles missing points field)
+          // Fallback: fetch all, then sort locally (handles missing pointsTotal field)
           const allSnap = await window.btccDb
             .collection("standings_players")
             .doc("season_2026")
@@ -40,8 +40,8 @@
           playersDocs = allSnap.docs
             .slice()
             .sort((a, b) => {
-              const ap = Number(a.data()?.points ?? 0);
-              const bp = Number(b.data()?.points ?? 0);
+              const ap = Number(a.data()?.pointsTotal ?? a.data()?.points ?? 0);
+              const bp = Number(b.data()?.pointsTotal ?? b.data()?.points ?? 0);
               return bp - ap;
             });
         }
@@ -66,7 +66,7 @@
                       <tr>
                         <td style="padding:6px;">${idx + 1}</td>
                         <td style="padding:6px;">${d.displayName || "Unnamed"}</td>
-                        <td style="padding:6px; text-align:right;">${d.points ?? 0}</td>
+                        <td style="padding:6px; text-align:right;">${d.pointsTotal ?? d.points ?? 0}</td>
                       </tr>
                     `;
                   })
@@ -87,7 +87,7 @@
           .collection("standings_teams")
           .doc("season_2026")
           .collection("teams")
-          .orderBy("points", "desc")
+          .orderBy("pointsTotal", "desc")
           .get();
 
         if (!orderedSnap.empty) {
@@ -102,8 +102,8 @@
           teamsDocs = allSnap.docs
             .slice()
             .sort((a, b) => {
-              const ap = Number(a.data()?.points ?? 0);
-              const bp = Number(b.data()?.points ?? 0);
+              const ap = Number(a.data()?.pointsTotal ?? a.data()?.points ?? 0);
+              const bp = Number(b.data()?.pointsTotal ?? b.data()?.points ?? 0);
               return bp - ap;
             });
         }
@@ -128,7 +128,7 @@
                       <tr>
                         <td style="padding:6px;">${idx + 1}</td>
                         <td style="padding:6px;">${d.teamName || "Unnamed team"}</td>
-                        <td style="padding:6px; text-align:right;">${d.points ?? 0}</td>
+                        <td style="padding:6px; text-align:right;">${d.pointsTotal ?? d.points ?? 0}</td>
                       </tr>
                     `;
                   })
