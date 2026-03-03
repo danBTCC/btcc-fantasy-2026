@@ -112,56 +112,142 @@
     </section>
 
     <!-- TABLES -->
-   <section class="view" id="view-tables" data-view="tables" hidden>
-  <div class="card">
-    <h1>Standings</h1>
-    <p class="muted">Read-only standings tables. (Wiring to Firebase comes next.)</p>
-    <p class="tiny muted">
-      Last updated: <span id="standings-updated">—</span>
-    </p>
-  </div>
+    <section class="view" id="view-tables" data-view="tables" hidden>
+      <div class="card">
+        <h1>Standings</h1>
+        <p class="muted">Read-only standings tables.</p>
+        <p class="tiny muted">
+          Last updated: <span id="standings-updated">—</span>
+        </p>
+      </div>
 
-  <div class="card">
-    <h2>Championship</h2>
-    <div id="standings-championship">Loading…</div>
-    <p class="tiny muted">If empty, this will show “No data yet”.</p>
-  </div>
+      <!-- Overall (always visible) -->
+      <div class="card" style="margin-top:10px;">
+        <h3 style="margin:0 0 6px 0;">Overall Championship</h3>
+        <div class="tiny muted" style="margin-bottom:8px;">Season total (players)</div>
+        <div id="standings-players">Loading…</div>
+      </div>
 
-  <div class="card">
-    <h2>Players</h2>
-    <div id="standings-players">Loading…</div>
-    <p class="tiny muted">If empty, this will show “No data yet”.</p>
-  </div>
+      <!-- Collapsible sections -->
+      <div class="card" style="margin-top:10px;">
+        <button class="collapseHeader" type="button" data-toggle="standings-teams-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
+          <h3 style="margin:0; display:flex; align-items:center; justify-content:space-between;">
+            <span>Teams</span>
+            <span class="tiny muted">▾</span>
+          </h3>
+        </button>
+        <div id="standings-teams-wrap" hidden style="margin-top:8px;">
+          <div id="standings-teams">Loading…</div>
+        </div>
+      </div>
 
-  <div class="card">
-    <h2>Teams</h2>
-    <div id="standings-teams">Loading…</div>
-    <p class="tiny muted">If empty, this will show “No data yet”.</p>
-  </div>
-</section>
+      <div class="card" style="margin-top:10px;">
+        <button class="collapseHeader" type="button" data-toggle="standings-wingfoot-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
+          <h3 style="margin:0; display:flex; align-items:center; justify-content:space-between;">
+            <span>WingFoot (Qualifying)</span>
+            <span class="tiny muted">▾</span>
+          </h3>
+        </button>
+        <div id="standings-wingfoot-wrap" hidden style="margin-top:8px;">
+          <div id="standings-wingfoot">No data yet</div>
+        </div>
+      </div>
 
- <!-- DRIVERS -->
-<section class="view" id="view-drivers" data-view="drivers" hidden>
-  <div class="card">
-    <h1>Drivers</h1>
-    <p class="muted">Live driver list from Firebase (read-only).</p>
-    <div id="drivers-list">Loading drivers...</div>
-  </div>
-</section>
+      <div class="card" style="margin-top:10px;">
+        <button class="collapseHeader" type="button" data-toggle="standings-manufacturer-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
+          <h3 style="margin:0; display:flex; align-items:center; justify-content:space-between;">
+            <span>Manufacturer</span>
+            <span class="tiny muted">▾</span>
+          </h3>
+        </button>
+        <div id="standings-manufacturer-wrap" hidden style="margin-top:8px;">
+          <div id="standings-manufacturer">No data yet</div>
+        </div>
+      </div>
 
-<!-- RESULTS -->
-<<section class="view" id="view-results" data-view="results" hidden>
-  <div class="card">
-    <h1>Results</h1>
-    <p class="muted">Read-only event list. Admin entry comes later.</p>
+      <div class="card" style="margin-top:10px;">
+        <button class="collapseHeader" type="button" data-toggle="standings-independent-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
+          <h3 style="margin:0; display:flex; align-items:center; justify-content:space-between;">
+            <span>Independents</span>
+            <span class="tiny muted">▾</span>
+          </h3>
+        </button>
+        <div id="standings-independent-wrap" hidden style="margin-top:8px;">
+          <div id="standings-independent">No data yet</div>
+        </div>
+      </div>
 
-    <div id="events-list">Loading…</div>
+      <div class="card" style="margin-top:10px;">
+        <button class="collapseHeader" type="button" data-toggle="standings-jacksears-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
+          <h3 style="margin:0; display:flex; align-items:center; justify-content:space-between;">
+            <span>Jack Sears</span>
+            <span class="tiny muted">▾</span>
+          </h3>
+        </button>
+        <div id="standings-jacksears-wrap" hidden style="margin-top:8px;">
+          <div id="standings-jacksears">No data yet</div>
+        </div>
+      </div>
 
-    <p class="tiny muted">
-      This will list Events (Rounds / Venue / Dates / Status) once wired to Firebase.
-    </p>
-  </div>
-</section>
+      <div class="card" style="margin-top:10px;">
+        <button class="collapseHeader" type="button" data-toggle="standings-race1-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
+          <h3 style="margin:0; display:flex; align-items:center; justify-content:space-between;">
+            <span>Race 1</span>
+            <span class="tiny muted">▾</span>
+          </h3>
+        </button>
+        <div id="standings-race1-wrap" hidden style="margin-top:8px;">
+          <div id="standings-race1">No data yet</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:10px;">
+        <button class="collapseHeader" type="button" data-toggle="standings-race2-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
+          <h3 style="margin:0; display:flex; align-items:center; justify-content:space-between;">
+            <span>Race 2</span>
+            <span class="tiny muted">▾</span>
+          </h3>
+        </button>
+        <div id="standings-race2-wrap" hidden style="margin-top:8px;">
+          <div id="standings-race2">No data yet</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:10px;">
+        <button class="collapseHeader" type="button" data-toggle="standings-race3-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
+          <h3 style="margin:0; display:flex; align-items:center; justify-content:space-between;">
+            <span>Race 3</span>
+            <span class="tiny muted">▾</span>
+          </h3>
+        </button>
+        <div id="standings-race3-wrap" hidden style="margin-top:8px;">
+          <div id="standings-race3">No data yet</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DRIVERS -->
+    <section class="view" id="view-drivers" data-view="drivers" hidden>
+      <div class="card">
+        <h1>Drivers</h1>
+        <p class="muted">Live driver list from Firebase (read-only).</p>
+        <div id="drivers-list">Loading drivers...</div>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="view" id="view-results" data-view="results" hidden>
+      <div class="card">
+        <h1>Results</h1>
+        <p class="muted">Read-only event list. Admin entry comes later.</p>
+
+        <div id="events-list">Loading…</div>
+
+        <p class="tiny muted">
+          This will list Events (Rounds / Venue / Dates / Status) once wired to Firebase.
+        </p>
+      </div>
+    </section>
 
     <!-- NEWS -->
     <section class="view" id="view-news" data-view="news" hidden>
@@ -196,21 +282,20 @@
     <span class="muted">BTCC Fantasy League 2026</span>
   </footer>
 
-<!-- Firebase SDKs (COMPAT versions) -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase SDKs (COMPAT versions) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<!-- Firebase config -->
-<script src="./firebase-config.js"></script>
+  <!-- Firebase config -->
+  <script src="./firebase-config.js"></script>
 
-<script src="./js/pages/drivers.js"></script>
-<script src="./js/pages/standings.js"></script>
-<script src="./js/pages/results.js"></script>
-<script src="./js/pages/admin.js"></script>
-<script src="./js/pages/submit.js"></script>
+  <script src="./js/pages/drivers.js"></script>
+  <script src="./js/pages/standings.js"></script>
+  <script src="./js/pages/results.js"></script>
+  <script src="./js/pages/admin.js"></script>
+  <script src="./js/pages/submit.js"></script>
 
-
-<script src="./app.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>

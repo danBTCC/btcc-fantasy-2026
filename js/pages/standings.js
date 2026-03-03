@@ -6,14 +6,41 @@
     const updatedEl = document.getElementById("standings-updated");
     const playersEl = document.getElementById("standings-players");
     const teamsEl = document.getElementById("standings-teams");
+    const teamsWrapEl = document.getElementById("standings-teams-wrap");
+    const wingfootEl = document.getElementById("standings-wingfoot");
+    const manufacturerEl = document.getElementById("standings-manufacturer");
+    const independentEl = document.getElementById("standings-independent");
+    const jacksearsEl = document.getElementById("standings-jacksears");
+    const race1El = document.getElementById("standings-race1");
+    const race2El = document.getElementById("standings-race2");
+    const race3El = document.getElementById("standings-race3");
 
     if (playersEl) playersEl.textContent = "Loading…";
     if (teamsEl) teamsEl.textContent = "Loading…";
+    if (wingfootEl) wingfootEl.textContent = "No data yet";
+    if (manufacturerEl) manufacturerEl.textContent = "No data yet";
+    if (independentEl) independentEl.textContent = "No data yet";
+    if (jacksearsEl) jacksearsEl.textContent = "No data yet";
+    if (race1El) race1El.textContent = "No data yet";
+    if (race2El) race2El.textContent = "No data yet";
+    if (race3El) race3El.textContent = "No data yet";
 
     try {
       if (!window.btccDb) {
         throw new Error("btccDb not available");
       }
+
+      // UI-only toggle wiring for collapsible sections
+      const toggleButtons = document.querySelectorAll('[data-toggle]');
+      toggleButtons.forEach((btn) => {
+        btn.onclick = () => {
+          const targetId = btn.getAttribute('data-toggle');
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            targetEl.hidden = !targetEl.hidden;
+          }
+        };
+      });
 
       // ---- Players standings ----
       if (playersEl) {
@@ -138,6 +165,7 @@
           `;
         }
 
+        // teamsWrapEl exists and is hidden by default, no change needed to show/hide
         console.log("✅ Teams standings loaded:", teamsDocs.length);
       }
 
