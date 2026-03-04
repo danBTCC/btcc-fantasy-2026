@@ -169,6 +169,68 @@
         console.log("✅ Teams standings loaded:", teamsDocs.length);
       }
 
+      // ---- WingFoot (Qualifying) standings ----
+      if (wingfootEl) {
+        let wingDocs = [];
+
+        const orderedSnap = await window.btccDb
+          .collection("standings_wingfoot")
+          .doc("season_2026")
+          .collection("players")
+          .orderBy("pointsTotal", "desc")
+          .get();
+
+        if (!orderedSnap.empty) {
+          wingDocs = orderedSnap.docs;
+        } else {
+          const allSnap = await window.btccDb
+            .collection("standings_wingfoot")
+            .doc("season_2026")
+            .collection("players")
+            .get();
+
+          wingDocs = allSnap.docs
+            .slice()
+            .sort((a, b) => {
+              const ap = Number(a.data()?.pointsTotal ?? a.data()?.points ?? 0);
+              const bp = Number(b.data()?.pointsTotal ?? b.data()?.points ?? 0);
+              return bp - ap;
+            });
+        }
+
+        if (!wingDocs.length) {
+          wingfootEl.textContent = "No data yet";
+        } else {
+          wingfootEl.innerHTML = `
+            <table class="table tiny" style="width:100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:6px;">Pos</th>
+                  <th style="text-align:left; padding:6px;">Player</th>
+                  <th style="text-align:right; padding:6px;">Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${wingDocs
+                  .map((doc, idx) => {
+                    const d = doc.data() || {};
+                    return `
+                      <tr>
+                        <td style="padding:6px;">${idx + 1}</td>
+                        <td style="padding:6px;">${d.displayName || "Unnamed"}</td>
+                        <td style="padding:6px; text-align:right;">${d.pointsTotal ?? d.points ?? 0}</td>
+                      </tr>
+                    `;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
+          `;
+        }
+
+        console.log("✅ WingFoot standings loaded:", wingDocs.length);
+      }
+
       // ---- Last updated ----
       try {
         const metaSnap = await window.btccDb
