@@ -395,3 +395,17 @@ th {
 #view-tables .table td {
   color: #ffffff !important;
 }
+
+/* Standings page: fix button/header text (Safari/iOS buttons can render black by default) */
+#view-tables button,
+#view-tables .collapseHeader,
+#view-tables h3,
+#view-tables h3 span {
+  color: var(--text) !important;
+}
+
+/* Keep muted text muted inside Standings */
+#view-tables .muted,
+#view-tables .tiny.muted {
+  color: var(--muted) !important;
+}
