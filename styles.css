@@ -389,3 +389,9 @@ th {
 #view-tables table td {
   color: #ffffff !important;
 }
+/* Standings page table text fix */
+#view-tables .table,
+#view-tables .table th,
+#view-tables .table td {
+  color: #ffffff !important;
+}
