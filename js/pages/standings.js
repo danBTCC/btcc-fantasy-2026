@@ -17,13 +17,61 @@
 
     if (playersEl) playersEl.textContent = "Loading…";
     if (teamsEl) teamsEl.textContent = "Loading…";
-    if (wingfootEl) wingfootEl.textContent = "No data yet";
-    if (manufacturerEl) manufacturerEl.textContent = "No data yet";
-    if (independentEl) independentEl.textContent = "No data yet";
-    if (jacksearsEl) jacksearsEl.textContent = "No data yet";
-    if (race1El) race1El.textContent = "No data yet";
-    if (race2El) race2El.textContent = "No data yet";
-    if (race3El) race3El.textContent = "No data yet";
+    if (wingfootEl) wingfootEl.textContent = "Loading…";
+    if (manufacturerEl) manufacturerEl.textContent = "Loading…";
+    if (independentEl) independentEl.textContent = "Loading…";
+    if (jacksearsEl) jacksearsEl.textContent = "Loading…";
+    if (race1El) race1El.textContent = "Loading…";
+    if (race2El) race2El.textContent = "Loading…";
+    if (race3El) race3El.textContent = "Loading…";
+      // --- Helpers (shared by all tables) ---
+      const renderSimplePointsTable = (mountEl, rows, labelName) => {
+        if (!mountEl) return;
+        if (!rows.length) {
+          mountEl.textContent = "No data yet";
+          return;
+        }
+        mountEl.innerHTML = `
+          <table class="table tiny" style="width:100%; border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:6px;">Pos</th>
+                <th style="text-align:left; padding:6px;">${labelName}</th>
+                <th style="text-align:right; padding:6px;">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows
+                .map((r, idx) => {
+                  return `
+                    <tr>
+                      <td style="padding:6px;">${idx + 1}</td>
+                      <td style="padding:6px;">${r.name || "Unnamed"}</td>
+                      <td style="padding:6px; text-align:right;">${r.points}</td>
+                    </tr>
+                  `;
+                })
+                .join("")}
+            </tbody>
+          </table>
+        `;
+      };
+
+      const readSortedPointsDocs = async (colRef) => {
+        // Prefer server-side sort if pointsTotal exists
+        const orderedSnap = await colRef.orderBy("pointsTotal", "desc").get();
+        if (!orderedSnap.empty) return orderedSnap.docs;
+
+        // Fallback: fetch all then sort locally
+        const allSnap = await colRef.get();
+        return allSnap.docs
+          .slice()
+          .sort((a, b) => {
+            const ap = Number(a.data()?.pointsTotal ?? a.data()?.points ?? 0);
+            const bp = Number(b.data()?.pointsTotal ?? b.data()?.points ?? 0);
+            return bp - ap;
+          });
+      };
 
     try {
       if (!window.btccDb) {
@@ -229,6 +277,132 @@
         }
 
         console.log("✅ WingFoot standings loaded:", wingDocs.length);
+      }
+
+      // ---- Manufacturer standings ----
+      if (manufacturerEl) {
+        const docs = await readSortedPointsDocs(
+          window.btccDb
+            .collection("standings_manufacturer")
+            .doc("season_2026")
+            .collection("players")
+        );
+
+        const rows = docs.map((doc) => {
+          const d = doc.data() || {};
+          return {
+            name: d.displayName || "Unnamed",
+            points: Number(d.pointsTotal ?? d.points ?? 0),
+          };
+        });
+
+        renderSimplePointsTable(manufacturerEl, rows, "Player");
+        console.log("✅ Manufacturer standings loaded:", rows.length);
+      }
+
+      // ---- Independent standings ----
+      if (independentEl) {
+        const docs = await readSortedPointsDocs(
+          window.btccDb
+            .collection("standings_independent")
+            .doc("season_2026")
+            .collection("players")
+        );
+
+        const rows = docs.map((doc) => {
+          const d = doc.data() || {};
+          return {
+            name: d.displayName || "Unnamed",
+            points: Number(d.pointsTotal ?? d.points ?? 0),
+          };
+        });
+
+        renderSimplePointsTable(independentEl, rows, "Player");
+        console.log("✅ Independent standings loaded:", rows.length);
+      }
+
+      // ---- Jack Sears standings ----
+      if (jacksearsEl) {
+        const docs = await readSortedPointsDocs(
+          window.btccDb
+            .collection("standings_jacksears")
+            .doc("season_2026")
+            .collection("players")
+        );
+
+        const rows = docs.map((doc) => {
+          const d = doc.data() || {};
+          return {
+            name: d.displayName || "Unnamed",
+            points: Number(d.pointsTotal ?? d.points ?? 0),
+          };
+        });
+
+        renderSimplePointsTable(jacksearsEl, rows, "Player");
+        console.log("✅ Jack Sears standings loaded:", rows.length);
+      }
+
+      // ---- Race 1 standings ----
+      if (race1El) {
+        const docs = await readSortedPointsDocs(
+          window.btccDb
+            .collection("standings_race1")
+            .doc("season_2026")
+            .collection("players")
+        );
+
+        const rows = docs.map((doc) => {
+          const d = doc.data() || {};
+          return {
+            name: d.displayName || "Unnamed",
+            points: Number(d.pointsTotal ?? d.points ?? 0),
+          };
+        });
+
+        renderSimplePointsTable(race1El, rows, "Player");
+        console.log("✅ Race 1 standings loaded:", rows.length);
+      }
+
+      // ---- Race 2 standings ----
+      if (race2El) {
+        const docs = await readSortedPointsDocs(
+          window.btccDb
+            .collection("standings_race2")
+            .doc("season_2026")
+            .collection("players")
+        );
+
+        const rows = docs.map((doc) => {
+          const d = doc.data() || {};
+          return {
+            name: d.displayName || "Unnamed",
+            points: Number(d.pointsTotal ?? d.points ?? 0),
+          };
+        });
+
+        renderSimplePointsTable(race2El, rows, "Player");
+        console.log("✅ Race 2 standings loaded:", rows.length);
+      }
+
+      // ---- Race 3 standings ----
+      if (race3El) {
+        const docs = await readSortedPointsDocs(
+          window.btccDb
+            .collection("standings_race3")
+            .doc("season_2026")
+            .collection("players")
+        );
+
+        const rows = docs.map((doc) => {
+          const d = doc.data() || {};
+          return {
+            name: d.displayName || "Unnamed",
+            points: Number(d.pointsTotal ?? d.points ?? 0),
+          };
+        });
+
+        renderSimplePointsTable(race3El, rows, "Player");
+        console.log("✅ Race 3 standings loaded:", rows.length);
       }
 
       // ---- Last updated ----
