@@ -383,16 +383,9 @@ th {
   font-size: 0.9rem;
   line-height: 1.35;
 }
-/* Standings tables text visibility fix */
-#view-tables table {
-  color: #ffffff;
-}
-
-#view-tables th,
-#view-tables td {
-  color: #ffffff;
-}
-
-#view-tables th {
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+/* Force white text inside standings tables */
+#view-tables table,
+#view-tables table th,
+#view-tables table td {
+  color: #ffffff !important;
 }
