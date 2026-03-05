@@ -132,9 +132,9 @@ async function loadHomeNewsSnippets() {
 
     const safeText = (v) => (typeof v === "string" && v.trim().length ? v.trim() : "—");
 
-    elGossip.textContent = safeText(d.pitLaneGossip);
-    elLatest.textContent = safeText(d.latestEventNews);
-    elPrev.textContent = safeText(d.previousEventNews);
+    elGossip.textContent = safeText(d.pitLane);
+    elLatest.textContent = safeText(d.latestEvent);
+    elPrev.textContent = safeText(d.previousEvent);
   } catch (err) {
     console.error("❌ loadHomeNewsSnippets failed:", err);
   }
