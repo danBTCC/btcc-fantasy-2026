@@ -9,6 +9,11 @@ function setActiveTab(route) {
   document.querySelectorAll(".view").forEach(v => {
     v.hidden = v.dataset.view !== route;
   });
+
+  // When switching to Home, refresh the editable home news snippets.
+  if (route === "home") {
+    loadHomeNewsSnippets();
+  }
 }
 
 function getRouteFromHash() {
@@ -99,6 +104,40 @@ function formatCountdownLong(ms) {
   const secs = totalSeconds % 60;
 
   return `${days} Days ${hours} Hours ${mins} Mins ${secs} Seconds`;
+}
+
+// Loads the editable Home page snippets saved by Admin (meta/homeNews)
+async function loadHomeNewsSnippets() {
+  try {
+    const elGossip = document.getElementById("home-news-gossip");
+    const elLatest = document.getElementById("home-news-latest");
+    const elPrev = document.getElementById("home-news-previous");
+
+    // If we're not on the Home view (or markup not present), do nothing.
+    if (!elGossip || !elLatest || !elPrev) return;
+
+    const db =
+      window.btccDb ||
+      (typeof firebase !== "undefined" && firebase.apps?.length ? firebase.firestore() : null);
+
+    if (!db) {
+      elGossip.textContent = "—";
+      elLatest.textContent = "—";
+      elPrev.textContent = "—";
+      return;
+    }
+
+    const snap = await db.collection("meta").doc("homeNews").get();
+    const d = snap.exists ? (snap.data() || {}) : {};
+
+    const safeText = (v) => (typeof v === "string" && v.trim().length ? v.trim() : "—");
+
+    elGossip.textContent = safeText(d.pitLaneGossip);
+    elLatest.textContent = safeText(d.latestEventNews);
+    elPrev.textContent = safeText(d.previousEventNews);
+  } catch (err) {
+    console.error("❌ loadHomeNewsSnippets failed:", err);
+  }
 }
 
 // Finds the next event by dateFrom/eventNo and shows it on the Home "Next event" card.
@@ -204,6 +243,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await checkFirebaseAndReadMeta();
 
   await loadNextEventCountdown();
+  await loadHomeNewsSnippets();
 
   // Page data (read-only at this stage)
   await runPageLoaders();
