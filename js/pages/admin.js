@@ -528,6 +528,110 @@ if (root.__eventMeta?.resultsLocked === true) {
       }
     });
   }
+
+    // ============================================================
+  // ADMIN: HOME PAGE NEWS (Editable text boxes)
+  // Stores data at meta/homeNews
+  // Fields: pitLane, latestEvent, previousEvent, updatedAt, updatedBy
+  // ============================================================
+  async function loadAdminHomeNews(root) {
+    const msg = root.querySelector("#admin-home-news-msg");
+    const pit = root.querySelector("#admin-home-news-pit");
+    const latest = root.querySelector("#admin-home-news-latest");
+    const prev = root.querySelector("#admin-home-news-prev");
+
+    if (!pit || !latest || !prev) return;
+
+    if (!window.btccDb) {
+      if (msg) msg.textContent = "Database not ready.";
+      return;
+    }
+
+    try {
+      if (msg) msg.textContent = "Loading…";
+      const snap = await window.btccDb.collection("meta").doc("homeNews").get();
+      const d = snap.exists ? (snap.data() || {}) : {};
+
+      pit.value = (d.pitLane || "").toString();
+      latest.value = (d.latestEvent || "").toString();
+      prev.value = (d.previousEvent || "").toString();
+
+      if (msg) msg.textContent = snap.exists ? "Loaded." : "No saved Home news yet (fill in and Save).";
+    } catch (err) {
+      console.error("❌ loadAdminHomeNews failed:", err);
+      if (msg) msg.textContent = err?.message || "Failed to load";
+    }
+  }
+
+  function setupAdminHomeNews(root) {
+    const saveBtn = root.querySelector("#admin-home-news-save");
+    if (!saveBtn) return;
+
+    const msg = root.querySelector("#admin-home-news-msg");
+    const pit = root.querySelector("#admin-home-news-pit");
+    const latest = root.querySelector("#admin-home-news-latest");
+    const prev = root.querySelector("#admin-home-news-prev");
+
+    const setMsg = (t) => {
+      if (msg) msg.textContent = t;
+    };
+
+    saveBtn.addEventListener("click", async () => {
+      if (!window.btccDb) {
+        setMsg("Database not ready.");
+        return;
+      }
+
+      const pitLane = (pit?.value || "").trim();
+      const latestEvent = (latest?.value || "").trim();
+      const previousEvent = (prev?.value || "").trim();
+
+      try {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving…";
+        setMsg("");
+
+        const user = firebase.auth().currentUser;
+        const who = user?.email || "admin";
+
+        await window.btccDb.collection("meta").doc("homeNews").set(
+          {
+            pitLane,
+            latestEvent,
+            previousEvent,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: who,
+          },
+          { merge: true }
+        );
+
+        setMsg("Saved.");
+      } catch (err) {
+        console.error("❌ Save home news failed:", err);
+        setMsg(err?.message || "Failed to save");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Home news";
+      }
+    });
+
+    // Load existing data on first render
+    loadAdminHomeNews(root);
+
+    // Optional manual reload
+    const reloadBtn = root.querySelector("#admin-home-news-reload");
+    if (reloadBtn) {
+      reloadBtn.addEventListener("click", async () => {
+        reloadBtn.disabled = true;
+        try {
+          await loadAdminHomeNews(root);
+        } finally {
+          reloadBtn.disabled = false;
+        }
+      });
+    }
+  }
+
   // ============================================================
   // SECTION 2: ADMIN BOOTSTRAP (Unlocked View)
   // ============================================================
@@ -537,6 +641,31 @@ if (root.__eventMeta?.resultsLocked === true) {
       `
       <h1>Admin</h1>
       <p class="muted">Admin unlocked for <strong>${email}</strong></p>
+      
+            <div class="card" style="margin-top:12px;">
+        <h2 style="margin:0 0 6px 0;">Home Page News</h2>
+        <p class="tiny muted" style="margin:0;">Editable home page snippets (not pulled from the News tab). Saved to <span class="tiny">meta/homeNews</span>.</p>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+          <label class="tiny muted">Pit lane gossip</label>
+          <textarea id="admin-home-news-pit" rows="3" placeholder="A few lines…"
+            style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
+
+          <label class="tiny muted">Latest event news</label>
+          <textarea id="admin-home-news-latest" rows="3" placeholder="A few lines…"
+            style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
+
+          <label class="tiny muted">Previous event news</label>
+          <textarea id="admin-home-news-prev" rows="3" placeholder="A few lines…"
+            style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
+
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:4px;">
+            <button id="admin-home-news-save" class="tile">Save Home news</button>
+            <button id="admin-home-news-reload" class="tile tinyBtn" type="button">Reload</button>
+            <div id="admin-home-news-msg" class="tiny muted"></div>
+          </div>
+        </div>
+      </div>
 
       <div class="card" style="margin-top:12px;">
         <h2 style="margin:0 0 6px 0;">Player Manager</h2>
@@ -588,6 +717,7 @@ if (root.__eventMeta?.resultsLocked === true) {
     root.querySelector("#admin-logout")?.addEventListener("click", handleLogout);
     loadAdminEventPicker(root);
     loadAdminDrivers(root);
+    setupAdminHomeNews(root);
     setupAdminPlayerManager(root);
     renderQualifyingForm(root);
     renderRaceForms(root);
