@@ -475,6 +475,60 @@ if (root.__eventMeta?.resultsLocked === true) {
   }
 
   // ============================================================
+  // ADMIN: PLAYER MANAGER (Create / Update players)
+  // ============================================================
+  function setupAdminPlayerManager(root) {
+    const btn = root.querySelector("#admin-player-save");
+    if (!btn) return;
+
+    const msg = root.querySelector("#admin-player-msg");
+
+    btn.addEventListener("click", async () => {
+      const uid = root.querySelector("#admin-player-uid")?.value?.trim();
+      const displayName = root.querySelector("#admin-player-name")?.value?.trim();
+      const teamId = root.querySelector("#admin-player-team")?.value?.trim() || "unassigned";
+      const budget = Number(root.querySelector("#admin-player-budget")?.value || 0);
+
+      if (!uid || !displayName) {
+        if (msg) msg.textContent = "UID and Display Name are required.";
+        return;
+      }
+
+      if (!window.btccDb) {
+        if (msg) msg.textContent = "Database not ready.";
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.textContent = "Saving…";
+
+        await window.btccDb.collection("players").doc(uid).set(
+          {
+            uid,
+            displayName,
+            teamId,
+            teamName: teamId,
+            budget,
+            active: true,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          },
+          { merge: true }
+        );
+
+        if (msg) msg.textContent = `Saved player: ${displayName}`;
+        btn.textContent = "Save player";
+      } catch (err) {
+        console.error("❌ Save player failed:", err);
+        if (msg) msg.textContent = err?.message || "Failed to save player";
+        btn.textContent = "Save player";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+  // ============================================================
   // SECTION 2: ADMIN BOOTSTRAP (Unlocked View)
   // ============================================================
   function renderAdminUnlocked(root, email) {
@@ -483,6 +537,32 @@ if (root.__eventMeta?.resultsLocked === true) {
       `
       <h1>Admin</h1>
       <p class="muted">Admin unlocked for <strong>${email}</strong></p>
+
+      <div class="card" style="margin-top:12px;">
+        <h2 style="margin:0 0 6px 0;">Player Manager</h2>
+        <p class="tiny muted">Create or update a player using their Firebase UID.</p>
+
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+          <label class="tiny muted">Player UID</label>
+          <input id="admin-player-uid" type="text" placeholder="Firebase UID"
+            style="padding:8px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" />
+
+          <label class="tiny muted">Display Name</label>
+          <input id="admin-player-name" type="text" placeholder="Player name"
+            style="padding:8px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" />
+
+          <label class="tiny muted">Team ID</label>
+          <input id="admin-player-team" type="text" placeholder="team_1, team_2, etc"
+            style="padding:8px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" />
+
+          <label class="tiny muted">Budget</label>
+          <input id="admin-player-budget" type="number" value="10"
+            style="padding:8px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" />
+
+          <button id="admin-player-save" class="tile">Save player</button>
+          <div id="admin-player-msg" class="tiny muted"></div>
+        </div>
+      </div>
 
       <div class="card" style="margin-top:12px;">
         <h2 style="margin:0 0 6px 0;">Results Entry</h2>
@@ -508,6 +588,7 @@ if (root.__eventMeta?.resultsLocked === true) {
     root.querySelector("#admin-logout")?.addEventListener("click", handleLogout);
     loadAdminEventPicker(root);
     loadAdminDrivers(root);
+    setupAdminPlayerManager(root);
     renderQualifyingForm(root);
     renderRaceForms(root);
     renderResultsPreview(root);
