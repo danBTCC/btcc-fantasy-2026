@@ -89,25 +89,28 @@ async function checkFirebaseAndReadMeta() {
   }
 }
 
-function pad2(n) {
-  return String(n).padStart(2, "0");
-}
+function formatCountdownLong(ms) {
+  if (ms <= 0) return "0 Days 0 Hours 0 Mins 0 Seconds";
 
-function formatCountdown(ms) {
-  if (ms <= 0) return "00:00:00:00";
   const totalSeconds = Math.floor(ms / 1000);
   const days = Math.floor(totalSeconds / 86400);
   const hours = Math.floor((totalSeconds % 86400) / 3600);
   const mins = Math.floor((totalSeconds % 3600) / 60);
   const secs = totalSeconds % 60;
-  return `${days}:${pad2(hours)}:${pad2(mins)}:${pad2(secs)}`;
+
+  return `${days} Days ${hours} Hours ${mins} Mins ${secs} Seconds`;
 }
 
-// Finds the next event by dateFrom/eventNo and shows:
-// "Submissions for Event X close in DD:HH:MM:SS"
+// Finds the next event by dateFrom/eventNo and shows it on the Home "Next event" card.
+// Lockout rule (for now): dateFrom @ 15:00 local time (UK users).
 async function loadNextEventCountdown() {
-  const el = document.getElementById("nextEventCountdown");
-  if (!el) return;
+  const nameEl = document.getElementById("next-event-name");
+  const countdownEl = document.getElementById("next-event-countdown");
+  const lockoutEl = document.getElementById("next-event-lockout");
+  const statusEl = document.getElementById("next-event-status");
+
+  // If the Home card isn't present, do nothing.
+  if (!nameEl || !countdownEl || !lockoutEl) return;
 
   try {
     const db =
@@ -115,7 +118,10 @@ async function loadNextEventCountdown() {
       (typeof firebase !== "undefined" && firebase.apps?.length ? firebase.firestore() : null);
 
     if (!db) {
-      el.textContent = "Offline mode (no countdown).";
+      nameEl.textContent = "Offline mode";
+      countdownEl.textContent = "—";
+      lockoutEl.textContent = "—";
+      if (statusEl) statusEl.textContent = "—";
       return;
     }
 
@@ -123,45 +129,59 @@ async function loadNextEventCountdown() {
     const events = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
     if (!events.length) {
-      el.textContent = "No events found.";
+      nameEl.textContent = "No events";
+      countdownEl.textContent = "—";
+      lockoutEl.textContent = "—";
+      if (statusEl) statusEl.textContent = "—";
       return;
     }
 
-    // Lockout rule (for now): dateFrom @ 15:00 UK local time
-    const now = new Date();
-
-    const withLockout = events
+    // Build lockout datetime from dateFrom (YYYY-MM-DD) at 15:00 local.
+    const parsed = events
       .filter(e => typeof e.dateFrom === "string" && e.dateFrom.length >= 10)
       .map(e => {
-        // This uses the viewer's local timezone (fine for UK users)
         const lockout = new Date(`${e.dateFrom}T15:00:00`);
         return { ...e, lockout };
-      });
+      })
+      // ensure ascending by eventNo just in case
+      .sort((a, b) => (a.eventNo ?? 999) - (b.eventNo ?? 999));
 
-    // Next upcoming lockout in the future
-    const next = withLockout.find(e => e.lockout.getTime() > now.getTime()) || null;
+    const now = Date.now();
 
-    if (!next) {
-      el.textContent = "All events are past lockout.";
-      return;
-    }
+    // Choose next event (first event whose lockout is in the future)
+    // If all lockouts are past, fall back to the last event.
+    const next = parsed.find(e => e.lockout.getTime() > now) || parsed[parsed.length - 1];
 
-    const label = `Submissions for Event ${next.eventNo} close in`;
+    const venue = next.venue || next.name || `Event ${next.eventNo ?? "—"}`;
+    nameEl.textContent = venue;
+
+    const lockoutText = `${next.lockout.toLocaleDateString("en-GB")} ${next.lockout.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+    lockoutEl.textContent = `Lockout: ${lockoutText}`;
 
     // Update once per second
     const tick = () => {
       const msLeft = next.lockout.getTime() - Date.now();
-      el.textContent = `${label} ${formatCountdown(msLeft)}`;
+
+      if (msLeft <= 0) {
+        countdownEl.textContent = "0 Days 0 Hours 0 Mins 0 Seconds";
+        if (statusEl) statusEl.textContent = "Submissions are locked — Event in progress";
+      } else {
+        countdownEl.textContent = formatCountdownLong(msLeft);
+        if (statusEl) statusEl.textContent = "Submissions are open";
+      }
     };
 
     tick();
+
     // prevent multiple intervals if user refreshes modules
     if (window.__btccCountdownInterval) clearInterval(window.__btccCountdownInterval);
     window.__btccCountdownInterval = setInterval(tick, 1000);
   } catch (e) {
     console.error("Countdown failed:", e);
-    const el = document.getElementById("nextEventCountdown");
-    if (el) el.textContent = "Countdown unavailable.";
+    if (nameEl) nameEl.textContent = "Countdown unavailable";
+    if (countdownEl) countdownEl.textContent = "—";
+    if (lockoutEl) lockoutEl.textContent = "—";
+    if (statusEl) statusEl.textContent = "—";
   }
 }
 
