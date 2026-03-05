@@ -43,16 +43,6 @@
       </div>
 
       <div class="card">
-        <h2>Status</h2>
-        <ul class="list">
-          <li><span class="dot ok"></span> Netlify deployed</li>
-          <li><span class="dot ok"></span> Navigation working</li>
-         <li id="firebase-status" class="status-item">Firebase connected</li>
-        </ul>
-        <p class="tiny muted">Build stamp: <span id="buildStamp"></span></p>
-      </div>
-
-      <div class="card">
         <h2>Latest News</h2>
         <p class="muted">Preview (placeholder). Full posts will live in the News tab.</p>
 
@@ -73,6 +63,20 @@
           <div class="newsMeta">TBD • Admin</div>
           <div class="newsBody">Submissions will lock at 3:00 PM (UK time) on Saturdays during event weekends.</div>
         </div>
+      </div>
+
+      <div class="card" style="margin-top:10px; padding:10px;">
+        <details>
+          <summary class="muted" style="cursor:pointer;">Status</summary>
+          <div style="margin-top:8px;">
+            <ul class="list tiny" style="margin-top:0;">
+              <li><span class="dot ok"></span> Netlify deployed</li>
+              <li><span class="dot ok"></span> Navigation working</li>
+              <li id="firebase-status" class="status-item">Firebase connected</li>
+            </ul>
+            <p class="tiny muted" style="margin:6px 0 0 0;">Build stamp: <span id="buildStamp"></span></p>
+          </div>
+        </details>
       </div>
     </section>
 
