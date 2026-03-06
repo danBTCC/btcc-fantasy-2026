@@ -589,6 +589,9 @@ if (root.__eventMeta?.resultsLocked === true) {
             <td style="padding:8px; border-bottom:1px solid var(--border);">${cats || "—"}</td>
             <td style="padding:8px; border-bottom:1px solid var(--border);">${active}</td>
             <td style="padding:8px; border-bottom:1px solid var(--border);" class="tiny muted">${doc.id}</td>
+            <td style="padding:8px; border-bottom:1px solid var(--border); text-align:right;">
+              <button type="button" class="tile tinyBtn" data-delete-driver="${doc.id}" style="padding:6px 10px;">Delete</button>
+            </td>
           </tr>
         `;
       });
@@ -604,6 +607,7 @@ if (root.__eventMeta?.resultsLocked === true) {
                 <th style="text-align:left; padding:8px;">Category</th>
                 <th style="text-align:left; padding:8px;">Active</th>
                 <th style="text-align:left; padding:8px;">Doc ID</th>
+                <th style="text-align:right; padding:8px;">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -612,6 +616,32 @@ if (root.__eventMeta?.resultsLocked === true) {
           </table>
         </div>
       `;
+
+      mount.querySelectorAll("[data-delete-driver]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const driverId = btn.getAttribute("data-delete-driver");
+          if (!driverId || !window.btccDb) return;
+
+          const ok = window.confirm(`Delete driver "${driverId}"? This cannot be undone.`);
+          if (!ok) return;
+
+          try {
+            btn.disabled = true;
+            btn.textContent = "Deleting…";
+
+            await window.btccDb.collection("drivers").doc(driverId).delete();
+
+            console.log("✅ Driver deleted:", driverId);
+            await loadAdminDriverList(root);
+            await loadAdminDrivers(root);
+          } catch (err) {
+            console.error("❌ Delete driver failed:", err);
+            alert(err?.message || "Failed to delete driver");
+            btn.disabled = false;
+            btn.textContent = "Delete";
+          }
+        });
+      });
     } catch (err) {
       console.error("❌ loadAdminDriverList failed:", err);
       mount.innerHTML = `<div class="tiny muted">Failed to load drivers: ${err?.message || err}</div>`;
