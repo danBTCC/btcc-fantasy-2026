@@ -447,3 +447,7 @@ th {
   color: var(--muted);
   word-break: break-word;
 }
+
+.homeNewsText {
+  white-space: pre-line;
+}
