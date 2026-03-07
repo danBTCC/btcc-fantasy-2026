@@ -1564,6 +1564,15 @@ if (banner) {
             <div id="admin-teams-msg" class="tiny muted" style="margin-top:8px;"></div>
             <button type="button" id="admin-refresh-teams" class="tile tinyBtn" style="margin-top:10px;">Refresh teams standings preview</button>
             <div id="admin-teams-preview" class="note" style="margin-top:10px;" hidden></div>
+
+            <div style="height:10px;"></div>
+
+            <strong>Driver standings rebuild (I3.3)</strong><br>
+            <span class="tiny muted">Aggregates fantasy driver points from event_scores, ranks drivers, and assigns tiers using the 7 / 10 / 7 split for Event 2+.</span>
+            <button type="button" id="admin-rebuild-drivers-i3" class="tile" style="margin-top:10px;">Rebuild DRIVER standings up to selected event</button>
+            <div id="admin-drivers-standings-msg" class="tiny muted" style="margin-top:8px;"></div>
+            <button type="button" id="admin-refresh-drivers-standings" class="tile tinyBtn" style="margin-top:10px;">Refresh driver standings preview</button>
+            <div id="admin-drivers-standings-preview" class="note" style="margin-top:10px;" hidden></div>
           </div>
         </div>
       </div>
@@ -1590,10 +1599,18 @@ if (banner) {
         await loadStandingsTeamsPreview(root);
       };
     }
+    // Driver standings preview (I3.3)
+    const driversRefreshBtn = mount.querySelector("#admin-refresh-drivers-standings");
+    if (driversRefreshBtn) {
+      driversRefreshBtn.onclick = async () => {
+        await loadStandingsDriversPreview(root);
+      };
+    }
     // Auto-refresh preview when panel renders (best-effort)
     loadEventScoresPreview(root);
     loadStandingsPlayersPreview(root);
     loadStandingsTeamsPreview(root);
+    loadStandingsDriversPreview(root);
 
     // H7.2: Lock results (writes to events/{eventId})
     const lockBtn = mount.querySelector("#admin-lock-results");
@@ -1753,6 +1770,30 @@ if (banner) {
           setTeamsMsg(e?.message || String(e));
         } finally {
           teamsBtn.disabled = false;
+        }
+      };
+    }
+    // Driver standings rebuild (I3.3)
+    const driversBtn = mount.querySelector("#admin-rebuild-drivers-i3");
+    const driversMsg = mount.querySelector("#admin-drivers-standings-msg");
+    const setDriversMsg = (t) => {
+      if (driversMsg) driversMsg.textContent = t;
+    };
+    if (driversBtn) {
+      driversBtn.onclick = async () => {
+        try {
+          if (!window.btccDb) throw new Error("Database not ready");
+          const eid = root.__selectedEventId;
+          if (!eid) throw new Error("No event selected");
+          driversBtn.disabled = true;
+          setDriversMsg("Rebuilding driver standings…");
+          const result = await rebuildStandingsDriversI3_3(root);
+          setDriversMsg(`Rebuilt driver standings for ${result.driverCount} driver(s) through Event ${result.throughEventNo}.`);
+          await loadStandingsDriversPreview(root);
+        } catch (e) {
+          setDriversMsg(e?.message || String(e));
+        } finally {
+          driversBtn.disabled = false;
         }
       };
     }
@@ -1981,6 +2022,8 @@ if (banner) {
             // PHASE I3: Rebuild standings after event_scores write
             await rebuildStandingsPlayersI3(root);
             await loadStandingsPlayersPreview(root);
+            await rebuildStandingsDriversI3_3(root);
+            await loadStandingsDriversPreview(root);
           }
         } catch (e) {
           console.error("❌ Engine dry run failed:", e);
@@ -2401,3 +2444,222 @@ if (banner) {
       mount.innerHTML = `<strong>Teams standings</strong><br><span class="tiny muted">Failed to load: ${e?.message || e}</span>`;
     }
   }
+// PHASE I3.3: Rebuild standings_drivers/season_2026/drivers/* from event_scores up to selected event
+async function rebuildStandingsDriversI3_3(root) {
+  if (!window.btccDb) throw new Error("Database not ready");
+  const eid = root.__selectedEventId;
+  if (!eid) throw new Error("No event selected");
+
+  const eventSnap = await window.btccDb.collection("events").doc(eid).get();
+  if (!eventSnap.exists) throw new Error("Selected event not found");
+  const eventData = eventSnap.data() || {};
+  const selectedEventNo = eventData.eventNo;
+  if (typeof selectedEventNo !== "number") throw new Error("Selected event missing eventNo");
+
+  const eventsSnap = await window.btccDb.collection("events")
+    .where("eventNo", "<=", selectedEventNo)
+    .orderBy("eventNo")
+    .get();
+
+  const eventList = eventsSnap.docs.map((doc) => ({ id: doc.id, eventNo: doc.data().eventNo }));
+
+  const driversSnap = await window.btccDb.collection("drivers").get();
+  const driverMeta = new Map();
+  driversSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    driverMeta.set(doc.id, {
+      name: d.name || doc.id,
+      active: d.active !== false,
+    });
+  });
+
+  const totals = new Map();
+
+  for (const ev of eventList) {
+    const scoresSnap = await window.btccDb.collection("event_scores").doc(ev.id).collection("players").get();
+    scoresSnap.forEach((doc) => {
+      const data = doc.data() || {};
+      const source = data.perDriverBreakdown || data.perDriverBySession || data.perDriver || {};
+
+      Object.entries(source).forEach(([driverId, value]) => {
+        let points = 0;
+        if (typeof value === "number") {
+          points = value;
+        } else if (value && typeof value === "object") {
+          points = Number(value.total ?? value.points ?? 0);
+        }
+
+        let rec = totals.get(driverId);
+        if (!rec) {
+          const meta = driverMeta.get(driverId) || { name: driverId, active: true };
+          rec = {
+            driverId,
+            name: meta.name,
+            active: meta.active,
+            pointsTotal: 0,
+          };
+          totals.set(driverId, rec);
+        }
+
+        rec.pointsTotal += Number(points || 0);
+      });
+    });
+  }
+
+  driversSnap.forEach((doc) => {
+    if (!totals.has(doc.id)) {
+      const meta = driverMeta.get(doc.id) || { name: doc.id, active: true };
+      totals.set(doc.id, {
+        driverId: doc.id,
+        name: meta.name,
+        active: meta.active,
+        pointsTotal: 0,
+      });
+    }
+  });
+
+  const ranked = Array.from(totals.values())
+    .sort((a, b) => {
+      const pointsDiff = Number(b.pointsTotal || 0) - Number(a.pointsTotal || 0);
+      if (pointsDiff !== 0) return pointsDiff;
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    })
+    .map((row, index) => {
+      const position = index + 1;
+      let tier = null;
+      if (selectedEventNo >= 2) {
+        if (position <= 7) tier = "high";
+        else if (position <= 17) tier = "middle";
+        else tier = "lower";
+      }
+      return {
+        ...row,
+        position,
+        tier,
+      };
+    });
+
+  const seasonRef = window.btccDb.collection("standings_drivers").doc("season_2026");
+  const batch = window.btccDb.batch();
+
+  batch.set(
+    seasonRef,
+    {
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      throughEventId: eid,
+      throughEventNo: selectedEventNo,
+      driverCount: ranked.length,
+      tierMode: selectedEventNo >= 2 ? "7-10-7" : "event1-free-choice",
+    },
+    { merge: true }
+  );
+
+  ranked.forEach((row) => {
+    batch.set(
+      seasonRef.collection("drivers").doc(row.driverId),
+      {
+        driverId: row.driverId,
+        name: row.name,
+        active: row.active,
+        pointsTotal: Number(row.pointsTotal || 0),
+        position: row.position,
+        tier: row.tier,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    batch.set(
+      window.btccDb.collection("drivers").doc(row.driverId),
+      {
+        pointsTotal: Number(row.pointsTotal || 0),
+        position: row.position,
+        tier: row.tier,
+        tierUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  });
+
+  await batch.commit();
+
+  return {
+    driverCount: ranked.length,
+    throughEventNo: selectedEventNo,
+    throughEventId: eid,
+  };
+}
+
+// Read-only preview of standings_drivers/season_2026/drivers/*
+async function loadStandingsDriversPreview(root) {
+  const mount = root.querySelector("#admin-drivers-standings-preview");
+  if (!mount) return;
+
+  const eid = root.__selectedEventId;
+  if (!eid) {
+    mount.hidden = true;
+    mount.innerHTML = "";
+    return;
+  }
+
+  if (!window.btccDb) {
+    mount.hidden = false;
+    mount.innerHTML = `<strong>Driver standings</strong><br><span class="tiny muted">Waiting for database…</span>`;
+    return;
+  }
+
+  mount.hidden = false;
+  mount.innerHTML = `<strong>Driver standings</strong><br><span class="tiny muted">Loading…</span>`;
+
+  try {
+    let snap;
+    try {
+      snap = await window.btccDb
+        .collection("standings_drivers")
+        .doc("season_2026")
+        .collection("drivers")
+        .orderBy("position")
+        .get();
+    } catch (err) {
+      snap = await window.btccDb
+        .collection("standings_drivers")
+        .doc("season_2026")
+        .collection("drivers")
+        .get();
+    }
+
+    if (snap.empty) {
+      mount.innerHTML = `<strong>Driver standings</strong><br><span class="tiny muted">No driver standings found yet. Run the driver rebuild first.</span>`;
+      return;
+    }
+
+    const rows = snap.docs
+      .map((doc) => {
+        const x = doc.data() || {};
+        return {
+          name: x.name || doc.id,
+          position: Number(x.position || 999),
+          pointsTotal: Number(x.pointsTotal || 0),
+          tier: x.tier || (Number(x.position || 0) >= 1 ? "—" : "—"),
+        };
+      })
+      .sort((a, b) => {
+        const posDiff = a.position - b.position;
+        if (posDiff !== 0) return posDiff;
+        return a.name.localeCompare(b.name);
+      });
+
+    mount.innerHTML = `
+      <strong>Driver standings</strong>
+      <div class="tiny muted" style="margin-top:6px;">Showing ${rows.length} driver(s) from standings_drivers/season_2026/drivers</div>
+      <div style="margin-top:10px; border:1px solid var(--border); border-radius:12px; padding:10px; background:rgba(255,255,255,.02);">
+        <ol class="list" style="margin:0; padding-left:18px;">
+          ${rows.map((r) => `<li class="tiny" style="margin:6px 0;">${r.position}. ${r.name} — ${r.pointsTotal} pts <span class="muted">(${r.tier || "—"})</span></li>`).join("")}
+        </ol>
+      </div>
+    `;
+  } catch (e) {
+    console.error("❌ loadStandingsDriversPreview failed:", e);
+    mount.innerHTML = `<strong>Driver standings</strong><br><span class="tiny muted">Failed to load: ${e?.message || e}</span>`;
+  }
+}
