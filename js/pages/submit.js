@@ -6,6 +6,15 @@
     el.innerHTML = html;
   }
 
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   async function handleLogin(e, root) {
     e.preventDefault();
 
@@ -353,6 +362,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
   Selected: <strong id="team-count">0</strong> •
   Spend: <strong id="team-spend">£0.00</strong> •
   Remaining: <strong id="team-remaining">£0.00</strong>
+  <div id="team-tier-summary" class="tiny muted" style="margin-top:6px;"></div>
 </div>
 
 <div id="team-validation" class="note warnNote" style="margin-top:10px;" hidden>
@@ -412,51 +422,38 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
   }
 
   async function loadDriverPicker(root, playerBudget, uid, displayName) {
-  const box = root.querySelector("#driver-picker");
-  if (!box) return;
+    const box = root.querySelector("#driver-picker");
+    if (!box) return;
 
-  // Ensure event context is available (loadNextEventSummary sets root.__eventContext async)
-  const waitForEventContext = async () => {
-    for (let i = 0; i < 30; i++) { // up to ~3s
-      const ctx = root.__eventContext || {};
-      if (ctx.eventId) return ctx;
-      await new Promise(r => setTimeout(r, 100));
-    }
-    return root.__eventContext || {};
-  };
+    const waitForEventContext = async () => {
+      for (let i = 0; i < 30; i++) {
+        const ctx = root.__eventContext || {};
+        if (ctx.eventId) return ctx;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      return root.__eventContext || {};
+    };
 
-  const initialCtx = await waitForEventContext();
-  if (!initialCtx.eventId) {
-    box.innerHTML = `<div class="note warnNote">Waiting for event…</div>`;
-    return;
-  }
-
-  if (!window.btccDb) {
-    box.textContent = "Waiting for database…";
-    setTimeout(() => loadDriverPicker(root, playerBudget), 300);
-    return;
-  }
-
-  box.textContent = "Loading drivers…";
-
-  try {
-    const snap = await window.btccDb.collection("drivers").orderBy("name").get();
-
-    if (snap.empty) {
-      box.textContent = "No drivers yet";
+    const initialCtx = await waitForEventContext();
+    if (!initialCtx.eventId) {
+      box.innerHTML = `<div class="note warnNote">Waiting for event…</div>`;
       return;
     }
 
-    // Local selection state for now (UI-only)
-    const selected = new Set();
+    if (!window.btccDb) {
+      box.textContent = "Waiting for database…";
+      setTimeout(() => loadDriverPicker(root, playerBudget, uid, displayName), 300);
+      return;
+    }
+
+    box.textContent = "Loading drivers…";
 
     const validationEl = root.querySelector("#team-validation");
     const saveBtn = root.querySelector("#team-save");
+    const tierSummaryEl = root.querySelector("#team-tier-summary");
 
     const getEventContext = () => root.__eventContext || {};
 
-    // Lock state must be evaluated dynamically because the countdown can cross the lockout
-    // while the user is on the page.
     const isLockedNow = () => {
       const ctx = getEventContext();
       if (ctx.open === false) return true;
@@ -464,6 +461,36 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         return Date.now() >= ctx.lockout;
       }
       return false;
+    };
+
+    const isTierEvent = () => Number(getEventContext().eventNo || 0) >= 2;
+
+    const fmtMoney = (n) => `£${(Number(n) || 0).toFixed(2)}`;
+
+    const normaliseDriverIds = (data) => {
+      if (!data || typeof data !== "object") return [];
+      const candidates = [
+        data.driverIds,
+        data.teamIds,
+        data.team,
+        data.drivers,
+        data.selectedDrivers,
+        data.picks,
+        data.selection,
+      ];
+      const arr = candidates.find((x) => Array.isArray(x)) || [];
+      return Array.from(
+        new Set(
+          arr
+            .map((item) => {
+              if (!item) return null;
+              if (typeof item === "string") return item;
+              if (typeof item === "object") return item.driverId || item.id || item.ref || null;
+              return null;
+            })
+            .filter(Boolean)
+        )
+      );
     };
 
     function showLockedMessage() {
@@ -476,7 +503,6 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       }
     }
 
-    // Separate label for last-saved so the button can always stay as an action.
     let lastSavedEl = root.querySelector("#team-last-saved");
     if (!lastSavedEl) {
       lastSavedEl = document.createElement("div");
@@ -491,263 +517,390 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       if (isLockedNow()) saveBtn.disabled = true;
     }
 
-    // Load existing submission for this event (if any) and preselect drivers
-    async function loadExistingSubmission() {
+    try {
       const ctx = getEventContext();
-      const eventId = ctx.eventId;
-      if (!eventId || !uid) return;
+      const currentEventNo = Number(ctx.eventNo || 0);
 
-      try {
-        const subSnap = await window.btccDb
-          .collection("submissions")
-          .doc(eventId)
-          .collection("entries")
-          .doc(uid)
-          .get();
+      const [driversSnap, eventsSnap, playerSnap] = await Promise.all([
+        window.btccDb.collection("drivers").orderBy("name").get(),
+        window.btccDb.collection("events").orderBy("eventNo").get(),
+        window.btccDb.collection("players").doc(uid).get(),
+      ]);
 
-        if (!subSnap.exists) return;
+      if (driversSnap.empty) {
+        box.textContent = "No drivers yet";
+        return;
+      }
 
-        const sub = subSnap.data() || {};
-        // Support both current (driverIds) and older naming (teamIds)
-        const ids = Array.isArray(sub.driverIds)
-          ? sub.driverIds
-          : Array.isArray(sub.teamIds)
-          ? sub.teamIds
-          : [];
+      const playerData = playerSnap.exists ? (playerSnap.data() || {}) : {};
+      const sldDriverId = playerData.sldDriverId || playerData.sld || null;
 
-        ids.forEach((id) => {
-          const row = box.querySelector(`[data-driver-id="${id}"]`);
-          if (!row) return;
-          selected.add(id);
-          const btn = row.querySelector("[data-action='toggle']");
-          if (btn) btn.textContent = "Selected";
-          row.style.opacity = "1";
+      const previousEvents = eventsSnap.docs
+        .map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+        .filter((event) => Number(event.eventNo || 0) < currentEventNo)
+        .sort((a, b) => Number(a.eventNo || 0) - Number(b.eventNo || 0))
+        .slice(-2);
+
+      const previousSelections = [];
+      for (const event of previousEvents) {
+        let subSnap = null;
+        try {
+          subSnap = await window.btccDb
+            .collection("submissions")
+            .doc(event.id)
+            .collection("entries")
+            .doc(uid)
+            .get();
+        } catch (err) {
+          console.warn(`⚠️ Could not read submissions/${event.id}/entries/${uid}:`, err);
+        }
+
+        if (!subSnap || !subSnap.exists) {
+          try {
+            subSnap = await window.btccDb
+              .collection("entries")
+              .doc(event.id)
+              .collection("entries")
+              .doc(uid)
+              .get();
+          } catch (err) {
+            console.warn(`⚠️ Could not read entries/${event.id}/entries/${uid}:`, err);
+          }
+        }
+
+        previousSelections.push({
+          eventId: event.id,
+          eventNo: Number(event.eventNo || 0),
+          driverIds: subSnap && subSnap.exists ? normaliseDriverIds(subSnap.data()) : [],
         });
-
-        updateSummary();
-
-        if (sub.updatedAt) {
-          const d = typeof sub.updatedAt.toDate === "function" ? sub.updatedAt.toDate() : null;
-          if (d && lastSavedEl) lastSavedEl.textContent = `Last saved: ${d.toLocaleString("en-GB")}`;
-        }
-
-        if (saveBtn && !isLockedNow()) {
-          saveBtn.textContent = "Save changes";
-          saveBtn.disabled = false;
-        }
-
-        console.log("✅ Loaded existing submission:", eventId, uid);
-      } catch (e) {
-        console.warn("⚠️ Could not load existing submission:", e);
-      }
-    }
-
-    async function saveSubmission() {
-      const ctx = getEventContext();
-      const eventId = ctx.eventId;
-
-      if (!eventId) {
-        if (validationEl) {
-          validationEl.hidden = false;
-          validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Event not ready yet. Try again in a moment.</span>`;
-        }
-        return;
       }
 
-      // Client-side lockout enforcement for now
-      if (isLockedNow()) {
-        if (validationEl) {
-          validationEl.hidden = false;
-          validationEl.innerHTML = `<strong>Locked:</strong><br><span class="tiny muted">Submissions are closed for this event.</span>`;
+      const consecutiveCounts = new Map();
+      previousSelections.forEach((entry) => {
+        entry.driverIds.forEach((driverId) => {
+          consecutiveCounts.set(driverId, (consecutiveCounts.get(driverId) || 0) + 1);
+        });
+      });
+
+      const drivers = driversSnap.docs.map((doc) => {
+        const d = doc.data() || {};
+        const selectionsInLastTwo = Number(consecutiveCounts.get(doc.id) || 0);
+        const isSLD = !!sldDriverId && sldDriverId === doc.id;
+        const blocked = selectionsInLastTwo >= 2 && !isSLD;
+        return {
+          id: doc.id,
+          name: d.name ?? "Unnamed",
+          price: Number(d.price ?? d.cost ?? d.value ?? 0),
+          tier: d.tier ?? null,
+          selectionsInLastTwo,
+          blocked,
+          isSLD,
+        };
+      });
+
+      const driversById = new Map(drivers.map((driver) => [driver.id, driver]));
+      const selected = new Set();
+
+      const updateRowState = (row) => {
+        if (!row) return;
+        const id = row.getAttribute("data-driver-id");
+        const driver = driversById.get(id);
+        const btn = row.querySelector("[data-action='toggle']");
+        if (!driver || !btn) return;
+
+        const isSelected = selected.has(id);
+        if (isSelected) {
+          btn.textContent = "Selected";
+          row.style.opacity = "1";
+          row.style.borderColor = "rgba(255,255,255,.16)";
+        } else if (driver.blocked) {
+          btn.textContent = "Blocked";
+          row.style.opacity = "0.72";
+          row.style.borderColor = "rgba(250, 204, 21, .25)";
+        } else {
+          btn.textContent = "Select";
+          row.style.opacity = "0.9";
+          row.style.borderColor = "var(--border)";
         }
-        return;
-      }
 
-      const driverIds = Array.from(selected);
-
-      // Compute total cost from rendered rows
-      const totalCost = driverIds.reduce((sum, id) => {
-        const price = Number(box.querySelector(`[data-driver-id="${id}"]`)?.dataset?.price || 0);
-        return sum + price;
-      }, 0);
-
-      const payload = {
-        uid,
-        displayName: displayName || "Player",
-        driverIds,
-        teamIds: driverIds, // compatibility mirror
-        totalCost: Number(totalCost) || 0,
-        eventId,
-        eventNo: ctx.eventNo ?? null,
-        venue: ctx.venue ?? null,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        btn.disabled = isLockedNow();
       };
 
-      const ref = window.btccDb.collection("submissions").doc(eventId).collection("entries").doc(uid);
+      const updateSummary = () => {
+        const countEl = root.querySelector("#team-count");
+        const spendEl = root.querySelector("#team-spend");
+        const remEl = root.querySelector("#team-remaining");
 
-      try {
-        // If first time, set createdAt too (merge keeps it if already exists)
-        await ref.set({ ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        const selectedDrivers = Array.from(selected)
+          .map((id) => driversById.get(id))
+          .filter(Boolean);
 
-        if (validationEl) validationEl.hidden = true;
-        if (lastSavedEl) lastSavedEl.textContent = `Last saved: ${new Date().toLocaleString("en-GB")}`;
-        if (saveBtn && !isLockedNow()) {
-          saveBtn.textContent = "Save changes";
-          saveBtn.disabled = false;
+        const total = selectedDrivers.reduce((sum, driver) => sum + Number(driver.price || 0), 0);
+        const budgetNum = Number(playerBudget) || 0;
+        const remaining = budgetNum - total;
+
+        const tierCounts = { high: 0, middle: 0, lower: 0 };
+        selectedDrivers.forEach((driver) => {
+          const tierKey = String(driver.tier || "").toLowerCase();
+          if (tierCounts[tierKey] !== undefined) tierCounts[tierKey] += 1;
+        });
+
+        if (countEl) countEl.textContent = String(selected.size);
+        if (spendEl) spendEl.textContent = fmtMoney(total);
+        if (remEl) remEl.textContent = fmtMoney(remaining);
+
+        if (tierSummaryEl) {
+          if (isTierEvent()) {
+            tierSummaryEl.innerHTML = `High: <strong>${tierCounts.high}</strong>/1 min • max 2 &nbsp;|&nbsp; Middle: <strong>${tierCounts.middle}</strong>/1 min • max 2 &nbsp;|&nbsp; Lower: <strong>${tierCounts.lower}</strong>/1 min • max 2`;
+          } else {
+            tierSummaryEl.textContent = "Event 1: free choice. No tier rules yet.";
+          }
         }
 
-        console.log("✅ Submission saved:", eventId, uid, payload);
-      } catch (err) {
-        console.error("❌ Submission save failed:", err);
+        const issues = [];
+
+        if (budgetNum <= 0) {
+          issues.push("Budget not set yet.");
+        }
+
+        if (selected.size < 3) {
+          issues.push("Select at least 3 drivers.");
+        }
+
+        if (selected.size > 6) {
+          issues.push("Maximum 6 drivers allowed.");
+        }
+
+        if (remaining < 0) {
+          issues.push(`Over budget by ${fmtMoney(Math.abs(remaining))}.`);
+        }
+
+        const blockedSelected = selectedDrivers.filter((driver) => driver.blocked && !driver.isSLD);
+        if (blockedSelected.length > 0) {
+          issues.push(`Cannot select drivers already used in the previous 2 events: ${blockedSelected.map((driver) => escapeHtml(driver.name)).join(", ")}.`);
+        }
+
+        if (isTierEvent()) {
+          const missingTierData = selectedDrivers.some((driver) => !driver.tier);
+          if (missingTierData) {
+            issues.push("Tier data is not ready yet for all selected drivers.");
+          }
+          if (tierCounts.high < 1) issues.push("Select at least 1 High tier driver.");
+          if (tierCounts.middle < 1) issues.push("Select at least 1 Middle tier driver.");
+          if (tierCounts.lower < 1) issues.push("Select at least 1 Lower tier driver.");
+          if (tierCounts.high > 2) issues.push("Maximum 2 High tier drivers allowed.");
+          if (tierCounts.middle > 2) issues.push("Maximum 2 Middle tier drivers allowed.");
+          if (tierCounts.lower > 2) issues.push("Maximum 2 Lower tier drivers allowed.");
+        }
+
+        const valid = issues.length === 0;
+
         if (validationEl) {
-          validationEl.hidden = false;
-          validationEl.innerHTML = `<strong>Save failed.</strong><br><span class="tiny muted">${err?.message || err}</span>`;
+          if (valid) {
+            validationEl.hidden = true;
+          } else {
+            validationEl.hidden = false;
+            validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">${issues.join("<br>")}</span>`;
+          }
+        }
+
+        if (saveBtn) {
+          if (isLockedNow()) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Locked";
+          } else {
+            saveBtn.disabled = !valid;
+            saveBtn.textContent = "Save changes";
+          }
+        }
+      };
+
+      async function loadExistingSubmission() {
+        const eventId = getEventContext().eventId;
+        if (!eventId || !uid) return;
+
+        try {
+          const subSnap = await window.btccDb
+            .collection("submissions")
+            .doc(eventId)
+            .collection("entries")
+            .doc(uid)
+            .get();
+
+          if (!subSnap.exists) return;
+
+          const ids = normaliseDriverIds(subSnap.data());
+          ids.forEach((id) => {
+            if (!driversById.has(id)) return;
+            selected.add(id);
+            const row = box.querySelector(`[data-driver-id="${id}"]`);
+            updateRowState(row);
+          });
+
+          updateSummary();
+
+          const sub = subSnap.data() || {};
+          if (sub.updatedAt) {
+            const d = typeof sub.updatedAt.toDate === "function" ? sub.updatedAt.toDate() : null;
+            if (d && lastSavedEl) lastSavedEl.textContent = `Last saved: ${d.toLocaleString("en-GB")}`;
+          }
+
+          if (saveBtn && !isLockedNow()) {
+            saveBtn.textContent = "Save changes";
+            saveBtn.disabled = false;
+          }
+
+          console.log("✅ Loaded existing submission:", eventId, uid);
+        } catch (e) {
+          console.warn("⚠️ Could not load existing submission:", e);
         }
       }
-    }
 
-    if (saveBtn) {
-      saveBtn.onclick = saveSubmission;
-    }
+      async function saveSubmission() {
+        const eventId = getEventContext().eventId;
 
-    // Phase G5: validation (UI-only)
-    const MIN_DRIVERS = 3;
-    const MAX_DRIVERS = 6;
+        if (!eventId) {
+          if (validationEl) {
+            validationEl.hidden = false;
+            validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Event not ready yet. Try again in a moment.</span>`;
+          }
+          return;
+        }
 
-    const fmtMoney = (n) => `£${(Number(n) || 0).toFixed(2)}`;
+        if (isLockedNow()) {
+          if (validationEl) {
+            validationEl.hidden = false;
+            validationEl.innerHTML = `<strong>Locked:</strong><br><span class="tiny muted">Submissions are closed for this event.</span>`;
+          }
+          return;
+        }
 
-    const updateSummary = () => {
-      const countEl = root.querySelector("#team-count");
-      const spendEl = root.querySelector("#team-spend");
-      const remEl = root.querySelector("#team-remaining");
+        const driverIds = Array.from(selected);
+        const totalCost = driverIds.reduce((sum, id) => sum + Number(driversById.get(id)?.price || 0), 0);
 
-      const total = Array.from(selected).reduce((sum, id) => {
-        const price = Number(root.querySelector(`[data-driver-id="${id}"]`)?.dataset?.price || 0);
-        return sum + price;
-      }, 0);
+        const payload = {
+          uid,
+          displayName: displayName || "Player",
+          driverIds,
+          teamIds: driverIds,
+          totalCost: Number(totalCost) || 0,
+          eventId,
+          eventNo: getEventContext().eventNo ?? null,
+          venue: getEventContext().venue ?? null,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        };
 
-      const budgetNum = Number(playerBudget) || 0;
-      const remaining = budgetNum - total;
+        const ref = window.btccDb.collection("submissions").doc(eventId).collection("entries").doc(uid);
 
-      if (countEl) countEl.textContent = String(selected.size);
-      if (spendEl) spendEl.textContent = fmtMoney(total);
-      if (remEl) remEl.textContent = fmtMoney(remaining);
+        try {
+          await ref.set({ ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
 
-      // Validation rules (UI-only)
-      const issues = [];
+          if (validationEl) validationEl.hidden = true;
+          if (lastSavedEl) lastSavedEl.textContent = `Last saved: ${new Date().toLocaleString("en-GB")}`;
+          if (saveBtn && !isLockedNow()) {
+            saveBtn.textContent = "Save changes";
+            saveBtn.disabled = false;
+          }
 
-      if (budgetNum <= 0) {
-        issues.push("Budget not set yet.");
-      }
-
-      if (selected.size < MIN_DRIVERS) {
-        issues.push(`Select at least ${MIN_DRIVERS} drivers.`);
-      }
-
-      if (selected.size > MAX_DRIVERS) {
-        issues.push(`Maximum ${MAX_DRIVERS} drivers allowed.`);
-      }
-
-      if (remaining < 0) {
-        issues.push(`Over budget by ${fmtMoney(Math.abs(remaining))}.`);
-      }
-
-      const valid = issues.length === 0;
-
-      if (validationEl) {
-        if (valid) {
-          validationEl.hidden = true;
-        } else {
-          validationEl.hidden = false;
-          validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">${issues.join("<br>")}</span>`;
+          console.log("✅ Submission saved:", eventId, uid, payload);
+        } catch (err) {
+          console.error("❌ Submission save failed:", err);
+          if (validationEl) {
+            validationEl.hidden = false;
+            validationEl.innerHTML = `<strong>Save failed.</strong><br><span class="tiny muted">${escapeHtml(err?.message || err)}</span>`;
+          }
         }
       }
 
       if (saveBtn) {
-        if (isLockedNow()) {
-          saveBtn.disabled = true;
-          saveBtn.textContent = "Locked";
-        } else {
-          saveBtn.disabled = !valid;
-          saveBtn.textContent = "Save changes";
-        }
+        saveBtn.onclick = saveSubmission;
       }
-    };
 
-    box.innerHTML = `
-      <ul class="list">
-        ${snap.docs
-          .map((doc) => {
-            const d = doc.data() || {};
-            const name = d.name ?? "Unnamed";
-            const price = Number(d.price ?? d.cost ?? 0); // supports either field name
-            return `
-              <li class="driverPickRow" data-driver-id="${doc.id}" data-price="${price}">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                  <div>
-                    <strong>${name}</strong><br>
-                    <span class="tiny muted">${fmtMoney(price)}</span>
+      box.innerHTML = `
+        <ul class="list">
+          ${drivers
+            .map((driver) => {
+              const tierLabel = isTierEvent() ? (driver.tier ? `${String(driver.tier).charAt(0).toUpperCase()}${String(driver.tier).slice(1)}` : "Tier TBD") : "Free choice";
+              const streakLabel = `${driver.selectionsInLastTwo}/2`;
+              const sldLabel = driver.isSLD ? " • SLD" : "";
+              const blockedLabel = driver.blocked ? " • Blocked next event" : "";
+              return `
+                <li class="driverPickRow" data-driver-id="${driver.id}" data-price="${driver.price}" data-tier="${escapeHtml(driver.tier || "")}" data-blocked="${driver.blocked ? "1" : "0"}">
+                  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                    <div>
+                      <strong>${escapeHtml(driver.name)}</strong><br>
+                      <span class="tiny muted">${fmtMoney(driver.price)} • ${escapeHtml(tierLabel)} • ${escapeHtml(streakLabel)}${escapeHtml(sldLabel)}${escapeHtml(blockedLabel)}</span>
+                    </div>
+                    <button type="button" class="tile tinyBtn" data-action="toggle">${driver.blocked ? "Blocked" : "Select"}</button>
                   </div>
-                  <button type="button" class="tile tinyBtn" data-action="toggle" ${isLockedNow() ? "disabled" : ""}>Select</button>
-                </div>
-              </li>
-            `;
-          })
-          .join("")}
-      </ul>
-    `;
+                </li>
+              `;
+            })
+            .join("")}
+        </ul>
+      `;
 
-    box.querySelectorAll("[data-action='toggle']").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (isLockedNow()) {
-          showLockedMessage();
-          return;
-        }
-        const row = btn.closest("[data-driver-id]");
-        const id = row?.getAttribute("data-driver-id");
-        if (!id) return;
+      box.querySelectorAll("[data-action='toggle']").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (isLockedNow()) {
+            showLockedMessage();
+            return;
+          }
 
-        if (selected.has(id)) {
-          selected.delete(id);
-          btn.textContent = "Select";
-          row.style.opacity = "0.85";
-        } else {
-          if (selected.size >= MAX_DRIVERS) {
+          const row = btn.closest("[data-driver-id]");
+          const id = row?.getAttribute("data-driver-id");
+          const driver = id ? driversById.get(id) : null;
+          if (!id || !driver) return;
+
+          if (selected.has(id)) {
+            selected.delete(id);
+            updateRowState(row);
+            updateSummary();
+            return;
+          }
+
+          if (driver.blocked && !driver.isSLD) {
             if (validationEl) {
               validationEl.hidden = false;
-              validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Maximum ${MAX_DRIVERS} drivers allowed.</span>`;
+              validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">${escapeHtml(driver.name)} has already been selected in the previous 2 events.</span>`;
             }
             return;
           }
+
+          if (selected.size >= 6) {
+            if (validationEl) {
+              validationEl.hidden = false;
+              validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Maximum 6 drivers allowed.</span>`;
+            }
+            return;
+          }
+
           selected.add(id);
-          btn.textContent = "Selected";
-          row.style.opacity = "1";
-        }
-
-        updateSummary();
+          updateRowState(row);
+          updateSummary();
+        });
       });
-    });
 
-    // Preload saved selection (if any)
-    await loadExistingSubmission();
+      box.querySelectorAll("[data-driver-id]").forEach((row) => updateRowState(row));
 
-    if (isLockedNow()) {
-      showLockedMessage();
+      await loadExistingSubmission();
+
+      if (isLockedNow()) {
+        showLockedMessage();
+      }
+
+      updateSummary();
+      console.log("✅ Driver picker loaded:", drivers.length);
+    } catch (err) {
+      console.error("❌ loadDriverPicker failed:", err);
+      box.innerHTML = `
+        <div class="note warnNote">
+          Failed to load drivers.<br>
+          <span class="tiny muted">${escapeHtml(err?.message || err)}</span>
+        </div>
+      `;
     }
-
-    // Initial summary
-    updateSummary();
-    console.log("✅ Driver picker loaded:", snap.size);
-  } catch (err) {
-    console.error("❌ loadDriverPicker failed:", err);
-    box.innerHTML = `
-      <div class="note warnNote">
-        Failed to load drivers.<br>
-        <span class="tiny muted">${err?.message || err}</span>
-      </div>
-    `;
   }
-}
 
   async function loadSubmit() {
     const view = document.getElementById("view-submit");
