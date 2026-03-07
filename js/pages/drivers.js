@@ -202,12 +202,24 @@
       ]);
 
       const selectionRows = drivers
-        .map((driver) => [driver.name || "Unnamed", String(selectionCounts.get(driver.id) || 0)])
+        .map((driver) => {
+          const name = driver.name || "Unnamed";
+          const selections = Number(selectionCounts.get(driver.id) || 0);
+          const points = Number(driverPoints.get(driver.id) || 0);
+          const pps = selections > 0 ? (points / selections).toFixed(1) : "0.0";
+
+          return {
+            name,
+            selections,
+            pps,
+          };
+        })
         .sort((a, b) => {
-          const countDiff = Number(b[1]) - Number(a[1]);
+          const countDiff = b.selections - a.selections;
           if (countDiff !== 0) return countDiff;
-          return a[0].localeCompare(b[0]);
-        });
+          return a.name.localeCompare(b.name);
+        })
+        .map((row, index) => [String(index + 1), row.name, String(row.selections), row.pps]);
 
       const pointsRows = drivers
         .map((driver) => ({
@@ -225,7 +237,7 @@
         ${renderDriverList(drivers)}
         ${renderStatsTable(
           "Driver Selection Count",
-          ["Driver", "Selections"],
+          ["Pos", "Driver", "Selections", "PPS"],
           selectionRows,
           "No submission data yet."
         )}
