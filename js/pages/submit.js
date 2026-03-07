@@ -364,6 +364,10 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
   Remaining: <strong id="team-remaining">£0.00</strong>
   <div id="team-tier-summary" class="tiny muted" style="margin-top:6px;"></div>
 </div>
+<div class="note" style="margin-top:10px;" id="selected-team-panel">
+  <div style="font-weight:700; margin-bottom:6px;">Your current team</div>
+  <div id="selected-team-list" class="tiny muted">No drivers selected yet.</div>
+</div>
 
 <div id="team-validation" class="note warnNote" style="margin-top:10px;" hidden>
   Validation message
@@ -451,6 +455,9 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
     const validationEl = root.querySelector("#team-validation");
     const saveBtn = root.querySelector("#team-save");
     const tierSummaryEl = root.querySelector("#team-tier-summary");
+    const selectedTeamListEl = root.querySelector("#selected-team-list");
+    let hasInteracted = false;
+    let hasTriedSave = false;
 
     const getEventContext = () => root.__eventContext || {};
 
@@ -638,6 +645,17 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
           .map((id) => driversById.get(id))
           .filter(Boolean);
 
+        // --- New: update selected team panel ---
+        if (selectedTeamListEl) {
+          if (selectedDrivers.length === 0) {
+            selectedTeamListEl.textContent = "No drivers selected yet.";
+          } else {
+            selectedTeamListEl.innerHTML = selectedDrivers
+              .map((driver) => `<div style="margin-bottom:4px;"><strong>${escapeHtml(driver.name)}</strong> <span class="muted">(${fmtMoney(driver.price)})</span></div>`)
+              .join("");
+          }
+        }
+
         const total = selectedDrivers.reduce((sum, driver) => sum + Number(driver.price || 0), 0);
         const budgetNum = Number(playerBudget) || 0;
         const remaining = budgetNum - total;
@@ -701,9 +719,11 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         if (validationEl) {
           if (valid) {
             validationEl.hidden = true;
-          } else {
+          } else if (hasInteracted || hasTriedSave) {
             validationEl.hidden = false;
             validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">${issues.join("<br>")}</span>`;
+          } else {
+            validationEl.hidden = true;
           }
         }
 
@@ -760,6 +780,8 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       }
 
       async function saveSubmission() {
+        hasTriedSave = true;
+        updateSummary();
         const eventId = getEventContext().eventId;
 
         if (!eventId) {
@@ -804,6 +826,14 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
             saveBtn.textContent = "Save changes";
             saveBtn.disabled = false;
           }
+          // Show temporary saved state message
+          if (validationEl) {
+            validationEl.hidden = false;
+            validationEl.innerHTML = `<strong>Saved:</strong><br><span class="tiny muted">Team saved successfully.</span>`;
+            setTimeout(() => {
+              if (validationEl) validationEl.hidden = true;
+            }, 1600);
+          }
 
           console.log("✅ Submission saved:", eventId, uid, payload);
         } catch (err) {
@@ -824,7 +854,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
           ${drivers
             .map((driver) => {
               const tierLabel = isTierEvent() ? (driver.tier ? `${String(driver.tier).charAt(0).toUpperCase()}${String(driver.tier).slice(1)}` : "Tier TBD") : "Free choice";
-              const streakLabel = `${driver.selectionsInLastTwo}/2`;
+              const streakLabel = `Usage: ${driver.selectionsInLastTwo}/2`;
               const sldLabel = driver.isSLD ? " • SLD" : "";
               const blockedLabel = driver.blocked ? " • Blocked next event" : "";
               return `
@@ -874,6 +904,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
           if (!id || !driver) return;
 
           if (selected.has(id)) {
+            hasInteracted = true;
             selected.delete(id);
             updateRowState(row);
             updateSummary();
@@ -896,6 +927,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
             return;
           }
 
+          hasInteracted = true;
           selected.add(id);
           updateRowState(row);
           updateSummary();
