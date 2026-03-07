@@ -201,11 +201,17 @@
         loadDriverPoints(db, events),
       ]);
 
+      const getDriverPointsTotal = (driver) => {
+        if (typeof driver.pointsTotal === "number") return Number(driver.pointsTotal || 0);
+        if (typeof driver.points === "number") return Number(driver.points || 0);
+        return Number(driverPoints.get(driver.id) || 0);
+      };
+
       const selectionRows = drivers
         .map((driver) => {
           const name = driver.name || "Unnamed";
           const selections = Number(selectionCounts.get(driver.id) || 0);
-          const points = Number(driverPoints.get(driver.id) || 0);
+          const points = getDriverPointsTotal(driver);
           const pps = selections > 0 ? (points / selections).toFixed(1) : "0.0";
 
           return {
@@ -224,7 +230,7 @@
       const pointsRows = drivers
         .map((driver) => ({
           name: driver.name || "Unnamed",
-          points: Number(driverPoints.get(driver.id) || 0),
+          points: getDriverPointsTotal(driver),
         }))
         .sort((a, b) => {
           const pointsDiff = b.points - a.points;
