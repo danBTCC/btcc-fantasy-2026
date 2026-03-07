@@ -825,13 +825,31 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
               const sldLabel = driver.isSLD ? " • SLD" : "";
               const blockedLabel = driver.blocked ? " • Blocked next event" : "";
               return `
-                <li class="driverPickRow" data-driver-id="${driver.id}" data-price="${driver.price}" data-tier="${escapeHtml(driver.tier || "")}" data-blocked="${driver.blocked ? "1" : "0"}">
-                  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                    <div>
-                      <strong>${escapeHtml(driver.name)}</strong><br>
-                      <span class="tiny muted">${fmtMoney(driver.price)} • ${escapeHtml(tierLabel)} • ${escapeHtml(streakLabel)}${escapeHtml(sldLabel)}${escapeHtml(blockedLabel)}</span>
+                <li
+                  class="driverPickRow"
+                  data-driver-id="${driver.id}"
+                  data-price="${driver.price}"
+                  data-tier="${escapeHtml(driver.tier || "")}"
+                  data-blocked="${driver.blocked ? "1" : "0"}"
+                  style="padding:12px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,.02); margin-bottom:10px;"
+                >
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-weight:700; line-height:1.2;">${escapeHtml(driver.name)}</div>
+                      <div class="tiny muted" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px 8px;">
+                        <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${fmtMoney(driver.price)}</span>
+                        <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${escapeHtml(tierLabel)}</span>
+                        <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${escapeHtml(streakLabel)}</span>
+                        ${driver.isSLD ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(34,197,94,.35); background:rgba(34,197,94,.10);">SLD</span>` : ""}
+                        ${driver.blocked ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(250,204,21,.35); background:rgba(250,204,21,.10);">Blocked next event</span>` : ""}
+                      </div>
                     </div>
-                    <button type="button" class="tile tinyBtn" data-action="toggle">${driver.blocked ? "Blocked" : "Select"}</button>
+                    <button
+                      type="button"
+                      class="tile tinyBtn"
+                      data-action="toggle"
+                      style="width:auto; min-width:96px; padding:10px 14px; flex:0 0 auto; white-space:nowrap;"
+                    >${driver.blocked ? "Blocked" : "Select"}</button>
                   </div>
                 </li>
               `;
