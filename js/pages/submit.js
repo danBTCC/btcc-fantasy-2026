@@ -612,15 +612,18 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         if (isSelected) {
           btn.textContent = "Selected";
           row.style.opacity = "1";
-          row.style.borderColor = "rgba(255,255,255,.16)";
+          row.style.borderColor = "#facc15";
+          row.style.boxShadow = "0 0 0 1px rgba(250, 204, 21, .25)";
         } else if (driver.blocked) {
           btn.textContent = "Blocked";
           row.style.opacity = "0.72";
           row.style.borderColor = "rgba(250, 204, 21, .25)";
+          row.style.boxShadow = "none";
         } else {
           btn.textContent = "Select";
           row.style.opacity = "0.9";
           row.style.borderColor = "var(--border)";
+          row.style.boxShadow = "none";
         }
 
         btn.disabled = isLockedNow();
