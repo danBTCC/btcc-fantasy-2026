@@ -116,6 +116,27 @@
     return totals;
   }
 
+  async function loadStoredDriverStandings(db) {
+    const totals = new Map();
+
+    try {
+      const snap = await db
+        .collection("standings_drivers")
+        .doc("season_2026")
+        .collection("drivers")
+        .get();
+
+      snap.forEach((doc) => {
+        const data = doc.data() || {};
+        totals.set(doc.id, Number(data.pointsTotal || data.points || 0));
+      });
+    } catch (err) {
+      console.warn("standings_drivers/season_2026/drivers read failed", err);
+    }
+
+    return totals;
+  }
+
   function renderDriverList(drivers) {
     return `<ul class="driverList">
       ${drivers
@@ -196,12 +217,16 @@
       const drivers = driversSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       const events = eventsSnap.docs;
 
-      const [selectionCounts, driverPoints] = await Promise.all([
+      const [selectionCounts, storedDriverStandings, driverPoints] = await Promise.all([
         loadSelectionCounts(db, events),
+        loadStoredDriverStandings(db),
         loadDriverPoints(db, events),
       ]);
 
       const getDriverPointsTotal = (driver) => {
+        if (storedDriverStandings.has(driver.id)) {
+          return Number(storedDriverStandings.get(driver.id) || 0);
+        }
         if (typeof driver.pointsTotal === "number") return Number(driver.pointsTotal || 0);
         if (typeof driver.points === "number") return Number(driver.points || 0);
         return Number(driverPoints.get(driver.id) || 0);
