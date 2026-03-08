@@ -1828,8 +1828,8 @@ async function rebuildStandingsDriversI3_3(root) {
   };
 
   const racePointsForPos = (pos1) => {
-    if (!pos1 || pos1 < 1 || pos1 > 26) return 0;
-    return 27 - pos1; // 1->26 ... 26->1
+    if (!pos1 || pos1 < 1 || pos1 > 24) return 0;
+    return 25 - pos1; // 1->24 ... 24->1
   };
 
   const qualiPointsForPos = (pos1) => {
