@@ -651,6 +651,9 @@ const ADMIN_EMAILS = [
   }
 
   window.loadAdmin = loadAdmin;
+  window.loadSelectedEventMetaAndResults = loadSelectedEventMetaAndResults;
+  window.renderResultsPreview = renderResultsPreview;
+  window.renderRaceForms = renderRaceForms;
 
   // --- H7.1: Admin Results Preview panel (read-only, no lock/unlock writes) ---
   // ============================================================
