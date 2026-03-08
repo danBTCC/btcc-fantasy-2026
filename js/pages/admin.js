@@ -2461,7 +2461,10 @@ async function rebuildStandingsDriversI3_3(root) {
     .orderBy("eventNo")
     .get();
 
-  const eventList = eventsSnap.docs.map((doc) => ({ id: doc.id, eventNo: doc.data().eventNo }));
+  const eventList = eventsSnap.docs.map((doc) => ({
+    id: doc.id,
+    eventNo: doc.data().eventNo,
+  }));
 
   const driversSnap = await window.btccDb.collection("drivers").get();
   const driverMeta = new Map();
@@ -2475,47 +2478,60 @@ async function rebuildStandingsDriversI3_3(root) {
 
   const totals = new Map();
 
-  for (const ev of eventList) {
-    const scoresSnap = await window.btccDb.collection("event_scores").doc(ev.id).collection("players").get();
-    scoresSnap.forEach((doc) => {
-      const data = doc.data() || {};
-      const source = data.perDriverBreakdown || data.perDriverBySession || data.perDriver || {};
-
-      Object.entries(source).forEach(([driverId, value]) => {
-        let points = 0;
-        if (typeof value === "number") {
-          points = value;
-        } else if (value && typeof value === "object") {
-          points = Number(value.total ?? value.points ?? 0);
-        }
-
-        let rec = totals.get(driverId);
-        if (!rec) {
-          const meta = driverMeta.get(driverId) || { name: driverId, active: true };
-          rec = {
-            driverId,
-            name: meta.name,
-            active: meta.active,
-            pointsTotal: 0,
-          };
-          totals.set(driverId, rec);
-        }
-
-        rec.pointsTotal += Number(points || 0);
-      });
-    });
-  }
-
-  driversSnap.forEach((doc) => {
-    if (!totals.has(doc.id)) {
-      const meta = driverMeta.get(doc.id) || { name: doc.id, active: true };
-      totals.set(doc.id, {
-        driverId: doc.id,
+  const ensureDriver = (driverId) => {
+    let rec = totals.get(driverId);
+    if (!rec) {
+      const meta = driverMeta.get(driverId) || { name: driverId, active: true };
+      rec = {
+        driverId,
         name: meta.name,
         active: meta.active,
         pointsTotal: 0,
-      });
+      };
+      totals.set(driverId, rec);
     }
+    return rec;
+  };
+
+  const racePointsForPos = (pos1) => {
+    if (!pos1 || pos1 < 1 || pos1 > 26) return 0;
+    return 27 - pos1; // 1->26 ... 26->1
+  };
+
+  const qualiPointsForPos = (pos1) => {
+    if (!pos1 || pos1 < 1 || pos1 > 6) return 0;
+    return 7 - pos1; // 1->6 ... 6->1
+  };
+
+  const scoreOrderIntoTotals = (orderArr, pointsForPosFn) => {
+    if (!Array.isArray(orderArr)) return;
+
+    orderArr.forEach((driverId, index) => {
+      if (!driverId) return;
+      const rec = ensureDriver(String(driverId));
+      rec.pointsTotal += Number(pointsForPosFn(index + 1) || 0);
+    });
+  };
+
+  for (const ev of eventList) {
+    const resultsSnap = await window.btccDb.collection("results").doc(ev.id).get();
+    if (!resultsSnap.exists) continue;
+
+    const data = resultsSnap.data() || {};
+    const qualifying = Array.isArray(data.qualifying) ? data.qualifying : [];
+    const race1 = Array.isArray(data.race1) ? data.race1 : [];
+    const race2 = Array.isArray(data.race2) ? data.race2 : [];
+    const race3 = Array.isArray(data.race3) ? data.race3 : [];
+
+    scoreOrderIntoTotals(qualifying, qualiPointsForPos);
+    scoreOrderIntoTotals(race1, racePointsForPos);
+    scoreOrderIntoTotals(race2, racePointsForPos);
+    scoreOrderIntoTotals(race3, racePointsForPos);
+  }
+
+  // Ensure every driver exists in standings even if on zero
+  driversSnap.forEach((doc) => {
+    ensureDriver(doc.id);
   });
 
   const ranked = Array.from(totals.values())
@@ -2527,11 +2543,13 @@ async function rebuildStandingsDriversI3_3(root) {
     .map((row, index) => {
       const position = index + 1;
       let tier = null;
+
       if (selectedEventNo >= 2) {
         if (position <= 7) tier = "high";
         else if (position <= 17) tier = "middle";
         else tier = "lower";
       }
+
       return {
         ...row,
         position,
@@ -2550,6 +2568,7 @@ async function rebuildStandingsDriversI3_3(root) {
       throughEventNo: selectedEventNo,
       driverCount: ranked.length,
       tierMode: selectedEventNo >= 2 ? "7-10-7" : "event1-free-choice",
+      source: "results",
     },
     { merge: true }
   );
