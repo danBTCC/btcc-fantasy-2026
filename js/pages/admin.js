@@ -1881,15 +1881,15 @@ if (banner) {
             const race2Order = Array.isArray(resultsData.race2) ? resultsData.race2 : [];
             const race3Order = Array.isArray(resultsData.race3) ? resultsData.race3 : [];
 
-            // --- I2.1 scoring helpers (locked rules) ---
-            // Race scoring: full-grid linear (1st=26 .. 26th=1, DNF/DNS=0)
+            // --- I2.1 scoring helpers (2026 locked rules) ---
+            // Race scoring: full-grid linear for the 24-car 2026 grid (1st=24 .. 24th=1, DNF/DNS=0)
             // Qualifying (weekend/championship): top 6 only (6..1), rest 0
-            // Source: "Finalised 2026 Scoring System" (LOCKED)
+            // Source of truth: 2026 BTCC Fantasy League scoring update
 
             const racePointsForPos = (pos1) => {
               // pos1 is 1-based
-              if (!pos1 || pos1 < 1 || pos1 > 26) return 0;
-              return 27 - pos1; // 1->26, 2->25, ..., 26->1
+              if (!pos1 || pos1 < 1 || pos1 > 24) return 0;
+              return 25 - pos1; // 1->24, 2->23, ..., 24->1
             };
 
             const qualiWeekendPointsForPos = (pos1) => {
