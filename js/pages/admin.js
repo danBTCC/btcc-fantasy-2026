@@ -726,8 +726,6 @@ if (root.__eventMeta?.resultsLocked === true) {
     loadAdminDriverList(root);
   }
 
-  setupAdminHomeNews(root);
-
   // ============================================================
   // SECTION 2: ADMIN BOOTSTRAP (Unlocked View)
   // ============================================================
@@ -1976,8 +1974,8 @@ if (banner) {
         }
       };
     }
+  }
   // END renderResultsPreview
-  
 
   // I1.4: Read-only preview of event_scores/{eventId}/players/*
   async function loadEventScoresPreview(root) {
@@ -2049,8 +2047,6 @@ if (banner) {
       mount.innerHTML = `<strong>Event scores</strong><br><span class="tiny muted">Failed to load: ${e?.message || e}</span>`;
     }
   }
-  }
-})();
   // I3: Standings rebuild and preview
   // PHASE I3: Rebuild standings_players/season_2026/players/* from event_scores up to selected event
   async function rebuildStandingsPlayersI3(root) {
@@ -2833,3 +2829,4 @@ async function loadStandingsWingfootPreview(root) {
     mount.innerHTML = `<strong>Wingfoot standings</strong><br><span class="tiny muted">Failed to load: ${e?.message || e}</span>`;
   }
 }
+})();
