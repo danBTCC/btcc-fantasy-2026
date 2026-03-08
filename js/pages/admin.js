@@ -1573,6 +1573,15 @@ if (banner) {
             <div id="admin-drivers-standings-msg" class="tiny muted" style="margin-top:8px;"></div>
             <button type="button" id="admin-refresh-drivers-standings" class="tile tinyBtn" style="margin-top:10px;">Refresh driver standings preview</button>
             <div id="admin-drivers-standings-preview" class="note" style="margin-top:10px;" hidden></div>
+
+            <div style="height:10px;"></div>
+
+            <strong>Wingfoot standings rebuild (I3.4)</strong><br>
+            <span class="tiny muted">Builds qualifying-only player standings using full qualifying scoring (1st = 24 down to 24th = 1) from results and entries up to the selected event.</span>
+            <button type="button" id="admin-rebuild-wingfoot-i3" class="tile" style="margin-top:10px;">Rebuild WINGFOOT standings up to selected event</button>
+            <div id="admin-wingfoot-msg" class="tiny muted" style="margin-top:8px;"></div>
+            <button type="button" id="admin-refresh-wingfoot" class="tile tinyBtn" style="margin-top:10px;">Refresh Wingfoot preview</button>
+            <div id="admin-wingfoot-preview" class="note" style="margin-top:10px;" hidden></div>
           </div>
         </div>
       </div>
@@ -1606,11 +1615,18 @@ if (banner) {
         await loadStandingsDriversPreview(root);
       };
     }
+    const wingfootRefreshBtn = mount.querySelector("#admin-refresh-wingfoot");
+    if (wingfootRefreshBtn) {
+      wingfootRefreshBtn.onclick = async () => {
+        await loadStandingsWingfootPreview(root);
+      };
+    }
     // Auto-refresh preview when panel renders (best-effort)
     loadEventScoresPreview(root);
     loadStandingsPlayersPreview(root);
     loadStandingsTeamsPreview(root);
     loadStandingsDriversPreview(root);
+    loadStandingsWingfootPreview(root);
 
     // H7.2: Lock results (writes to events/{eventId})
     const lockBtn = mount.querySelector("#admin-lock-results");
@@ -1794,6 +1810,29 @@ if (banner) {
           setDriversMsg(e?.message || String(e));
         } finally {
           driversBtn.disabled = false;
+        }
+      };
+    }
+    const wingfootBtn = mount.querySelector("#admin-rebuild-wingfoot-i3");
+    const wingfootMsg = mount.querySelector("#admin-wingfoot-msg");
+    const setWingfootMsg = (t) => {
+      if (wingfootMsg) wingfootMsg.textContent = t;
+    };
+    if (wingfootBtn) {
+      wingfootBtn.onclick = async () => {
+        try {
+          if (!window.btccDb) throw new Error("Database not ready");
+          const eid = root.__selectedEventId;
+          if (!eid) throw new Error("No event selected");
+          wingfootBtn.disabled = true;
+          setWingfootMsg("Rebuilding Wingfoot standings…");
+          const result = await rebuildStandingsWingfootI3_4(root);
+          setWingfootMsg(`Rebuilt Wingfoot standings for ${result.playerCount} player(s) through Event ${result.throughEventNo}.`);
+          await loadStandingsWingfootPreview(root);
+        } catch (e) {
+          setWingfootMsg(e?.message || String(e));
+        } finally {
+          wingfootBtn.disabled = false;
         }
       };
     }
@@ -2024,6 +2063,8 @@ if (banner) {
             await loadStandingsPlayersPreview(root);
             await rebuildStandingsDriversI3_3(root);
             await loadStandingsDriversPreview(root);
+            await rebuildStandingsWingfootI3_4(root);
+            await loadStandingsWingfootPreview(root);
           }
         } catch (e) {
           console.error("❌ Engine dry run failed:", e);
@@ -2680,5 +2721,216 @@ async function loadStandingsDriversPreview(root) {
   } catch (e) {
     console.error("❌ loadStandingsDriversPreview failed:", e);
     mount.innerHTML = `<strong>Driver standings</strong><br><span class="tiny muted">Failed to load: ${e?.message || e}</span>`;
+  }
+}
+// --- WINGFOOT STANDINGS REBUILD (I3.4) ---
+async function rebuildStandingsWingfootI3_4(root) {
+  if (!window.btccDb) throw new Error("Database not ready");
+  const eid = root.__selectedEventId;
+  if (!eid) throw new Error("No event selected");
+
+  const eventSnap = await window.btccDb.collection("events").doc(eid).get();
+  if (!eventSnap.exists) throw new Error("Selected event not found");
+  const eventData = eventSnap.data() || {};
+  const selectedEventNo = eventData.eventNo;
+  if (typeof selectedEventNo !== "number") throw new Error("Selected event missing eventNo");
+
+  const eventsSnap = await window.btccDb.collection("events")
+    .where("eventNo", "<=", selectedEventNo)
+    .orderBy("eventNo")
+    .get();
+
+  const playerSnap = await window.btccDb.collection("players").get();
+  const playerMeta = new Map();
+  playerSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    playerMeta.set(doc.id, {
+      displayName: d.displayName || d.name || doc.id,
+      teamId: d.teamId || "unassigned",
+      teamName: d.teamName || d.teamId || "unassigned",
+    });
+  });
+
+  const totals = new Map();
+
+  const ensurePlayer = (uid) => {
+    let rec = totals.get(uid);
+    if (!rec) {
+      const meta = playerMeta.get(uid) || { displayName: uid, teamId: "unassigned", teamName: "unassigned" };
+      rec = {
+        uid,
+        displayName: meta.displayName,
+        teamId: meta.teamId,
+        teamName: meta.teamName,
+        pointsTotal: 0,
+      };
+      totals.set(uid, rec);
+    }
+    return rec;
+  };
+
+  const qualifyingTablePointsForPos = (pos1) => {
+    if (!pos1 || pos1 < 1 || pos1 > 24) return 0;
+    return 25 - pos1; // 1->24, 2->23, ..., 24->1
+  };
+
+  const normaliseDriverIdsFromEntry = (data) => {
+    if (!data || typeof data !== "object") return [];
+    const candidates = [
+      data.driverIds,
+      data.teamIds,
+      data.team,
+      data.drivers,
+      data.selectedDrivers,
+      data.picks,
+      data.selection,
+    ];
+    const arr = candidates.find((x) => Array.isArray(x)) || [];
+    return Array.from(
+      new Set(
+        arr
+          .map((item) => {
+            if (!item) return null;
+            if (typeof item === "string") return item;
+            if (typeof item === "object") return item.driverId || item.id || item.ref || null;
+            return null;
+          })
+          .filter(Boolean)
+          .map(String)
+      )
+    );
+  };
+
+  const scoreQualifyingForTeam = (teamIds, qualifyingOrder) => {
+    if (!Array.isArray(teamIds) || teamIds.length === 0) return 0;
+    return teamIds.reduce((total, driverId) => {
+      const idx = Array.isArray(qualifyingOrder) ? qualifyingOrder.indexOf(driverId) : -1;
+      const pos1 = idx >= 0 ? idx + 1 : null;
+      return total + qualifyingTablePointsForPos(pos1);
+    }, 0);
+  };
+
+  for (const ev of eventsSnap.docs) {
+    const eventId = ev.id;
+
+    const resultsSnap = await window.btccDb.collection("results").doc(eventId).get();
+    if (!resultsSnap.exists) continue;
+    const resultsData = resultsSnap.data() || {};
+    const qualifyingOrder = Array.isArray(resultsData.qualifying) ? resultsData.qualifying : [];
+
+    let entriesSnap = await window.btccDb.collection("entries").doc(eventId).collection("entries").get();
+    if (entriesSnap.empty) {
+      entriesSnap = await window.btccDb.collection("submissions").doc(eventId).collection("entries").get();
+    }
+
+    entriesSnap.forEach((doc) => {
+      const uid = doc.id;
+      const teamIds = normaliseDriverIdsFromEntry(doc.data() || {});
+      const rec = ensurePlayer(uid);
+      rec.pointsTotal += Number(scoreQualifyingForTeam(teamIds, qualifyingOrder) || 0);
+    });
+  }
+
+  playerSnap.forEach((doc) => ensurePlayer(doc.id));
+
+  const ranked = Array.from(totals.values())
+    .sort((a, b) => {
+      const pointsDiff = Number(b.pointsTotal || 0) - Number(a.pointsTotal || 0);
+      if (pointsDiff !== 0) return pointsDiff;
+      return String(a.displayName || "").localeCompare(String(b.displayName || ""));
+    })
+    .map((row, index) => ({ ...row, position: index + 1 }));
+
+  const seasonRef = window.btccDb.collection("standings_wingfoot").doc("season_2026");
+  const batch = window.btccDb.batch();
+
+  batch.set(
+    seasonRef,
+    {
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      throughEventId: eid,
+      throughEventNo: selectedEventNo,
+      playerCount: ranked.length,
+      source: "results.qualifying + entries (24-to-1)",
+    },
+    { merge: true }
+  );
+
+  ranked.forEach((row) => {
+    batch.set(
+      seasonRef.collection("players").doc(row.uid),
+      {
+        uid: row.uid,
+        displayName: row.displayName,
+        teamId: row.teamId,
+        teamName: row.teamName,
+        pointsTotal: Number(row.pointsTotal || 0),
+        position: row.position,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  });
+
+  await batch.commit();
+
+  return {
+    playerCount: ranked.length,
+    throughEventNo: selectedEventNo,
+    throughEventId: eid,
+  };
+}
+
+async function loadStandingsWingfootPreview(root) {
+  const mount = root.querySelector("#admin-wingfoot-preview");
+  if (!mount) return;
+
+  if (!window.btccDb) {
+    mount.hidden = false;
+    mount.innerHTML = `<strong>Wingfoot standings</strong><br><span class="tiny muted">Waiting for database…</span>`;
+    return;
+  }
+
+  mount.hidden = false;
+  mount.innerHTML = `<strong>Wingfoot standings</strong><br><span class="tiny muted">Loading…</span>`;
+
+  try {
+    let snap;
+    try {
+      snap = await window.btccDb
+        .collection("standings_wingfoot")
+        .doc("season_2026")
+        .collection("players")
+        .orderBy("position")
+        .get();
+    } catch (err) {
+      snap = await window.btccDb
+        .collection("standings_wingfoot")
+        .doc("season_2026")
+        .collection("players")
+        .get();
+    }
+
+    if (snap.empty) {
+      mount.innerHTML = `<strong>Wingfoot standings</strong><br><span class="tiny muted">No Wingfoot standings found yet.</span>`;
+      return;
+    }
+
+    const rows = snap.docs
+      .map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+      .sort((a, b) => Number(a.position || 999) - Number(b.position || 999));
+
+    mount.innerHTML = `
+      <strong>Wingfoot standings</strong>
+      <div class="tiny muted" style="margin-top:6px;">Showing ${rows.length} player(s)</div>
+      <div style="margin-top:10px; border:1px solid var(--border); border-radius:12px; padding:10px; background:rgba(255,255,255,.02);">
+        <ol class="list" style="margin:0; padding-left:18px;">
+          ${rows.map((r) => `<li class="tiny" style="margin:6px 0;">${r.position}. ${r.displayName || r.id} — ${Number(r.pointsTotal || 0)} pts</li>`).join("")}
+        </ol>
+      </div>
+    `;
+  } catch (e) {
+    console.error("❌ loadStandingsWingfootPreview failed:", e);
+    mount.innerHTML = `<strong>Wingfoot standings</strong><br><span class="tiny muted">Failed to load: ${e?.message || e}</span>`;
   }
 }
