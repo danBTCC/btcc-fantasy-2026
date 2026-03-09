@@ -161,54 +161,6 @@
   };
 
   const renderDriverFantasyTable = (rows) => {
-  const buildDriverEventPointsRows = (resultData, driverNameById) => {
-    const qualifying = Array.isArray(resultData?.qualifying) ? resultData.qualifying : [];
-    const race1 = Array.isArray(resultData?.race1) ? resultData.race1 : [];
-    const race2 = Array.isArray(resultData?.race2) ? resultData.race2 : [];
-    const race3 = Array.isArray(resultData?.race3) ? resultData.race3 : [];
-
-    const allIds = Array.from(
-      new Set([...qualifying, ...race1, ...race2, ...race3].filter(Boolean).map(String))
-    );
-
-    const qualifyingPointsForPos = (pos1) => {
-      if (!pos1 || pos1 < 1 || pos1 > 6) return 0;
-      return 7 - pos1;
-    };
-
-    const racePointsForPos = (pos1) => {
-      if (!pos1 || pos1 < 1 || pos1 > 24) return 0;
-      return 25 - pos1;
-    };
-
-    return allIds
-      .map((driverId) => {
-        const qPos = qualifying.indexOf(driverId) >= 0 ? qualifying.indexOf(driverId) + 1 : null;
-        const r1Pos = race1.indexOf(driverId) >= 0 ? race1.indexOf(driverId) + 1 : null;
-        const r2Pos = race2.indexOf(driverId) >= 0 ? race2.indexOf(driverId) + 1 : null;
-        const r3Pos = race3.indexOf(driverId) >= 0 ? race3.indexOf(driverId) + 1 : null;
-
-        const q = qualifyingPointsForPos(qPos);
-        const r1 = racePointsForPos(r1Pos);
-        const r2 = racePointsForPos(r2Pos);
-        const r3 = racePointsForPos(r3Pos);
-
-        return {
-          driverId,
-          name: driverNameById[driverId] || driverId,
-          q,
-          r1,
-          r2,
-          r3,
-          total: q + r1 + r2 + r3,
-        };
-      })
-      .sort((a, b) => {
-        const totalDiff = Number(b.total || 0) - Number(a.total || 0);
-        if (totalDiff !== 0) return totalDiff;
-        return String(a.name || a.driverId || "").localeCompare(String(b.name || b.driverId || ""));
-      });
-  };
     // rows: [{driverId, name?, q?, r1?, r2?, r3?, total}]
     if (!rows.length) {
       return `<div class="note">No driver results available yet.</div>`;
@@ -438,3 +390,51 @@ scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
 
   window.loadResults = loadResults;
 })();
+  const buildDriverEventPointsRows = (resultData, driverNameById) => {
+    const qualifying = Array.isArray(resultData?.qualifying) ? resultData.qualifying : [];
+    const race1 = Array.isArray(resultData?.race1) ? resultData.race1 : [];
+    const race2 = Array.isArray(resultData?.race2) ? resultData.race2 : [];
+    const race3 = Array.isArray(resultData?.race3) ? resultData.race3 : [];
+
+    const allIds = Array.from(
+      new Set([...qualifying, ...race1, ...race2, ...race3].filter(Boolean).map(String))
+    );
+
+    const qualifyingPointsForPos = (pos1) => {
+      if (!pos1 || pos1 < 1 || pos1 > 6) return 0;
+      return 7 - pos1;
+    };
+
+    const racePointsForPos = (pos1) => {
+      if (!pos1 || pos1 < 1 || pos1 > 24) return 0;
+      return 25 - pos1;
+    };
+
+    return allIds
+      .map((driverId) => {
+        const qPos = qualifying.indexOf(driverId) >= 0 ? qualifying.indexOf(driverId) + 1 : null;
+        const r1Pos = race1.indexOf(driverId) >= 0 ? race1.indexOf(driverId) + 1 : null;
+        const r2Pos = race2.indexOf(driverId) >= 0 ? race2.indexOf(driverId) + 1 : null;
+        const r3Pos = race3.indexOf(driverId) >= 0 ? race3.indexOf(driverId) + 1 : null;
+
+        const q = qualifyingPointsForPos(qPos);
+        const r1 = racePointsForPos(r1Pos);
+        const r2 = racePointsForPos(r2Pos);
+        const r3 = racePointsForPos(r3Pos);
+
+        return {
+          driverId,
+          name: driverNameById[driverId] || driverId,
+          q,
+          r1,
+          r2,
+          r3,
+          total: q + r1 + r2 + r3,
+        };
+      })
+      .sort((a, b) => {
+        const totalDiff = Number(b.total || 0) - Number(a.total || 0);
+        if (totalDiff !== 0) return totalDiff;
+        return String(a.name || a.driverId || "").localeCompare(String(b.name || b.driverId || ""));
+      });
+  };
