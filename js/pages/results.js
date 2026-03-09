@@ -161,6 +161,54 @@
   };
 
   const renderDriverFantasyTable = (rows) => {
+  const buildDriverEventPointsRows = (resultData, driverNameById) => {
+    const qualifying = Array.isArray(resultData?.qualifying) ? resultData.qualifying : [];
+    const race1 = Array.isArray(resultData?.race1) ? resultData.race1 : [];
+    const race2 = Array.isArray(resultData?.race2) ? resultData.race2 : [];
+    const race3 = Array.isArray(resultData?.race3) ? resultData.race3 : [];
+
+    const allIds = Array.from(
+      new Set([...qualifying, ...race1, ...race2, ...race3].filter(Boolean).map(String))
+    );
+
+    const qualifyingPointsForPos = (pos1) => {
+      if (!pos1 || pos1 < 1 || pos1 > 6) return 0;
+      return 7 - pos1;
+    };
+
+    const racePointsForPos = (pos1) => {
+      if (!pos1 || pos1 < 1 || pos1 > 24) return 0;
+      return 25 - pos1;
+    };
+
+    return allIds
+      .map((driverId) => {
+        const qPos = qualifying.indexOf(driverId) >= 0 ? qualifying.indexOf(driverId) + 1 : null;
+        const r1Pos = race1.indexOf(driverId) >= 0 ? race1.indexOf(driverId) + 1 : null;
+        const r2Pos = race2.indexOf(driverId) >= 0 ? race2.indexOf(driverId) + 1 : null;
+        const r3Pos = race3.indexOf(driverId) >= 0 ? race3.indexOf(driverId) + 1 : null;
+
+        const q = qualifyingPointsForPos(qPos);
+        const r1 = racePointsForPos(r1Pos);
+        const r2 = racePointsForPos(r2Pos);
+        const r3 = racePointsForPos(r3Pos);
+
+        return {
+          driverId,
+          name: driverNameById[driverId] || driverId,
+          q,
+          r1,
+          r2,
+          r3,
+          total: q + r1 + r2 + r3,
+        };
+      })
+      .sort((a, b) => {
+        const totalDiff = Number(b.total || 0) - Number(a.total || 0);
+        if (totalDiff !== 0) return totalDiff;
+        return String(a.name || a.driverId || "").localeCompare(String(b.name || b.driverId || ""));
+      });
+  };
     // rows: [{driverId, name?, q?, r1?, r2?, r3?, total}]
     if (!rows.length) {
       return `<div class="note">No driver results available yet.</div>`;
@@ -337,6 +385,10 @@
               if (resultsSlot) {
                 resultsSlot.innerHTML = renderDriverResultsTable(rows);
               }
+              if (driverScoresSlot) {
+                const driverRows = buildDriverEventPointsRows(rdata, driverNameById);
+                driverScoresSlot.innerHTML = renderDriverFantasyTable(driverRows);
+              }
             }
           } catch (e) {
             console.warn("⚠️ Failed to read results doc for", eventId, e);
@@ -365,97 +417,9 @@ scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
             if (playerScoresSlot) playerScoresSlot.innerHTML = `<div class="note warnNote">No event scores available.</div>`;
           }
 
-          // ---- Driver breakdown table (best-effort) ----
-          // We aggregate across all player score docs.
-          // Supports either:
-          //   - doc.perDriver: {driverId: totalPts}
-          //   - doc.perDriverBreakdown: {driverId: {q,r1,r2,r3,total}}
-          //   - doc.perDriverBySession: {driverId: {q,r1,r2,r3}}
-          try {
-            const agg = new Map();
-
-            for (const sd of scoreDocs) {
-              const perDriverBreakdown = sd.perDriverBreakdown;
-              const perDriverBySession = sd.perDriverBySession;
-              const perDriver = sd.perDriver;
-
-              const applyBreakdownObject = (obj) => {
-                if (!obj || typeof obj !== "object") return;
-                Object.entries(obj).forEach(([driverId, b]) => {
-                  if (!driverId) return;
-                  const cur = agg.get(driverId) || { driverId, q: 0, r1: 0, r2: 0, r3: 0, total: 0 };
-
-                  const q = typeof b?.q === "number" ? b.q
-                    : typeof b?.Q === "number" ? b.Q
-                    : typeof b?.qualifying === "number" ? b.qualifying
-                    : typeof b?.quali === "number" ? b.quali
-                    : 0;
-
-                  const r1 = typeof b?.r1 === "number" ? b.r1
-                    : typeof b?.R1 === "number" ? b.R1
-                    : typeof b?.race1 === "number" ? b.race1
-                    : 0;
-
-                  const r2 = typeof b?.r2 === "number" ? b.r2
-                    : typeof b?.R2 === "number" ? b.R2
-                    : typeof b?.race2 === "number" ? b.race2
-                    : 0;
-
-                  const r3 = typeof b?.r3 === "number" ? b.r3
-                    : typeof b?.R3 === "number" ? b.R3
-                    : typeof b?.race3 === "number" ? b.race3
-                    : 0;
-
-                  const t = typeof b?.total === "number" ? b.total
-                    : typeof b === "number" ? b
-                    : q + r1 + r2 + r3;
-
-                  cur.q += q;
-                  cur.r1 += r1;
-                  cur.r2 += r2;
-                  cur.r3 += r3;
-                  cur.total += t;
-                  agg.set(driverId, cur);
-                });
-              };
-
-              if (perDriverBreakdown && typeof perDriverBreakdown === "object") {
-                applyBreakdownObject(perDriverBreakdown);
-              } else if (perDriverBySession && typeof perDriverBySession === "object") {
-                // Some engine versions store session points here.
-                applyBreakdownObject(perDriverBySession);
-                // If we also have perDriver totals, prefer that for total.
-                if (perDriver && typeof perDriver === "object") {
-                  Object.entries(perDriver).forEach(([driverId, t]) => {
-                    if (!driverId) return;
-                    if (typeof t !== "number") return;
-                    const cur = agg.get(driverId) || { driverId, q: 0, r1: 0, r2: 0, r3: 0, total: 0 };
-                    cur.total += 0; // total already included via sessions; leave as-is
-                    agg.set(driverId, cur);
-                  });
-                }
-              } else if (perDriver && typeof perDriver === "object") {
-                Object.entries(perDriver).forEach(([driverId, t]) => {
-                  if (!driverId) return;
-                  if (typeof t !== "number") return;
-                  const cur = agg.get(driverId) || { driverId, q: undefined, r1: undefined, r2: undefined, r3: undefined, total: 0 };
-                  cur.total += t;
-                  agg.set(driverId, cur);
-                });
-              }
-            }
-
-            const rows = Array.from(agg.values())
-              .map((r) => ({
-                ...r,
-                name: driverNameById[r.driverId] || r.driverId,
-              }))
-              .sort((a, b) => (b.total || 0) - (a.total || 0));
-
-            if (driverScoresSlot) driverScoresSlot.innerHTML = renderDriverFantasyTable(rows);
-          } catch (e) {
-            console.warn("⚠️ Failed to build driver breakdown for", eventId, e);
-            if (driverScoresSlot) driverScoresSlot.innerHTML = `<div class="note">No driver breakdown available yet.</div>`;
+          // Driver event points are now calculated directly from official results above.
+          if (driverScoresSlot && !driverScoresSlot.innerHTML.trim()) {
+            driverScoresSlot.innerHTML = `<div class="note">No driver breakdown available yet.</div>`;
           }
         })
       );
