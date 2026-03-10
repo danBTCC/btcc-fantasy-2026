@@ -157,6 +157,13 @@ const ADMIN_EMAILS = [
       </div>
 
       <div class="card" style="margin-top:12px;">
+        <h2 style="margin:0 0 6px 0;">Submission Tracker</h2>
+        <p class="tiny muted">Quick visual check of which players have submitted for Events 1–10.</p>
+        <div id="admin-submission-tracker-msg" class="tiny muted" style="margin-top:8px;">Loading…</div>
+        <div id="admin-submission-tracker" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
         <h2 style="margin:0 0 6px 0;">Player Manager</h2>
         <p class="tiny muted">Create or update a player using their Firebase UID.</p>
 
@@ -243,6 +250,7 @@ const ADMIN_EMAILS = [
     loadAdminEventPicker(root);
     loadAdminDrivers(root);
     setupAdminHomeNews(root);
+    loadAdminSubmissionTracker(root);
     setupAdminPlayerManager(root);
     setupAdminDriverManager(root);
     renderQualifyingForm(root);
@@ -650,49 +658,161 @@ const ADMIN_EMAILS = [
     });
   }
 
-  window.loadAdmin = loadAdmin;
+    window.loadAdmin = loadAdmin;
   window.loadSelectedEventMetaAndResults = loadSelectedEventMetaAndResults;
   window.renderResultsPreview = renderResultsPreview;
   window.renderRaceForms = renderRaceForms;
+  window.loadAdminSubmissionTracker = loadAdminSubmissionTracker;
+
+  async function loadAdminSubmissionTracker(root) {
+    const mount = root.querySelector("#admin-submission-tracker");
+    const msg = root.querySelector("#admin-submission-tracker-msg");
+    if (!mount) return;
+
+    if (!window.btccDb) {
+      if (msg) msg.textContent = "Database not ready.";
+      mount.innerHTML = "";
+      return;
+    }
+
+    try {
+      if (msg) msg.textContent = "Loading…";
+      mount.innerHTML = "";
+
+      const [playersSnap, eventsSnap] = await Promise.all([
+        window.btccDb.collection("players").get(),
+        window.btccDb.collection("events").orderBy("eventNo").get(),
+      ]);
+
+      const players = playersSnap.docs
+        .map((doc) => {
+          const d = doc.data() || {};
+          return {
+            uid: doc.id,
+            displayName: (d.displayName || d.name || doc.id).toString(),
+            active: d.active !== false,
+          };
+        })
+        .filter((p) => p.active)
+        .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+      const events = eventsSnap.docs
+        .map((doc) => ({
+          id: doc.id,
+          eventNo: Number(doc.data()?.eventNo || 0),
+        }))
+        .filter((e) => e.eventNo >= 1 && e.eventNo <= 10)
+        .sort((a, b) => a.eventNo - b.eventNo);
+
+      const submissionMap = new Map();
+
+      await Promise.all(
+        events.map(async (ev) => {
+          let entriesSnap = await window.btccDb
+            .collection("submissions")
+            .doc(ev.id)
+            .collection("entries")
+            .get();
+
+          if (entriesSnap.empty) {
+            entriesSnap = await window.btccDb
+              .collection("entries")
+              .doc(ev.id)
+              .collection("entries")
+              .get();
+          }
+
+          const submitted = new Set();
+          entriesSnap.forEach((doc) => {
+            submitted.add(doc.id);
+          });
+
+          submissionMap.set(ev.id, submitted);
+        })
+      );
+
+      const header = `
+        <thead>
+          <tr>
+            <th style="position:sticky; left:0; background:rgba(14,17,22,.98); text-align:left; padding:8px; border-bottom:1px solid var(--border); min-width:160px; z-index:1;">Player</th>
+            ${events.map((ev) => `<th style="text-align:center; padding:8px; border-bottom:1px solid var(--border); min-width:72px;">E${ev.eventNo}</th>`).join("")}
+          </tr>
+        </thead>
+      `;
+
+      const body = `
+        <tbody>
+          ${players.map((player) => `
+            <tr>
+              <td style="position:sticky; left:0; background:rgba(14,17,22,.98); padding:8px; border-bottom:1px solid var(--border); font-weight:600; z-index:1;">${player.displayName}</td>
+              ${events.map((ev) => {
+                const submitted = submissionMap.get(ev.id)?.has(player.uid) === true;
+                return `<td style="text-align:center; padding:8px; border-bottom:1px solid var(--border);">${submitted ? "✅" : "—"}</td>`;
+              }).join("")}
+            </tr>
+          `).join("")}
+        </tbody>
+      `;
+
+      mount.innerHTML = `
+        <div style="overflow:auto; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.02);">
+          <table style="width:100%; border-collapse:collapse;">
+            ${header}
+            ${body}
+          </table>
+        </div>
+      `;
+
+      if (msg) {
+        msg.textContent = `Showing ${players.length} active player(s) across ${events.length} event(s).`;
+      }
+    } catch (err) {
+      console.error("❌ loadAdminSubmissionTracker failed:", err);
+      if (msg) msg.textContent = err?.message || "Failed to load submission tracker.";
+      mount.innerHTML = `<div class="note warnNote">Failed to load submission tracker.</div>`;
+    }
+  }
 
   // --- H7.1: Admin Results Preview panel (read-only, no lock/unlock writes) ---
   // ============================================================
   // SECTION 5: RESULTS PREVIEW + LOCK / UNLOCK (H7)
   // ============================================================
   async function loadSelectedEventMetaAndResults(root) {
-    const eventId = root.__selectedEventId;
-    if (!eventId) {
-      root.__eventMeta = null;
-      root.__savedResults = null;
-      renderResultsPreview(root);
-      return;
-    }
-
-    if (!window.btccDb) {
-      root.__eventMeta = null;
-      root.__savedResults = null;
-      renderResultsPreview(root);
-      return;
-    }
-
-    try {
-      const [eventSnap, resultsSnap] = await Promise.all([
-        window.btccDb.collection("events").doc(eventId).get(),
-        window.btccDb.collection("results").doc(eventId).get(),
-      ]);
-
-      root.__eventMeta = eventSnap.exists ? (eventSnap.data() || {}) : null;
-      root.__savedResults = resultsSnap.exists ? (resultsSnap.data() || {}) : null;
-
-      // NOTE: H7.1 is preview only; we do NOT enforce lock behaviour yet.
-      renderResultsPreview(root);
-    } catch (err) {
-      console.error("❌ loadSelectedEventMetaAndResults failed:", err);
-      root.__eventMeta = null;
-      root.__savedResults = null;
-      renderResultsPreview(root, err);
-    }
+  const eventId = root.__selectedEventId;
+  if (!eventId) {
+    root.__eventMeta = null;
+    root.__savedResults = null;
+    renderResultsPreview(root);
+    return;
   }
+
+  if (!window.btccDb) {
+    root.__eventMeta = null;
+    root.__savedResults = null;
+    renderResultsPreview(root);
+    return;
+  }
+
+  try {
+    const [eventSnap, resultsSnap] = await Promise.all([
+      window.btccDb.collection("events").doc(eventId).get(),
+      window.btccDb.collection("results").doc(eventId).get(),
+    ]);
+
+    root.__eventMeta = eventSnap.exists ? (eventSnap.data() || {}) : null;
+    root.__savedResults = resultsSnap.exists ? (resultsSnap.data() || {}) : null;
+
+    // NOTE: H7.1 is preview only; we do NOT enforce lock behaviour yet.
+    renderResultsPreview(root);
+    loadAdminSubmissionTracker(root);
+  } catch (err) {
+    console.error("❌ loadSelectedEventMetaAndResults failed:", err);
+    root.__eventMeta = null;
+    root.__savedResults = null;
+    renderResultsPreview(root, err);
+    loadAdminSubmissionTracker(root);
+  }
+} 
 
   function renderResultsPreview(root, err) {
     const mount = root.querySelector("#admin-results-preview");
