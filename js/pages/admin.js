@@ -329,11 +329,22 @@ const ADMIN_EMAILS = [
         <select data-${raceKey}-dsq multiple size="4" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
           ${options}
         </select>
-        <label class="tiny muted" style="display:block; margin-top:10px;">Fastest Lap (3 points available)</label>
-        <select data-${raceKey}-fl multiple size="4" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
-          ${options}
-        </select>
-        <div class="tiny muted" style="margin-top:6px;">Select up to 3 drivers. Fastest Lap may be awarded to a classified finisher or a DNF, but not DNS / DSQ.</div>
+        <label class="tiny muted" style="display:block; margin-top:10px;">Fastest Lap awards (up to 3)</label>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <select data-${raceKey}-fl1 style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+            <option value="">—</option>
+            ${options}
+          </select>
+          <select data-${raceKey}-fl2 style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+            <option value="">—</option>
+            ${options}
+          </select>
+          <select data-${raceKey}-fl3 style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+            <option value="">—</option>
+            ${options}
+          </select>
+        </div>
+        <div class="tiny muted" style="margin-top:6px;">Use up to 3 fastest-lap awards. The same driver may be selected more than once if they qualify in multiple categories. Fastest Lap may be awarded to a classified finisher or a DNF, but not DNS / DSQ.</div>
       </div>
 
       <button type="button" id="admin-${raceKey}-save" class="tile" style="margin-top:12px;" disabled>
@@ -357,14 +368,20 @@ const ADMIN_EMAILS = [
       const dnfSel = mount.querySelector(`select[data-${raceKey}-dnf]`);
       const dnsSel = mount.querySelector(`select[data-${raceKey}-dns]`);
       const dsqSel = mount.querySelector(`select[data-${raceKey}-dsq]`);
-      const flSel = mount.querySelector(`select[data-${raceKey}-fl]`);
+      const fl1Sel = mount.querySelector(`select[data-${raceKey}-fl1]`);
+      const fl2Sel = mount.querySelector(`select[data-${raceKey}-fl2]`);
+      const fl3Sel = mount.querySelector(`select[data-${raceKey}-fl3]`);
 
       const finishers = finishSelects.map(s => s.value || null);
       const classified = finishers.filter(Boolean);
       const dnfIds = dnfSel ? Array.from(dnfSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
       const dnsIds = dnsSel ? Array.from(dnsSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
       const dsqIds = dsqSel ? Array.from(dsqSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
-      const fastestLapDriverIds = flSel ? Array.from(flSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
+      const fastestLapDriverIds = [
+        fl1Sel?.value || "",
+        fl2Sel?.value || "",
+        fl3Sel?.value || "",
+      ].filter(Boolean);
 
       const issues = [];
 
@@ -381,9 +398,7 @@ const ADMIN_EMAILS = [
 
       if (classified.length === 0) issues.push("Enter at least one classified finisher.");
 
-      const flDupes = fastestLapDriverIds.filter((v, idx) => fastestLapDriverIds.indexOf(v) !== idx);
-      if (flDupes.length > 0) issues.push("Fastest Lap drivers can only be selected once each.");
-      if (fastestLapDriverIds.length > 3) issues.push("Fastest Lap can have a maximum of 3 drivers.");
+      if (fastestLapDriverIds.length > 3) issues.push("Fastest Lap can have a maximum of 3 awards.");
       fastestLapDriverIds.forEach((driverId) => {
         const flAllowed = classified.includes(driverId) || dnfIds.includes(driverId);
         if (!flAllowed) issues.push("Fastest Lap must belong to a classified finisher or a DNF (not DNS / DSQ).");
@@ -416,10 +431,10 @@ const ADMIN_EMAILS = [
       if (raceKey === "race1") root.__draftRace1 = draft;
       if (raceKey === "race2") root.__draftRace2 = draft;
       if (raceKey === "race3") root.__draftRace3 = draft;
-      renderResultsPreview(root);
+      renderResultsPreview(root);     V
     };
 
-    mount.querySelectorAll(`select[data-${raceKey}-pos], select[data-${raceKey}-dnf], select[data-${raceKey}-dns], select[data-${raceKey}-dsq], select[data-${raceKey}-fl]`).forEach(sel => {
+    mount.querySelectorAll(`select[data-${raceKey}-pos], select[data-${raceKey}-dnf], select[data-${raceKey}-dns], select[data-${raceKey}-dsq], select[data-${raceKey}-fl1], select[data-${raceKey}-fl2], select[data-${raceKey}-fl3]`).forEach(sel => {
       sel.addEventListener("change", validate);
     });
 
