@@ -329,13 +329,11 @@ const ADMIN_EMAILS = [
         <select data-${raceKey}-dsq multiple size="4" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
           ${options}
         </select>
-
-        <label class="tiny muted" style="display:block; margin-top:10px;">Fastest Lap</label>
-        <select data-${raceKey}-fl style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
-          <option value="">Select driver…</option>
+        <label class="tiny muted" style="display:block; margin-top:10px;">Fastest Lap (3 points available)</label>
+        <select data-${raceKey}-fl multiple size="4" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
           ${options}
         </select>
-        <div class="tiny muted" style="margin-top:6px;">Fastest Lap may be awarded to a classified finisher or a DNF, but not DNS / DSQ.</div>
+        <div class="tiny muted" style="margin-top:6px;">Select up to 3 drivers. Fastest Lap may be awarded to a classified finisher or a DNF, but not DNS / DSQ.</div>
       </div>
 
       <button type="button" id="admin-${raceKey}-save" class="tile" style="margin-top:12px;" disabled>
@@ -366,7 +364,7 @@ const ADMIN_EMAILS = [
       const dnfIds = dnfSel ? Array.from(dnfSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
       const dnsIds = dnsSel ? Array.from(dnsSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
       const dsqIds = dsqSel ? Array.from(dsqSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
-      const fastestLapDriverId = flSel?.value || "";
+      const fastestLapDriverIds = flSel ? Array.from(flSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
 
       const issues = [];
 
@@ -383,10 +381,13 @@ const ADMIN_EMAILS = [
 
       if (classified.length === 0) issues.push("Enter at least one classified finisher.");
 
-      if (fastestLapDriverId) {
-        const flAllowed = classified.includes(fastestLapDriverId) || dnfIds.includes(fastestLapDriverId);
+      const flDupes = fastestLapDriverIds.filter((v, idx) => fastestLapDriverIds.indexOf(v) !== idx);
+      if (flDupes.length > 0) issues.push("Fastest Lap drivers can only be selected once each.");
+      if (fastestLapDriverIds.length > 3) issues.push("Fastest Lap can have a maximum of 3 drivers.");
+      fastestLapDriverIds.forEach((driverId) => {
+        const flAllowed = classified.includes(driverId) || dnfIds.includes(driverId);
         if (!flAllowed) issues.push("Fastest Lap must belong to a classified finisher or a DNF (not DNS / DSQ).");
-      }
+      });
 
       const valid = issues.length === 0;
 
@@ -409,7 +410,7 @@ const ADMIN_EMAILS = [
           DNS: dnsIds,
           DSQ: dsqIds,
         },
-        fastestLapDriverId: fastestLapDriverId || null,
+        fastestLapDriverIds,
       };
 
       if (raceKey === "race1") root.__draftRace1 = draft;
@@ -453,11 +454,11 @@ const ADMIN_EMAILS = [
         // Read draft
         const draft = root.__draftRace1 && typeof root.__draftRace1 === "object"
           ? root.__draftRace1
-          : { positions: [], classified: [], status: { FIN: [], DNF: [], DNS: [], DSQ: [] }, fastestLapDriverId: null };
+          : { positions: [], classified: [], status: { FIN: [], DNF: [], DNS: [], DSQ: [] }, fastestLapDriverIds: [] };
 
         const classified = Array.isArray(draft.classified) ? draft.classified : [];
         const status = draft.status || { FIN: [], DNF: [], DNS: [], DSQ: [] };
-        const fastestLapDriverId = draft.fastestLapDriverId || null;
+        const fastestLapDriverIds = Array.isArray(draft.fastestLapDriverIds) ? draft.fastestLapDriverIds : [];
 
         if (!classified.length) {
           if (validationEl2) {
@@ -477,7 +478,7 @@ const ADMIN_EMAILS = [
               race1: classified,
               race1Positions: Array.isArray(draft.positions) ? draft.positions : [],
               race1Status: status,
-              race1FastestLapDriverId: fastestLapDriverId,
+              race1FastestLapDriverIds: fastestLapDriverIds,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             },
@@ -499,7 +500,7 @@ const ADMIN_EMAILS = [
           await loadSelectedEventMetaAndResults(root);
 
           saveBtn.textContent = `Saved ${new Date().toLocaleString("en-GB")}`;
-          console.log("✅ Race 1 saved:", eid, classified, status, fastestLapDriverId);
+          console.log("✅ Race 1 saved:", eid, classified, status, fastestLapDriverIds);
         } catch (err) {
           console.error("❌ Save Race 1 failed:", err);
           if (validationEl2) {
@@ -542,11 +543,11 @@ const ADMIN_EMAILS = [
         // Read draft
         const draft = root.__draftRace2 && typeof root.__draftRace2 === "object"
           ? root.__draftRace2
-          : { positions: [], classified: [], status: { FIN: [], DNF: [], DNS: [], DSQ: [] }, fastestLapDriverId: null };
+          : { positions: [], classified: [], status: { FIN: [], DNF: [], DNS: [], DSQ: [] }, fastestLapDriverIds: [] };
 
         const classified = Array.isArray(draft.classified) ? draft.classified : [];
         const status = draft.status || { FIN: [], DNF: [], DNS: [], DSQ: [] };
-        const fastestLapDriverId = draft.fastestLapDriverId || null;
+        const fastestLapDriverIds = Array.isArray(draft.fastestLapDriverIds) ? draft.fastestLapDriverIds : [];
 
         if (!classified.length) {
           if (validationEl2) {
@@ -566,7 +567,7 @@ const ADMIN_EMAILS = [
               race2: classified,
               race2Positions: Array.isArray(draft.positions) ? draft.positions : [],
               race2Status: status,
-              race2FastestLapDriverId: fastestLapDriverId,
+              race2FastestLapDriverIds: fastestLapDriverIds,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             },
@@ -588,7 +589,7 @@ const ADMIN_EMAILS = [
           await loadSelectedEventMetaAndResults(root);
 
           saveBtn.textContent = `Saved ${new Date().toLocaleString("en-GB")}`;
-          console.log("✅ Race 2 saved:", eid, classified, status, fastestLapDriverId);
+          console.log("✅ Race 2 saved:", eid, classified, status, fastestLapDriverIds);
         } catch (err) {
           console.error("❌ Save Race 2 failed:", err);
           if (validationEl2) {
@@ -630,11 +631,11 @@ const ADMIN_EMAILS = [
         // Read draft
         const draft = root.__draftRace3 && typeof root.__draftRace3 === "object"
           ? root.__draftRace3
-          : { positions: [], classified: [], status: { FIN: [], DNF: [], DNS: [], DSQ: [] }, fastestLapDriverId: null };
+          : { positions: [], classified: [], status: { FIN: [], DNF: [], DNS: [], DSQ: [] }, fastestLapDriverIds: [] };
 
         const classified = Array.isArray(draft.classified) ? draft.classified : [];
         const status = draft.status || { FIN: [], DNF: [], DNS: [], DSQ: [] };
-        const fastestLapDriverId = draft.fastestLapDriverId || null;
+        const fastestLapDriverIds = Array.isArray(draft.fastestLapDriverIds) ? draft.fastestLapDriverIds : [];
 
         if (!classified.length) {
           if (validationEl2) {
@@ -654,7 +655,7 @@ const ADMIN_EMAILS = [
               race3: classified,
               race3Positions: Array.isArray(draft.positions) ? draft.positions : [],
               race3Status: status,
-              race3FastestLapDriverId: fastestLapDriverId,
+              race3FastestLapDriverIds: fastestLapDriverIds,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             },
@@ -676,7 +677,7 @@ const ADMIN_EMAILS = [
           await loadSelectedEventMetaAndResults(root);
 
           saveBtn.textContent = `Saved ${new Date().toLocaleString("en-GB")}`;
-          console.log("✅ Race 3 saved:", eid, classified, status, fastestLapDriverId);
+          console.log("✅ Race 3 saved:", eid, classified, status, fastestLapDriverIds);
         } catch (err) {
           console.error("❌ Save Race 3 failed:", err);
           if (validationEl2) {
