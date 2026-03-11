@@ -1430,6 +1430,18 @@ if (banner) {
             const race2Order = Array.isArray(resultsData.race2) ? resultsData.race2 : [];
             const race3Order = Array.isArray(resultsData.race3) ? resultsData.race3 : [];
 
+            const race1FastestLapIds = Array.isArray(resultsData.race1FastestLapDriverIds)
+              ? resultsData.race1FastestLapDriverIds.filter(Boolean).map(String)
+              : (resultsData.race1FastestLapDriverId ? [String(resultsData.race1FastestLapDriverId)] : []);
+
+            const race2FastestLapIds = Array.isArray(resultsData.race2FastestLapDriverIds)
+              ? resultsData.race2FastestLapDriverIds.filter(Boolean).map(String)
+              : (resultsData.race2FastestLapDriverId ? [String(resultsData.race2FastestLapDriverId)] : []);
+
+            const race3FastestLapIds = Array.isArray(resultsData.race3FastestLapDriverIds)
+              ? resultsData.race3FastestLapDriverIds.filter(Boolean).map(String)
+              : (resultsData.race3FastestLapDriverId ? [String(resultsData.race3FastestLapDriverId)] : []);
+
             // --- I2.1 scoring helpers (2026 locked rules) ---
             // Race scoring: full-grid linear for the 24-car 2026 grid (1st=24 .. 24th=1, DNF/DNS=0)
             // Qualifying (weekend/championship): top 6 only (6..1), rest 0
@@ -1482,6 +1494,23 @@ if (banner) {
               return { total, perDriver };
             };
 
+            const scoreAwardIdsForTeam = (teamIds, awardIds, pointsEach = 1) => {
+              if (!Array.isArray(teamIds) || teamIds.length === 0) return { total: 0, perDriver: {} };
+              const perDriver = {};
+              let total = 0;
+
+              teamIds.forEach((driverId) => {
+                const count = Array.isArray(awardIds)
+                  ? awardIds.filter((id) => String(id) === String(driverId)).length
+                  : 0;
+                const pts = count * pointsEach;
+                perDriver[driverId] = pts;
+                total += pts;
+              });
+
+              return { total, perDriver };
+            };
+
             const batch = window.btccDb.batch();
             const baseRef = window.btccDb.collection("event_scores").doc(eid);
 
@@ -1496,12 +1525,15 @@ if (banner) {
               const r1 = scoreOrderForTeam(teamIds, race1Order, racePointsForPos);
               const r2 = scoreOrderForTeam(teamIds, race2Order, racePointsForPos);
               const r3 = scoreOrderForTeam(teamIds, race3Order, racePointsForPos);
+              const fl1 = scoreAwardIdsForTeam(teamIds, race1FastestLapIds, 1);
+              const fl2 = scoreAwardIdsForTeam(teamIds, race2FastestLapIds, 1);
+              const fl3 = scoreAwardIdsForTeam(teamIds, race3FastestLapIds, 1);
 
               const breakdown = {
                 qualifying: quali.total,
-                race1: r1.total,
-                race2: r2.total,
-                race3: r3.total,
+                race1: r1.total + fl1.total,
+                race2: r2.total + fl2.total,
+                race3: r3.total + fl3.total,
               };
 
               const pointsTotal = breakdown.qualifying + breakdown.race1 + breakdown.race2 + breakdown.race3;
@@ -1512,9 +1544,9 @@ if (banner) {
 
               teamIds.forEach((driverId) => {
                 const qPts = Number(quali.perDriver?.[driverId] || 0);
-                const r1Pts = Number(r1.perDriver?.[driverId] || 0);
-                const r2Pts = Number(r2.perDriver?.[driverId] || 0);
-                const r3Pts = Number(r3.perDriver?.[driverId] || 0);
+                const r1Pts = Number(r1.perDriver?.[driverId] || 0) + Number(fl1.perDriver?.[driverId] || 0);
+                const r2Pts = Number(r2.perDriver?.[driverId] || 0) + Number(fl2.perDriver?.[driverId] || 0);
+                const r3Pts = Number(r3.perDriver?.[driverId] || 0) + Number(fl3.perDriver?.[driverId] || 0);
                 const tPts = qPts + r1Pts + r2Pts + r3Pts;
 
                 perDriverBreakdown[driverId] = { q: qPts, r1: r1Pts, r2: r2Pts, r3: r3Pts, total: tPts };
@@ -1537,13 +1569,18 @@ if (banner) {
                   // Keep the old per-session maps for debugging / future use
                   perDriverBySession: {
                     qualifying: quali.perDriver,
-                    race1: r1.perDriver,
-                    race2: r2.perDriver,
-                    race3: r3.perDriver,
+                    race1: Object.fromEntries(teamIds.map((driverId) => [driverId, Number(r1.perDriver?.[driverId] || 0) + Number(fl1.perDriver?.[driverId] || 0)])),
+                    race2: Object.fromEntries(teamIds.map((driverId) => [driverId, Number(r2.perDriver?.[driverId] || 0) + Number(fl2.perDriver?.[driverId] || 0)])),
+                    race3: Object.fromEntries(teamIds.map((driverId) => [driverId, Number(r3.perDriver?.[driverId] || 0) + Number(fl3.perDriver?.[driverId] || 0)])),
+                    fastestLap: {
+                      race1: fl1.perDriver,
+                      race2: fl2.perDriver,
+                      race3: fl3.perDriver,
+                    },
                   },
                   sourceResultsUpdatedAt: srcUpdatedAt,
                   computedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                  engineVersion: "I2.1",
+                  engineVersion: "I2.2",
                 },
                 { merge: false }
               );
@@ -1558,7 +1595,7 @@ if (banner) {
                 entryCount,
                 sourceResultsUpdatedAt: srcUpdatedAt,
                 ranAt: firebase.firestore.FieldValue.serverTimestamp(),
-                engineVersion: "I2.1",
+                engineVersion: "I2.2",
               },
               { merge: true }
             );
