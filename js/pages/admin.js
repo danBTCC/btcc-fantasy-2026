@@ -431,7 +431,7 @@ const ADMIN_EMAILS = [
       if (raceKey === "race1") root.__draftRace1 = draft;
       if (raceKey === "race2") root.__draftRace2 = draft;
       if (raceKey === "race3") root.__draftRace3 = draft;
-      renderResultsPreview(root);     V
+      renderResultsPreview(root);
     };
 
     mount.querySelectorAll(`select[data-${raceKey}-pos], select[data-${raceKey}-dnf], select[data-${raceKey}-dns], select[data-${raceKey}-dsq], select[data-${raceKey}-fl1], select[data-${raceKey}-fl2], select[data-${raceKey}-fl3]`).forEach(sel => {
@@ -944,15 +944,15 @@ const ADMIN_EMAILS = [
 
     const race1Ids = (saved && Array.isArray(saved.race1) && saved.race1.length)
       ? saved.race1
-      : (Array.isArray(root.__draftRace1) ? root.__draftRace1 : []);
+      : ((root.__draftRace1 && Array.isArray(root.__draftRace1.classified)) ? root.__draftRace1.classified : []);
 
     const race2Ids = (saved && Array.isArray(saved.race2) && saved.race2.length)
       ? saved.race2
-      : (Array.isArray(root.__draftRace2) ? root.__draftRace2 : []);
+      : ((root.__draftRace2 && Array.isArray(root.__draftRace2.classified)) ? root.__draftRace2.classified : []);
 
     const race3Ids = (saved && Array.isArray(saved.race3) && saved.race3.length)
       ? saved.race3
-      : (Array.isArray(root.__draftRace3) ? root.__draftRace3 : []);
+      : ((root.__draftRace3 && Array.isArray(root.__draftRace3.classified)) ? root.__draftRace3.classified : []);
 
     const qualiNames = idsToNames(qualiIds);
     const race1Names = idsToNames(race1Ids);
