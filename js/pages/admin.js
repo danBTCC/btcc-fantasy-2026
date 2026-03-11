@@ -295,6 +295,7 @@ const ADMIN_EMAILS = [
 
       <div id="admin-${raceKey}-validation" class="note warnNote" hidden></div>
 
+      <div class="tiny muted" style="margin:10px 0 6px 0;">Classified finishers only. Leave remaining positions blank if there were DNFs / DNS / DSQs.</div>
       <div id="admin-${raceKey}-grid" style="display:flex; flex-direction:column; gap:10px;">
         ${Array.from({ length: N }).map((_, i) => {
           const pos = i + 1;
@@ -302,12 +303,39 @@ const ADMIN_EMAILS = [
             <div style="display:flex; gap:10px; align-items:center;">
               <div style="min-width:64px;"><strong>P${pos}</strong></div>
               <select data-${raceKey}-pos="${pos}" style="flex:1; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
-                <option value="">Select driver…</option>
+                <option value="">—</option>
                 ${options}
               </select>
             </div>
           `;
         }).join("")}
+      </div>
+
+      <div class="note" style="margin-top:10px;">
+        <strong>Non-classified / special statuses</strong>
+        <div class="tiny muted" style="margin-top:6px;">Use Ctrl/Cmd-click to select multiple drivers where needed.</div>
+
+        <label class="tiny muted" style="display:block; margin-top:10px;">DNF</label>
+        <select data-${raceKey}-dnf multiple size="6" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+          ${options}
+        </select>
+
+        <label class="tiny muted" style="display:block; margin-top:10px;">DNS</label>
+        <select data-${raceKey}-dns multiple size="4" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+          ${options}
+        </select>
+
+        <label class="tiny muted" style="display:block; margin-top:10px;">DSQ</label>
+        <select data-${raceKey}-dsq multiple size="4" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+          ${options}
+        </select>
+
+        <label class="tiny muted" style="display:block; margin-top:10px;">Fastest Lap</label>
+        <select data-${raceKey}-fl style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+          <option value="">Select driver…</option>
+          ${options}
+        </select>
+        <div class="tiny muted" style="margin-top:6px;">Fastest Lap may be awarded to a classified finisher or a DNF, but not DNS / DSQ.</div>
       </div>
 
       <button type="button" id="admin-${raceKey}-save" class="tile" style="margin-top:12px;" disabled>
@@ -327,15 +355,38 @@ const ADMIN_EMAILS = [
     const saveBtn = mount.querySelector(`#admin-${raceKey}-save`);
 
     const validate = () => {
-      const selects = Array.from(mount.querySelectorAll(`select[data-${raceKey}-pos]`));
-      const chosen = selects.map(s => s.value).filter(Boolean);
+      const finishSelects = Array.from(mount.querySelectorAll(`select[data-${raceKey}-pos]`));
+      const dnfSel = mount.querySelector(`select[data-${raceKey}-dnf]`);
+      const dnsSel = mount.querySelector(`select[data-${raceKey}-dns]`);
+      const dsqSel = mount.querySelector(`select[data-${raceKey}-dsq]`);
+      const flSel = mount.querySelector(`select[data-${raceKey}-fl]`);
 
-      const dupes = chosen.filter((v, idx) => chosen.indexOf(v) !== idx);
-      const missing = selects.filter(s => !s.value).length;
+      const finishers = finishSelects.map(s => s.value || null);
+      const classified = finishers.filter(Boolean);
+      const dnfIds = dnfSel ? Array.from(dnfSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
+      const dnsIds = dnsSel ? Array.from(dnsSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
+      const dsqIds = dsqSel ? Array.from(dsqSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
+      const fastestLapDriverId = flSel?.value || "";
 
       const issues = [];
-      if (missing > 0) issues.push(`Select a driver for all positions (${missing} missing).`);
-      if (dupes.length > 0) issues.push("Each driver can only appear once.");
+
+      // Classified order must be contiguous from the top with no gaps.
+      let seenBlank = false;
+      finishers.forEach((v, idx) => {
+        if (!v) seenBlank = true;
+        if (v && seenBlank) issues.push(`Classified finishers must be entered in order with no gaps before P${idx + 1}.`);
+      });
+
+      const allAssigned = [...classified, ...dnfIds, ...dnsIds, ...dsqIds];
+      const dupes = allAssigned.filter((v, idx) => allAssigned.indexOf(v) !== idx);
+      if (dupes.length > 0) issues.push("A driver can only appear once across classified / DNF / DNS / DSQ.");
+
+      if (classified.length === 0) issues.push("Enter at least one classified finisher.");
+
+      if (fastestLapDriverId) {
+        const flAllowed = classified.includes(fastestLapDriverId) || dnfIds.includes(fastestLapDriverId);
+        if (!flAllowed) issues.push("Fastest Lap must belong to a classified finisher or a DNF (not DNS / DSQ).");
+      }
 
       const valid = issues.length === 0;
 
@@ -349,15 +400,25 @@ const ADMIN_EMAILS = [
 
       if (saveBtn) saveBtn.disabled = !valid;
 
-      // Store drafts for next step (no Firestore write)
-      const draft = selects.map(s => s.value || null);
+      const draft = {
+        positions: finishers,
+        classified,
+        status: {
+          FIN: classified,
+          DNF: dnfIds,
+          DNS: dnsIds,
+          DSQ: dsqIds,
+        },
+        fastestLapDriverId: fastestLapDriverId || null,
+      };
+
       if (raceKey === "race1") root.__draftRace1 = draft;
       if (raceKey === "race2") root.__draftRace2 = draft;
       if (raceKey === "race3") root.__draftRace3 = draft;
       renderResultsPreview(root);
     };
 
-    mount.querySelectorAll(`select[data-${raceKey}-pos]`).forEach(sel => {
+    mount.querySelectorAll(`select[data-${raceKey}-pos], select[data-${raceKey}-dnf], select[data-${raceKey}-dns], select[data-${raceKey}-dsq], select[data-${raceKey}-fl]`).forEach(sel => {
       sel.addEventListener("change", validate);
     });
 
@@ -390,15 +451,18 @@ const ADMIN_EMAILS = [
         }
 
         // Read draft
-        const draft = Array.isArray(root.__draftRace1) ? root.__draftRace1 : [];
-        const ids = draft.filter(Boolean);
-        const hasDupes = ids.some((v, i) => ids.indexOf(v) !== i);
-        const hasMissing = draft.some((v) => !v);
+        const draft = root.__draftRace1 && typeof root.__draftRace1 === "object"
+          ? root.__draftRace1
+          : { positions: [], classified: [], status: { FIN: [], DNF: [], DNS: [], DSQ: [] }, fastestLapDriverId: null };
 
-        if (hasMissing || hasDupes) {
+        const classified = Array.isArray(draft.classified) ? draft.classified : [];
+        const status = draft.status || { FIN: [], DNF: [], DNS: [], DSQ: [] };
+        const fastestLapDriverId = draft.fastestLapDriverId || null;
+
+        if (!classified.length) {
           if (validationEl2) {
             validationEl2.hidden = false;
-            validationEl2.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Please complete the grid with no duplicates.</span>`;
+            validationEl2.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Please enter at least one classified finisher and resolve any validation issues.</span>`;
           }
           return;
         }
@@ -410,7 +474,10 @@ const ADMIN_EMAILS = [
           const resultsRef = window.btccDb.collection("results").doc(eid);
           await resultsRef.set(
             {
-              race1: draft,
+              race1: classified,
+              race1Positions: Array.isArray(draft.positions) ? draft.positions : [],
+              race1Status: status,
+              race1FastestLapDriverId: fastestLapDriverId,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             },
@@ -432,7 +499,7 @@ const ADMIN_EMAILS = [
           await loadSelectedEventMetaAndResults(root);
 
           saveBtn.textContent = `Saved ${new Date().toLocaleString("en-GB")}`;
-          console.log("✅ Race 1 saved:", eid, draft);
+          console.log("✅ Race 1 saved:", eid, classified, status, fastestLapDriverId);
         } catch (err) {
           console.error("❌ Save Race 1 failed:", err);
           if (validationEl2) {
@@ -473,15 +540,18 @@ const ADMIN_EMAILS = [
         }
 
         // Read draft
-        const draft = Array.isArray(root.__draftRace2) ? root.__draftRace2 : [];
-        const ids = draft.filter(Boolean);
-        const hasDupes = ids.some((v, i) => ids.indexOf(v) !== i);
-        const hasMissing = draft.some((v) => !v);
+        const draft = root.__draftRace2 && typeof root.__draftRace2 === "object"
+          ? root.__draftRace2
+          : { positions: [], classified: [], status: { FIN: [], DNF: [], DNS: [], DSQ: [] }, fastestLapDriverId: null };
 
-        if (hasMissing || hasDupes) {
+        const classified = Array.isArray(draft.classified) ? draft.classified : [];
+        const status = draft.status || { FIN: [], DNF: [], DNS: [], DSQ: [] };
+        const fastestLapDriverId = draft.fastestLapDriverId || null;
+
+        if (!classified.length) {
           if (validationEl2) {
             validationEl2.hidden = false;
-            validationEl2.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Please complete the grid with no duplicates.</span>`;
+            validationEl2.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Please enter at least one classified finisher and resolve any validation issues.</span>`;
           }
           return;
         }
@@ -493,7 +563,10 @@ const ADMIN_EMAILS = [
           const resultsRef = window.btccDb.collection("results").doc(eid);
           await resultsRef.set(
             {
-              race2: draft,
+              race2: classified,
+              race2Positions: Array.isArray(draft.positions) ? draft.positions : [],
+              race2Status: status,
+              race2FastestLapDriverId: fastestLapDriverId,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             },
@@ -515,7 +588,7 @@ const ADMIN_EMAILS = [
           await loadSelectedEventMetaAndResults(root);
 
           saveBtn.textContent = `Saved ${new Date().toLocaleString("en-GB")}`;
-          console.log("✅ Race 2 saved:", eid, draft);
+          console.log("✅ Race 2 saved:", eid, classified, status, fastestLapDriverId);
         } catch (err) {
           console.error("❌ Save Race 2 failed:", err);
           if (validationEl2) {
@@ -555,15 +628,18 @@ const ADMIN_EMAILS = [
         }
 
         // Read draft
-        const draft = Array.isArray(root.__draftRace3) ? root.__draftRace3 : [];
-        const ids = draft.filter(Boolean);
-        const hasDupes = ids.some((v, i) => ids.indexOf(v) !== i);
-        const hasMissing = draft.some((v) => !v);
+        const draft = root.__draftRace3 && typeof root.__draftRace3 === "object"
+          ? root.__draftRace3
+          : { positions: [], classified: [], status: { FIN: [], DNF: [], DNS: [], DSQ: [] }, fastestLapDriverId: null };
 
-        if (hasMissing || hasDupes) {
+        const classified = Array.isArray(draft.classified) ? draft.classified : [];
+        const status = draft.status || { FIN: [], DNF: [], DNS: [], DSQ: [] };
+        const fastestLapDriverId = draft.fastestLapDriverId || null;
+
+        if (!classified.length) {
           if (validationEl2) {
             validationEl2.hidden = false;
-            validationEl2.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Please complete the grid with no duplicates.</span>`;
+            validationEl2.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Please enter at least one classified finisher and resolve any validation issues.</span>`;
           }
           return;
         }
@@ -575,7 +651,10 @@ const ADMIN_EMAILS = [
           const resultsRef = window.btccDb.collection("results").doc(eid);
           await resultsRef.set(
             {
-              race3: draft,
+              race3: classified,
+              race3Positions: Array.isArray(draft.positions) ? draft.positions : [],
+              race3Status: status,
+              race3FastestLapDriverId: fastestLapDriverId,
               updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             },
@@ -597,7 +676,7 @@ const ADMIN_EMAILS = [
           await loadSelectedEventMetaAndResults(root);
 
           saveBtn.textContent = `Saved ${new Date().toLocaleString("en-GB")}`;
-          console.log("✅ Race 3 saved:", eid, draft);
+          console.log("✅ Race 3 saved:", eid, classified, status, fastestLapDriverId);
         } catch (err) {
           console.error("❌ Save Race 3 failed:", err);
           if (validationEl2) {
