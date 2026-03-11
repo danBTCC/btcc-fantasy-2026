@@ -45,6 +45,7 @@
 
         <div id="admin-quali-validation" class="note warnNote" hidden></div>
 
+        <div class="tiny muted" style="margin:10px 0 6px 0;">Classified qualifiers only. Leave remaining positions blank if there were non-classified drivers or exclusions.</div>
         <div id="admin-quali-grid" style="display:flex; flex-direction:column; gap:10px;">
           ${Array.from({ length: N }).map((_, i) => {
             const pos = i + 1;
@@ -52,12 +53,32 @@
               <div style="display:flex; gap:10px; align-items:center;">
                 <div style="min-width:64px;"><strong>P${pos}</strong></div>
                 <select data-quali-pos="${pos}" style="flex:1; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
-                  <option value="">Select driver…</option>
+                  <option value="">—</option>
                   ${options}
                 </select>
               </div>
             `;
           }).join("")}
+        </div>
+
+        <div class="note" style="margin-top:10px;">
+          <strong>Non-classified / special statuses</strong>
+          <div class="tiny muted" style="margin-top:6px;">Use Ctrl/Cmd-click to select multiple drivers where needed.</div>
+
+          <label class="tiny muted" style="display:block; margin-top:10px;">DNF / No time</label>
+          <select data-quali-dnf multiple size="6" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+            ${options}
+          </select>
+
+          <label class="tiny muted" style="display:block; margin-top:10px;">DNS</label>
+          <select data-quali-dns multiple size="4" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+            ${options}
+          </select>
+
+          <label class="tiny muted" style="display:block; margin-top:10px;">DSQ / Excluded</label>
+          <select data-quali-dsq multiple size="4" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+            ${options}
+          </select>
         </div>
 
         <button type="button" id="admin-quali-preview" class="tile" style="margin-top:12px;" disabled>
@@ -72,14 +93,29 @@
 
     const validate = () => {
       const selects = Array.from(mount.querySelectorAll("select[data-quali-pos]"));
-      const chosen = selects.map((s) => s.value).filter(Boolean);
+      const dnfSel = mount.querySelector("select[data-quali-dnf]");
+      const dnsSel = mount.querySelector("select[data-quali-dns]");
+      const dsqSel = mount.querySelector("select[data-quali-dsq]");
 
-      const dupes = chosen.filter((v, idx) => chosen.indexOf(v) !== idx);
-      const missing = selects.filter((s) => !s.value).length;
+      const positions = selects.map((s) => s.value || null);
+      const classified = positions.filter(Boolean);
+      const dnfIds = dnfSel ? Array.from(dnfSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
+      const dnsIds = dnsSel ? Array.from(dnsSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
+      const dsqIds = dsqSel ? Array.from(dsqSel.selectedOptions).map(o => o.value).filter(Boolean) : [];
 
       const issues = [];
-      if (missing > 0) issues.push(`Select a driver for all positions (${missing} missing).`);
-      if (dupes.length > 0) issues.push("Each driver can only appear once.");
+
+      let seenBlank = false;
+      positions.forEach((v, idx) => {
+        if (!v) seenBlank = true;
+        if (v && seenBlank) issues.push(`Classified qualifiers must be entered in order with no gaps before P${idx + 1}.`);
+      });
+
+      const allAssigned = [...classified, ...dnfIds, ...dnsIds, ...dsqIds];
+      const dupes = allAssigned.filter((v, idx) => allAssigned.indexOf(v) !== idx);
+      if (dupes.length > 0) issues.push("A driver can only appear once across classified / DNF / DNS / DSQ.");
+
+      if (classified.length === 0) issues.push("Enter at least one classified qualifier.");
 
       const valid = issues.length === 0;
 
@@ -94,12 +130,20 @@
 
       if (previewBtn) previewBtn.disabled = !valid;
 
-      // Store draft for next step (no Firestore write)
-      root.__draftQuali = selects.map((s) => s.value || null);
+      root.__draftQuali = {
+        positions,
+        classified,
+        status: {
+          FIN: classified,
+          DNF: dnfIds,
+          DNS: dnsIds,
+          DSQ: dsqIds,
+        },
+      };
       renderResultsPreview(root);
     };
 
-    mount.querySelectorAll("select[data-quali-pos]").forEach((sel) => {
+    mount.querySelectorAll("select[data-quali-pos], select[data-quali-dnf], select[data-quali-dns], select[data-quali-dsq]").forEach((sel) => {
       sel.addEventListener("change", validate);
     });
 
@@ -127,14 +171,15 @@ if (root.__eventMeta?.resultsLocked === true) {
       if (!eventId2) return;
 
       // Ensure draft exists and is valid
-      const draft = Array.isArray(root.__draftQuali) ? root.__draftQuali : [];
-      const ids = draft.filter(Boolean);
-      const hasDupes = ids.some((v, i) => ids.indexOf(v) !== i);
-      const hasMissing = draft.some((v) => !v);
-      if (hasMissing || hasDupes) {
+      const draft = root.__draftQuali && typeof root.__draftQuali === "object"
+        ? root.__draftQuali
+        : { positions: [], classified: [], status: { FIN: [], DNF: [], DNS: [], DSQ: [] } };
+      const classified = Array.isArray(draft.classified) ? draft.classified : [];
+      const status = draft.status || { FIN: [], DNF: [], DNS: [], DSQ: [] };
+      if (!classified.length) {
         if (validationEl) {
           validationEl.hidden = false;
-          validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Please complete the grid with no duplicates.</span>`;
+          validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Please enter at least one classified qualifier and resolve any validation issues.</span>`;
         }
         return;
       }
@@ -155,7 +200,9 @@ if (root.__eventMeta?.resultsLocked === true) {
         const resultsRef = window.btccDb.collection("results").doc(eventId2);
         await resultsRef.set(
           {
-            qualifying: draft,
+            qualifying: classified,
+            qualifyingPositions: Array.isArray(draft.positions) ? draft.positions : [],
+            qualifyingStatus: status,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           },
@@ -174,7 +221,7 @@ if (root.__eventMeta?.resultsLocked === true) {
         );
 
         btn.textContent = `Saved ${new Date().toLocaleString("en-GB")}`;
-        console.log("✅ Qualifying saved:", eventId2, draft);
+        console.log("✅ Qualifying saved:", eventId2, classified, status);
       } catch (err) {
         console.error("❌ Save qualifying failed:", err);
         if (validationEl) {
