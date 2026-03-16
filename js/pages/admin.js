@@ -940,7 +940,7 @@ const ADMIN_EMAILS = [
     // Choose source: saved if present, otherwise drafts
     const qualiIds = (saved && Array.isArray(saved.qualifying) && saved.qualifying.length)
       ? saved.qualifying
-      : (Array.isArray(root.__draftQuali) ? root.__draftQuali : []);
+      : ((root.__draftQuali && Array.isArray(root.__draftQuali.classified)) ? root.__draftQuali.classified : []);
 
     const race1Ids = (saved && Array.isArray(saved.race1) && saved.race1.length)
       ? saved.race1
@@ -954,10 +954,59 @@ const ADMIN_EMAILS = [
       ? saved.race3
       : ((root.__draftRace3 && Array.isArray(root.__draftRace3.classified)) ? root.__draftRace3.classified : []);
 
+    const qualiStatus = (saved && saved.qualifyingStatus && typeof saved.qualifyingStatus === "object")
+      ? saved.qualifyingStatus
+      : ((root.__draftQuali && root.__draftQuali.status && typeof root.__draftQuali.status === "object") ? root.__draftQuali.status : { FIN: [], DNF: [], DNS: [], DSQ: [] });
+
+    const race1Status = (saved && saved.race1Status && typeof saved.race1Status === "object")
+      ? saved.race1Status
+      : ((root.__draftRace1 && root.__draftRace1.status && typeof root.__draftRace1.status === "object") ? root.__draftRace1.status : { FIN: [], DNF: [], DNS: [], DSQ: [] });
+
+    const race2Status = (saved && saved.race2Status && typeof saved.race2Status === "object")
+      ? saved.race2Status
+      : ((root.__draftRace2 && root.__draftRace2.status && typeof root.__draftRace2.status === "object") ? root.__draftRace2.status : { FIN: [], DNF: [], DNS: [], DSQ: [] });
+
+    const race3Status = (saved && saved.race3Status && typeof saved.race3Status === "object")
+      ? saved.race3Status
+      : ((root.__draftRace3 && root.__draftRace3.status && typeof root.__draftRace3.status === "object") ? root.__draftRace3.status : { FIN: [], DNF: [], DNS: [], DSQ: [] });
+
+    const race1FastestLapIds = (saved && Array.isArray(saved.race1FastestLapDriverIds))
+      ? saved.race1FastestLapDriverIds
+      : ((root.__draftRace1 && Array.isArray(root.__draftRace1.fastestLapDriverIds)) ? root.__draftRace1.fastestLapDriverIds : []);
+
+    const race2FastestLapIds = (saved && Array.isArray(saved.race2FastestLapDriverIds))
+      ? saved.race2FastestLapDriverIds
+      : ((root.__draftRace2 && Array.isArray(root.__draftRace2.fastestLapDriverIds)) ? root.__draftRace2.fastestLapDriverIds : []);
+
+    const race3FastestLapIds = (saved && Array.isArray(saved.race3FastestLapDriverIds))
+      ? saved.race3FastestLapDriverIds
+      : ((root.__draftRace3 && Array.isArray(root.__draftRace3.fastestLapDriverIds)) ? root.__draftRace3.fastestLapDriverIds : []);
+
     const qualiNames = idsToNames(qualiIds);
     const race1Names = idsToNames(race1Ids);
     const race2Names = idsToNames(race2Ids);
     const race3Names = idsToNames(race3Ids);
+
+    const statusNames = (statusObj, key) => idsToNames(Array.isArray(statusObj?.[key]) ? statusObj[key] : []);
+    const qualiDnfNames = statusNames(qualiStatus, "DNF");
+    const qualiDnsNames = statusNames(qualiStatus, "DNS");
+    const qualiDsqNames = statusNames(qualiStatus, "DSQ");
+
+    const race1DnfNames = statusNames(race1Status, "DNF");
+    const race1DnsNames = statusNames(race1Status, "DNS");
+    const race1DsqNames = statusNames(race1Status, "DSQ");
+
+    const race2DnfNames = statusNames(race2Status, "DNF");
+    const race2DnsNames = statusNames(race2Status, "DNS");
+    const race2DsqNames = statusNames(race2Status, "DSQ");
+
+    const race3DnfNames = statusNames(race3Status, "DNF");
+    const race3DnsNames = statusNames(race3Status, "DNS");
+    const race3DsqNames = statusNames(race3Status, "DSQ");
+
+    const race1FastestLapNames = idsToNames(race1FastestLapIds);
+    const race2FastestLapNames = idsToNames(race2FastestLapIds);
+    const race3FastestLapNames = idsToNames(race3FastestLapIds);
 
     if (!eventId) {
       mount.innerHTML = `
@@ -995,17 +1044,39 @@ if (banner) {
     const updatedBy = meta?.resultsUpdatedBy || "—";
     const savedUpdatedAt = fmtTs(saved?.updatedAt);
 
-    const section = (title, names) => {
-      const filled = Array.isArray(names) && names.some((n) => n && n !== "—");
+    const renderListBlock = (label, names, ordered = false) => {
+      const list = Array.isArray(names) ? names.filter(Boolean) : [];
+      if (!list.length) return "";
+      return `
+        <div style="margin-top:10px;">
+          <div class="tiny muted" style="margin-bottom:6px;"><strong>${label}</strong></div>
+          <div style="border:1px solid var(--border); border-radius:10px; padding:10px; background:rgba(255,255,255,.02);">
+            ${ordered
+              ? `<ol class="list" style="margin:0; padding-left:18px;">${list.map((n, i) => `<li class="tiny" style="margin:6px 0;">${i + 1}. ${n}</li>`).join("")}</ol>`
+              : `<ul class="list" style="margin:0; padding-left:18px;">${list.map((n) => `<li class="tiny" style="margin:6px 0;">${n}</li>`).join("")}</ul>`}
+          </div>
+        </div>
+      `;
+    };
+
+    const section = (title, cfg) => {
+      const orderedNames = Array.isArray(cfg?.orderedNames) ? cfg.orderedNames : [];
+      const dnfNames = Array.isArray(cfg?.dnfNames) ? cfg.dnfNames : [];
+      const dnsNames = Array.isArray(cfg?.dnsNames) ? cfg.dnsNames : [];
+      const dsqNames = Array.isArray(cfg?.dsqNames) ? cfg.dsqNames : [];
+      const fastestLapNames = Array.isArray(cfg?.fastestLapNames) ? cfg.fastestLapNames : [];
+
+      const hasAnything = [orderedNames, dnfNames, dnsNames, dsqNames, fastestLapNames].some(arr => Array.isArray(arr) && arr.length > 0);
+
       return `
         <div class="note" style="margin-top:10px;">
           <strong>${title}</strong>
-          <div class="tiny muted" style="margin-top:6px;">${filled ? "Full order preview." : "Not available yet."}</div>
-          <div style="max-height:260px; overflow:auto; margin-top:10px; border:1px solid var(--border); border-radius:12px; padding:10px; background:rgba(255,255,255,.02);">
-            <ol class="list" style="margin:0; padding-left:18px;">
-              ${names.map((n, i) => `<li class="tiny" style="margin:6px 0;">${i + 1}. ${n}</li>`).join("")}
-            </ol>
-          </div>
+          <div class="tiny muted" style="margin-top:6px;">${hasAnything ? "Expanded preview." : "Not available yet."}</div>
+          ${renderListBlock("Classified order", orderedNames, true)}
+          ${renderListBlock("DNF", dnfNames)}
+          ${renderListBlock("DNS", dnsNames)}
+          ${renderListBlock("DSQ", dsqNames)}
+          ${renderListBlock("Fastest Lap awards", fastestLapNames)}
         </div>
       `;
     };
@@ -1020,10 +1091,33 @@ if (banner) {
           Results doc updatedAt: <span class="tiny">${savedUpdatedAt}</span>
         </div>
         ${err ? `<div class="note warnNote"><strong>Preview note:</strong><br><span class="tiny muted">${err?.message || err}</span></div>` : ""}
-        ${section("Qualifying", qualiNames)}
-        ${section("Race 1", race1Names)}
-        ${section("Race 2", race2Names)}
-        ${section("Race 3", race3Names)}
+        ${section("Qualifying", {
+          orderedNames: qualiNames,
+          dnfNames: qualiDnfNames,
+          dnsNames: qualiDnsNames,
+          dsqNames: qualiDsqNames,
+        })}
+        ${section("Race 1", {
+          orderedNames: race1Names,
+          dnfNames: race1DnfNames,
+          dnsNames: race1DnsNames,
+          dsqNames: race1DsqNames,
+          fastestLapNames: race1FastestLapNames,
+        })}
+        ${section("Race 2", {
+          orderedNames: race2Names,
+          dnfNames: race2DnfNames,
+          dnsNames: race2DnsNames,
+          dsqNames: race2DsqNames,
+          fastestLapNames: race2FastestLapNames,
+        })}
+        ${section("Race 3", {
+          orderedNames: race3Names,
+          dnfNames: race3DnfNames,
+          dnsNames: race3DnsNames,
+          dsqNames: race3DsqNames,
+          fastestLapNames: race3FastestLapNames,
+        })}
         <div id="admin-lock-msg" class="note warnNote" hidden style="margin-top:12px;"></div>
 
         ${meta?.resultsLocked === true
