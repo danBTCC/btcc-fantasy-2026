@@ -759,6 +759,7 @@ const ADMIN_EMAILS = [
     window.renderRaceForms = renderRaceForms;
     window.loadAdminSubmissionTracker = loadAdminSubmissionTracker;
     window.runDriverValueEngineJ1 = runDriverValueEngineJ1;
+    window.runPlayerBudgetEngineJ2 = runPlayerBudgetEngineJ2;
 
   async function loadAdminSubmissionTracker(root) {
     const mount = root.querySelector("#admin-submission-tracker");
@@ -1708,9 +1709,10 @@ if (banner) {
             await rebuildStandingsWingfootI3_4(root);
             await loadStandingsWingfootPreview(root);
 
-            const valueResult = await runDriverValueEngineJ1(root, eid);
-            setEngineMsg(
-            `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}).`
+           const valueResult = await runDriverValueEngineJ1(root, eid);
+           const budgetResult = await runPlayerBudgetEngineJ2(root, eid);
+           setEngineMsg(
+           `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s).`
            );
           }
         } catch (e) {
@@ -1879,6 +1881,144 @@ async function runDriverValueEngineJ1(root, eventId) {
     tdv: roundMoney2(tdv),
     vv: roundMoney2(vv),
   };
+}
+
+async function runPlayerBudgetEngineJ2(root, eventId) {
+  if (!window.btccDb) throw new Error("Database not ready");
+  if (!eventId) throw new Error("No event selected for budget engine");
+
+  const [runSnap, playersSnap, entriesSnapA] = await Promise.all([
+    window.btccDb.collection("driver_value_runs").doc(eventId).collection("drivers").get(),
+    window.btccDb.collection("players").get(),
+    window.btccDb.collection("entries").doc(eventId).collection("entries").get(),
+  ]);
+
+  let entriesSnap = entriesSnapA;
+  if (entriesSnap.empty) {
+    const alt = await window.btccDb.collection("submissions").doc(eventId).collection("entries").get();
+    if (!alt.empty) entriesSnap = alt;
+  }
+
+  const driverRunMap = new Map();
+  runSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    driverRunMap.set(doc.id, {
+      dv: Number(d.dv || 0),
+      ndv: Number(d.ndv || 0),
+      ac: Number(d.ac || 0),
+      gp: Number(d.gp || 0),
+    });
+  });
+
+  const playerMap = new Map();
+  playersSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    playerMap.set(doc.id, {
+      budget: Number(d.budget || d.baseBudget || 10),
+      displayName: (d.displayName || d.name || doc.id).toString(),
+      active: d.active !== false,
+    });
+  });
+
+  const safeTeamIdsFromEntry = (entry) => {
+    const candidates = [
+      entry?.team,
+      entry?.drivers,
+      entry?.selectedDrivers,
+      entry?.driverIds,
+      entry?.picks,
+      entry?.selection,
+    ];
+    const arr = candidates.find((x) => Array.isArray(x));
+    const ids = Array.isArray(arr) ? arr.filter(Boolean).map(String) : [];
+    if (ids.length < 3 || ids.length > 6) return [];
+    return Array.from(new Set(ids));
+  };
+
+  const batch = window.btccDb.batch();
+  let playerCount = 0;
+
+  entriesSnap.forEach((doc) => {
+    const uid = doc.id;
+    const entry = doc.data() || {};
+    const player = playerMap.get(uid) || { budget: 10, displayName: uid, active: true };
+    const teamIds = safeTeamIdsFromEntry(entry);
+
+    const perDriverRawChanges = {};
+    const perDriverAppliedChanges = {};
+    let totalPositive = 0;
+    let totalNegative = 0;
+
+    teamIds.forEach((driverId) => {
+      const row = driverRunMap.get(driverId);
+      const raw = Number(row?.ac || 0);
+      const applied = raw < 0 ? Math.max(raw, -0.10) : raw;
+
+      perDriverRawChanges[driverId] = roundMoney2(raw);
+      perDriverAppliedChanges[driverId] = roundMoney2(applied);
+
+      if (applied >= 0) totalPositive += applied;
+      else totalNegative += applied;
+    });
+
+    const cappedNegative = Math.max(totalNegative, -0.60);
+    const totalChange = roundMoney2(totalPositive + cappedNegative);
+    const startingBudget = roundMoney2(player.budget);
+    const newBudget = roundMoney2(startingBudget + totalChange);
+
+    const runRef = window.btccDb.collection("player_budget_runs").doc(eventId).collection("players").doc(uid);
+    batch.set(
+      runRef,
+      {
+        eventId,
+        uid,
+        displayName: player.displayName,
+        startingBudget,
+        teamIds,
+        perDriverRawChanges,
+        perDriverAppliedChanges,
+        totalPositive: roundMoney2(totalPositive),
+        totalNegativeRaw: roundMoney2(totalNegative),
+        totalNegativeApplied: roundMoney2(cappedNegative),
+        totalChange,
+        newBudget,
+        computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        engineVersion: "J2.0",
+      },
+      { merge: false }
+    );
+
+    const playerRef = window.btccDb.collection("players").doc(uid);
+    batch.set(
+      playerRef,
+      {
+        budget: newBudget,
+        baseBudget: newBudget,
+        previousBudget: startingBudget,
+        lastBudgetChange: totalChange,
+        lastBudgetEventId: eventId,
+        budgetUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    playerCount += 1;
+  });
+
+  batch.set(
+    window.btccDb.collection("player_budget_runs").doc(eventId),
+    {
+      eventId,
+      playerCount,
+      computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      engineVersion: "J2.0",
+    },
+    { merge: true }
+  );
+
+  await batch.commit();
+
+  return { playerCount };
 }
 
   // I1.4: Read-only preview of event_scores/{eventId}/players/*
