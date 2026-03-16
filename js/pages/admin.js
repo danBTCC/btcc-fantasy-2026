@@ -754,10 +754,11 @@ const ADMIN_EMAILS = [
   }
 
     window.loadAdmin = loadAdmin;
-  window.loadSelectedEventMetaAndResults = loadSelectedEventMetaAndResults;
-  window.renderResultsPreview = renderResultsPreview;
-  window.renderRaceForms = renderRaceForms;
-  window.loadAdminSubmissionTracker = loadAdminSubmissionTracker;
+    window.loadSelectedEventMetaAndResults = loadSelectedEventMetaAndResults;
+    window.renderResultsPreview = renderResultsPreview;
+    window.renderRaceForms = renderRaceForms;
+    window.loadAdminSubmissionTracker = loadAdminSubmissionTracker;
+    window.runDriverValueEngineJ1 = runDriverValueEngineJ1;
 
   async function loadAdminSubmissionTracker(root) {
     const mount = root.querySelector("#admin-submission-tracker");
@@ -1706,6 +1707,11 @@ if (banner) {
             await loadStandingsDriversPreview(root);
             await rebuildStandingsWingfootI3_4(root);
             await loadStandingsWingfootPreview(root);
+
+            const valueResult = await runDriverValueEngineJ1(root, eid);
+            setEngineMsg(
+            `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}).`
+           );
           }
         } catch (e) {
           console.error("❌ Engine dry run failed:", e);
@@ -1720,6 +1726,160 @@ if (banner) {
     }
   }
   // END renderResultsPreview
+
+// ============================================================
+// DRIVER VALUE ENGINE CONSTANTS (J1)
+// ============================================================
+const PPV_2026 = 930;
+const PTR_2026 = 0.10;
+const MIN_DRIVER_VALUE_2026 = 0.10;
+
+  function roundMoney2(v) {
+  return Math.round((Number(v || 0) + Number.EPSILON) * 100) / 100;
+}
+
+async function runDriverValueEngineJ1(root, eventId) {
+  if (!window.btccDb) throw new Error("Database not ready");
+  if (!eventId) throw new Error("No event selected for value engine");
+
+  const [driversSnap, scoresSnap] = await Promise.all([
+    window.btccDb.collection("drivers").get(),
+    window.btccDb.collection("event_scores").doc(eventId).collection("players").get(),
+  ]);
+
+  const activeDrivers = driversSnap.docs
+    .map((doc) => {
+      const d = doc.data() || {};
+      return {
+        id: doc.id,
+        name: (d.name || doc.id).toString(),
+        active: d.active !== false,
+        value: Number(d.value || 0),
+        category: d.category || "",
+      };
+    })
+    .filter((d) => d.active);
+
+  if (!activeDrivers.length) {
+    throw new Error("No active drivers found for value engine");
+  }
+
+  const tdv = activeDrivers.reduce(
+    (sum, d) => sum + Math.max(Number(d.value || 0), MIN_DRIVER_VALUE_2026),
+    0
+  );
+
+  if (!tdv || tdv <= 0) {
+    throw new Error("Total Driver Value (TDV) is zero");
+  }
+
+  const vv = PPV_2026 / tdv;
+
+  const gpMap = new Map();
+
+  scoresSnap.forEach((doc) => {
+    const data = doc.data() || {};
+    const perDriver = data.perDriver || {};
+    Object.entries(perDriver).forEach(([driverId, pts]) => {
+      const prev = Number(gpMap.get(driverId) || 0);
+      gpMap.set(String(driverId), prev + Number(pts || 0));
+    });
+  });
+
+  const calcRows = activeDrivers.map((driver) => {
+    const dv = Math.max(Number(driver.value || 0), MIN_DRIVER_VALUE_2026);
+    const gp = Number(gpMap.get(driver.id) || 0);
+    const ep = vv * dv;
+    const diffRatio = ep > 0 ? ((gp - ep) / ep) : 0;
+    const appliedChangeRaw = dv * diffRatio * PTR_2026;
+    const ndvRaw = dv + appliedChangeRaw;
+    const ndv = Math.max(MIN_DRIVER_VALUE_2026, roundMoney2(ndvRaw));
+    const ac = roundMoney2(ndv - dv);
+
+    return {
+      driverId: driver.id,
+      name: driver.name,
+      category: driver.category,
+      active: true,
+      dv: roundMoney2(dv),
+      gp: roundMoney2(gp),
+      ep: roundMoney2(ep),
+      d: Number(diffRatio || 0),
+      ptr: PTR_2026,
+      ac,
+      ndv,
+    };
+  });
+
+  const batch = window.btccDb.batch();
+
+  calcRows.forEach((row) => {
+    const runRef = window.btccDb
+      .collection("driver_value_runs")
+      .doc(eventId)
+      .collection("drivers")
+      .doc(row.driverId);
+
+    batch.set(
+      runRef,
+      {
+        eventId,
+        driverId: row.driverId,
+        name: row.name,
+        category: row.category,
+        dv: row.dv,
+        gp: row.gp,
+        ep: row.ep,
+        d: row.d,
+        ptr: row.ptr,
+        ac: row.ac,
+        ndv: row.ndv,
+        computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        engineVersion: "J1.0",
+      },
+      { merge: false }
+    );
+
+    const driverRef = window.btccDb.collection("drivers").doc(row.driverId);
+    batch.set(
+      driverRef,
+      {
+        value: row.ndv,
+        previousValue: row.dv,
+        lastGp: row.gp,
+        lastEp: row.ep,
+        lastDiffRatio: row.d,
+        lastValueChange: row.ac,
+        lastValueEventId: eventId,
+        valueUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  });
+
+  batch.set(
+    window.btccDb.collection("driver_value_runs").doc(eventId),
+    {
+      eventId,
+      ppv: PPV_2026,
+      tdv: roundMoney2(tdv),
+      vv: roundMoney2(vv),
+      ptr: PTR_2026,
+      activeDriverCount: activeDrivers.length,
+      computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      engineVersion: "J1.0",
+    },
+    { merge: true }
+  );
+
+  await batch.commit();
+
+  return {
+    driverCount: calcRows.length,
+    tdv: roundMoney2(tdv),
+    vv: roundMoney2(vv),
+  };
+}
 
   // I1.4: Read-only preview of event_scores/{eventId}/players/*
   async function loadEventScoresPreview(root) {
