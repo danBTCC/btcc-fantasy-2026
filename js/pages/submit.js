@@ -351,6 +351,19 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
 <div class="card" style="margin-top:12px;">
   <h2 style="margin:0 0 6px 0;">Team Submission</h2>
+  <div id="sld-section" class="note" style="margin-top:10px;">
+    <div style="font-weight:700; margin-bottom:6px;">SLD — Season Long Driver</div>
+    <div class="tiny muted" style="margin-bottom:8px;">
+      Optional. Choose one driver to lock in for the full season.<br>
+      Your SLD costs <strong>+10%</strong>, counts as one of your drivers, and ignores repetition rules.
+    </div>
+
+    <select id="sld-select" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+      <option value="">No SLD selected</option>
+    </select>
+
+    <div id="sld-selected-msg" class="tiny" style="margin-top:6px;"></div>
+  </div>
 <div class="tiny muted">
   Next event: <strong id="submit-next-event">Loading…</strong><br>
   Status: <strong id="submit-submission-status">—</strong><br>
@@ -590,6 +603,57 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       });
 
       const drivers = driversSnap.docs.map((doc) => {
+      // ---- SLD setup (Event 1 only) ----
+      const sldSection = root.querySelector("#sld-section");
+      const sldSelect = root.querySelector("#sld-select");
+      const sldMsg = root.querySelector("#sld-selected-msg");
+
+      if (sldSection) {
+        const currentEventNo = Number(getEventContext().eventNo || 0);
+
+        if (currentEventNo !== 1) {
+          sldSection.style.display = "none";
+        } else {
+          sldSection.style.display = "block";
+
+          if (sldSelect) {
+            sldSelect.innerHTML = `<option value="">No SLD selected</option>` +
+              drivers.map(d => `<option value="${d.id}" data-price="${d.price}">${escapeHtml(d.name)}</option>`).join("");
+
+            sldSelect.addEventListener("change", () => {
+              const selectedId = sldSelect.value;
+              if (!selectedId) {
+                if (sldMsg) sldMsg.textContent = "";
+                return;
+              }
+
+              const driver = driversById.get(selectedId);
+              if (!driver) return;
+
+              const base = Number(driver.price || 0);
+              const sldPrice = Math.round(base * 1.10 * 100) / 100;
+
+              const confirmText = `You are selecting ${driver.name} as your Season Long Driver.\n\nExample Base value: £2.50\nSLD price 10% premium : £2.75\n\nThis choice is locked for the season. Continue?`;
+
+              if (!window.confirm(confirmText)) {
+                sldSelect.value = "";
+                return;
+              }
+
+              if (sldMsg) {
+                sldMsg.innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (${fmtMoney(sldPrice)} per event)`;
+              }
+
+              // Save to player profile
+              window.btccDb.collection("players").doc(uid).set({
+                sldDriverId: selectedId,
+                sldLocked: true,
+                sldSelectedAtEventNo: 1,
+              }, { merge: true });
+            });
+          }
+        }
+      }
         const d = doc.data() || {};
         const selectionsInLastTwo = Number(consecutiveCounts.get(doc.id) || 0);
         const isSLD = !!sldDriverId && sldDriverId === doc.id;
@@ -606,6 +670,18 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       });
 
       const driversById = new Map(drivers.map((driver) => [driver.id, driver]));
+
+      // preload SLD if set
+      if (sldDriverId && root.querySelector("#sld-select")) {
+        const sel = root.querySelector("#sld-select");
+        sel.value = sldDriverId;
+
+        const driver = driversById.get(sldDriverId);
+        if (driver && root.querySelector("#sld-selected-msg")) {
+          const sldPrice = Math.round(Number(driver.price || 0) * 1.10 * 100) / 100;
+          root.querySelector("#sld-selected-msg").innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (${fmtMoney(sldPrice)} per event)`;
+        }
+      }
       const selected = new Set();
 
       const updateRowState = (row) => {
