@@ -676,10 +676,11 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
               currentSldDriverId = selectedId;
               drivers.forEach((d) => {
                 d.isSLD = d.id === selectedId;
-              });
+               });
+               selected.add(selectedId);
 
               if (sldMsg) {
-                sldMsg.innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (${fmtMoney(sldPrice)} per event)`;
+                sldMsg.innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (Current SLD price this event: ${fmtMoney(sldPrice)})`;
               }
 
               await window.btccDb.collection("players").doc(uid).set({
@@ -703,7 +704,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         const driver = driversById.get(currentSldDriverId);
         if (driver && root.querySelector("#sld-selected-msg")) {
           const sldPrice = Math.round(Number(driver.price || 0) * 1.10 * 100) / 100;
-          root.querySelector("#sld-selected-msg").innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (${fmtMoney(sldPrice)} per event)`;
+          root.querySelector("#sld-selected-msg").innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (Current SLD price this event: ${fmtMoney(sldPrice)})`;
         }
       }
       const selected = new Set();
@@ -717,7 +718,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
         const isSelected = selected.has(id);
         if (isSelected) {
-          btn.textContent = "Selected";
+          btn.textContent = driver.isSLD ? "SLD" : "Selected";
           row.style.opacity = "1";
           row.style.borderColor = "#facc15";
           row.style.boxShadow = "0 0 0 1px rgba(250, 204, 21, .25)";
@@ -1009,12 +1010,20 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
           if (!id || !driver) return;
 
           if (selected.has(id)) {
-            hasInteracted = true;
-            selected.delete(id);
-            updateRowState(row);
-            updateSummary();
-            return;
+           if (driver.isSLD) {
+             if (validationEl) {
+               validationEl.hidden = false;
+               validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Your SLD counts as one of your drivers. Remove or change the SLD selection above if you do not want this driver locked into the team.</span>`;
+             }
+             return;
           }
+
+          hasInteracted = true;
+          selected.delete(id);
+          updateRowState(row);
+          updateSummary();
+          return;
+        }
 
           if (driver.blocked && !driver.isSLD) {
             if (validationEl) {
