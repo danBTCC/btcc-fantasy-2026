@@ -603,57 +603,6 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       });
 
       const drivers = driversSnap.docs.map((doc) => {
-      // ---- SLD setup (Event 1 only) ----
-      const sldSection = root.querySelector("#sld-section");
-      const sldSelect = root.querySelector("#sld-select");
-      const sldMsg = root.querySelector("#sld-selected-msg");
-
-      if (sldSection) {
-        const currentEventNo = Number(getEventContext().eventNo || 0);
-
-        if (currentEventNo !== 1) {
-          sldSection.style.display = "none";
-        } else {
-          sldSection.style.display = "block";
-
-          if (sldSelect) {
-            sldSelect.innerHTML = `<option value="">No SLD selected</option>` +
-              drivers.map(d => `<option value="${d.id}" data-price="${d.price}">${escapeHtml(d.name)}</option>`).join("");
-
-            sldSelect.addEventListener("change", () => {
-              const selectedId = sldSelect.value;
-              if (!selectedId) {
-                if (sldMsg) sldMsg.textContent = "";
-                return;
-              }
-
-              const driver = driversById.get(selectedId);
-              if (!driver) return;
-
-              const base = Number(driver.price || 0);
-              const sldPrice = Math.round(base * 1.10 * 100) / 100;
-
-              const confirmText = `You are selecting ${driver.name} as your Season Long Driver.\n\nExample Base value: £2.50\nSLD price 10% premium : £2.75\n\nThis choice is locked for the season. Continue?`;
-
-              if (!window.confirm(confirmText)) {
-                sldSelect.value = "";
-                return;
-              }
-
-              if (sldMsg) {
-                sldMsg.innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (${fmtMoney(sldPrice)} per event)`;
-              }
-
-              // Save to player profile
-              window.btccDb.collection("players").doc(uid).set({
-                sldDriverId: selectedId,
-                sldLocked: true,
-                sldSelectedAtEventNo: 1,
-              }, { merge: true });
-            });
-          }
-        }
-      }
         const d = doc.data() || {};
         const selectionsInLastTwo = Number(consecutiveCounts.get(doc.id) || 0);
         const isSLD = !!sldDriverId && sldDriverId === doc.id;
@@ -670,6 +619,61 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       });
 
       const driversById = new Map(drivers.map((driver) => [driver.id, driver]));
+
+      // ---- SLD setup (Event 1 only) ----
+      const sldSection = root.querySelector("#sld-section");
+      const sldSelect = root.querySelector("#sld-select");
+      const sldMsg = root.querySelector("#sld-selected-msg");
+
+      if (sldSection) {
+        const currentEventNo = Number(getEventContext().eventNo || 0);
+
+        if (currentEventNo !== 1) {
+          sldSection.style.display = "none";
+        } else {
+          sldSection.style.display = "block";
+
+          if (sldSelect) {
+            sldSelect.innerHTML = `<option value="">No SLD selected</option>` +
+              drivers.map((d) => `<option value="${d.id}" data-price="${d.price}">${escapeHtml(d.name)}</option>`).join("");
+
+            sldSelect.onchange = async () => {
+              const selectedId = sldSelect.value;
+              if (!selectedId) {
+                if (sldMsg) sldMsg.textContent = "";
+                await window.btccDb.collection("players").doc(uid).set({
+                  sldDriverId: null,
+                  sldLocked: false,
+                }, { merge: true });
+                return;
+              }
+
+              const driver = driversById.get(selectedId);
+              if (!driver) return;
+
+              const base = Number(driver.price || 0);
+              const sldPrice = Math.round(base * 1.10 * 100) / 100;
+
+              const confirmText = `You are selecting ${driver.name} as your Season Long Driver.\n\nExample Base value: £2.50\nSLD price 10% premium : £2.75\n\nThis choice is locked for the season. Continue?`;
+
+              if (!window.confirm(confirmText)) {
+                sldSelect.value = sldDriverId || "";
+                return;
+              }
+
+              if (sldMsg) {
+                sldMsg.innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (${fmtMoney(sldPrice)} per event)`;
+              }
+
+              await window.btccDb.collection("players").doc(uid).set({
+                sldDriverId: selectedId,
+                sldLocked: true,
+                sldSelectedAtEventNo: 1,
+              }, { merge: true });
+            };
+          }
+        }
+      }
 
       // preload SLD if set
       if (sldDriverId && root.querySelector("#sld-select")) {
