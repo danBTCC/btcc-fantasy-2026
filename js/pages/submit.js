@@ -654,7 +654,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
               const base = Number(driver.price || 0);
               const sldPrice = Math.round(base * 1.10 * 100) / 100;
 
-              const confirmText = `You are selecting ${driver.name} as your Season Long Driver.\n\nExample Base value: £2.50\nSLD price 10% premium : £2.75\n\nThis choice is locked for the season. Continue?`;
+              const confirmText = `You are selecting ${driver.name} as your Season Long Driver.\n\nExample Base value: £2.50\nSLD price 10% premium : £2.75\n\nSLD is excluded from Star Driver adjustments.\n\nThis choice is locked for the season. Continue?`;
 
               if (!window.confirm(confirmText)) {
                 sldSelect.value = sldDriverId || "";
