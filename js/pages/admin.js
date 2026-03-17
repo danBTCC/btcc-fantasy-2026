@@ -761,6 +761,7 @@ const ADMIN_EMAILS = [
     window.runDriverValueEngineJ1 = runDriverValueEngineJ1;
     window.runPlayerBudgetEngineJ2 = runPlayerBudgetEngineJ2;
     window.runDriverTierEngineJ3 = runDriverTierEngineJ3;
+    window.runBudgetBoostEngineJ4 = runBudgetBoostEngineJ4;
 
   async function loadAdminSubmissionTracker(root) {
     const mount = root.querySelector("#admin-submission-tracker");
@@ -1713,11 +1714,16 @@ if (banner) {
            const valueResult = await runDriverValueEngineJ1(root, eid);
            const budgetResult = await runPlayerBudgetEngineJ2(root, eid);
            const tierResult = await runDriverTierEngineJ3(root, eid);
+           const boostResult = await runBudgetBoostEngineJ4(root, eid);
 
            setEngineMsg(
-             tierResult.skipped
-              ? `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers skipped for Event 1.`
-             : `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers assigned for ${tierResult.driverCount} driver(s).`
+            tierResult.skipped
+             ? (boostResult.skipped
+               ? `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers skipped for Event 1. Budget Boost skipped for Event 1.`
+               : `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers skipped for Event 1. Budget Boost updated for ${boostResult.playerCount} player(s).`)
+             : (boostResult.skipped
+                ? `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers assigned for ${tierResult.driverCount} driver(s). Budget Boost skipped for Event 1.`
+               : `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers assigned for ${tierResult.driverCount} driver(s). Budget Boost updated for ${boostResult.playerCount} player(s).`)
            );
           }
         } catch (e) {
@@ -2116,6 +2122,154 @@ async function runDriverTierEngineJ3(root, eventId) {
   await batch.commit();
 
   return { driverCount: rows.length, skipped: false };
+}
+
+async function runBudgetBoostEngineJ4(root, eventId) {
+  if (!window.btccDb) throw new Error("Database not ready");
+  if (!eventId) throw new Error("No event selected for budget boost engine");
+
+  const eventMeta = root.__eventMeta || {};
+  const eventNo = Number(eventMeta.eventNo || 0);
+
+  const ladder = {
+    1: 0.00,
+    2: 0.01,
+    3: 0.02,
+    4: 0.03,
+    5: 0.04,
+    6: 0.05,
+    7: 0.06,
+    8: 0.07,
+    9: 0.08,
+    10: 0.10,
+    11: 0.12,
+    12: 0.14,
+    13: 0.15,
+    14: 0.16,
+    15: 0.17,
+    16: 0.18,
+  };
+
+  const multiplier = eventNo <= 1 ? 0 : (eventNo === 2 ? 0.5 : 1);
+
+  const standingsSnap = await window.btccDb
+    .collection("standings_players")
+    .doc("season_2026")
+    .collection("players")
+    .orderBy("pointsTotal", "desc")
+    .get();
+
+  const playersSnap = await window.btccDb.collection("players").get();
+
+  const playersMap = new Map();
+  playersSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    playersMap.set(doc.id, {
+      displayName: (d.displayName || d.name || doc.id).toString(),
+      budget: Number(d.budget || d.baseBudget || 10),
+      active: d.active !== false,
+    });
+  });
+
+  const standingsRows = standingsSnap.docs.map((doc, idx) => {
+    const d = doc.data() || {};
+    return {
+      uid: doc.id,
+      displayName: (d.displayName || d.name || doc.id).toString(),
+      pointsTotal: Number(d.pointsTotal || 0),
+      standingPos: idx + 1,
+    };
+  });
+
+  const rankedIds = new Set(standingsRows.map((r) => r.uid));
+
+  const extraRows = [];
+  Array.from(playersMap.entries()).forEach(([uid, p]) => {
+    if (!p.active) return;
+    if (!rankedIds.has(uid)) {
+      extraRows.push({
+        uid,
+        displayName: p.displayName,
+        pointsTotal: 0,
+        standingPos: null,
+      });
+    }
+  });
+
+  const allRows = [...standingsRows, ...extraRows];
+
+  const batch = window.btccDb.batch();
+  let playerCount = 0;
+
+  allRows.forEach((row, idx) => {
+    const effectivePos = Number(row.standingPos || (idx + 1));
+    const fullBoost = Number(ladder[Math.min(effectivePos, 16)] ?? 0.18);
+    const appliedBoost = roundMoney2(fullBoost * multiplier);
+    const player = playersMap.get(row.uid) || { budget: 10, displayName: row.displayName };
+    const baseBudget = roundMoney2(Number(player.budget || 10));
+    const effectiveBudget = roundMoney2(baseBudget + appliedBoost);
+
+    const runRef = window.btccDb
+      .collection("budget_boost_runs")
+      .doc(eventId)
+      .collection("players")
+      .doc(row.uid);
+
+    batch.set(
+      runRef,
+      {
+        eventId,
+        uid: row.uid,
+        displayName: row.displayName,
+        standingPos: effectivePos,
+        pointsTotal: Number(row.pointsTotal || 0),
+        fullBoost: roundMoney2(fullBoost),
+        multiplier,
+        appliedBoost,
+        baseBudget,
+        effectiveBudget,
+        computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        engineVersion: "J4.0",
+      },
+      { merge: false }
+    );
+
+    const playerRef = window.btccDb.collection("players").doc(row.uid);
+    batch.set(
+      playerRef,
+      {
+        budgetBoost: appliedBoost,
+        effectiveBudget,
+        budgetBoostEventId: eventId,
+        budgetBoostUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    playerCount += 1;
+  });
+
+  batch.set(
+    window.btccDb.collection("budget_boost_runs").doc(eventId),
+    {
+      eventId,
+      eventNo,
+      playerCount,
+      multiplier,
+      ladder,
+      computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      engineVersion: "J4.0",
+    },
+    { merge: true }
+  );
+
+  await batch.commit();
+
+  return {
+    playerCount,
+    multiplier,
+    skipped: multiplier === 0,
+  };
 }
 
   // I1.4: Read-only preview of event_scores/{eventId}/players/*
