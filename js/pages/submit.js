@@ -553,7 +553,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       }
 
       const playerData = playerSnap.exists ? (playerSnap.data() || {}) : {};
-      const sldDriverId = playerData.sldDriverId || playerData.sld || null;
+      let currentSldDriverId = playerData.sldDriverId || playerData.sld || null;
 
       const previousEvents = eventsSnap.docs
         .map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
@@ -603,23 +603,6 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       });
 
       const drivers = driversSnap.docs.map((doc) => {
-        const d = doc.data() || {};
-        const selectionsInLastTwo = Number(consecutiveCounts.get(doc.id) || 0);
-        const isSLD = !!sldDriverId && sldDriverId === doc.id;
-        const blocked = selectionsInLastTwo >= 2 && !isSLD;
-        return {
-          id: doc.id,
-          name: d.name ?? "Unnamed",
-          price: Number(d.price ?? d.cost ?? d.value ?? 0),
-          tier: d.tier ?? null,
-          selectionsInLastTwo,
-          blocked,
-          isSLD,
-        };
-      });
-
-      const driversById = new Map(drivers.map((driver) => [driver.id, driver]));
-
       // ---- SLD setup (Event 1 only) ----
       const sldSection = root.querySelector("#sld-section");
       const sldSelect = root.querySelector("#sld-select");
@@ -635,16 +618,22 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
           if (sldSelect) {
             sldSelect.innerHTML = `<option value="">No SLD selected</option>` +
-              drivers.map((d) => `<option value="${d.id}" data-price="${d.price}">${escapeHtml(d.name)}</option>`).join("");
+              drivers.map(d => `<option value="${d.id}" data-price="${d.price}">${escapeHtml(d.name)}</option>`).join("");
 
-            sldSelect.onchange = async () => {
+            sldSelect.addEventListener("change", () => {
               const selectedId = sldSelect.value;
               if (!selectedId) {
+                currentSldDriverId = null;
+                drivers.forEach((d) => {
+                  d.isSLD = false;
+                });
                 if (sldMsg) sldMsg.textContent = "";
-                await window.btccDb.collection("players").doc(uid).set({
+                window.btccDb.collection("players").doc(uid).set({
                   sldDriverId: null,
                   sldLocked: false,
                 }, { merge: true });
+                box.querySelectorAll("[data-driver-id]").forEach((row) => updateRowState(row));
+                updateSummary();
                 return;
               }
 
@@ -654,33 +643,62 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
               const base = Number(driver.price || 0);
               const sldPrice = Math.round(base * 1.10 * 100) / 100;
 
-              const confirmText = `You are selecting ${driver.name} as your Season Long Driver.\n\nExample Base value: £2.50\nSLD price 10% premium : £2.75\n\nSLD is excluded from Star Driver adjustments.\n\nThis choice is locked for the season. Continue?`;
+              const confirmText = `You are selecting ${driver.name} as your Season Long Driver.\n\nExample Base value: £2.50\nSLD price 10% premium : £2.75\n\nThis choice is locked for the season. Continue?`;
 
               if (!window.confirm(confirmText)) {
-                sldSelect.value = sldDriverId || "";
+                sldSelect.value = currentSldDriverId || "";
                 return;
               }
+
+              currentSldDriverId = selectedId;
+              drivers.forEach((d) => {
+                d.isSLD = d.id === selectedId;
+              });
 
               if (sldMsg) {
                 sldMsg.innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (${fmtMoney(sldPrice)} per event)`;
               }
 
-              await window.btccDb.collection("players").doc(uid).set({
+              window.btccDb.collection("players").doc(uid).set({
                 sldDriverId: selectedId,
                 sldLocked: true,
                 sldSelectedAtEventNo: 1,
               }, { merge: true });
-            };
+
+              box.querySelectorAll("[data-driver-id]").forEach((row) => updateRowState(row));
+              updateSummary();
+            });
           }
         }
       }
+        const d = doc.data() || {};
+        const selectionsInLastTwo = Number(consecutiveCounts.get(doc.id) || 0);
+        const isSLD = !!currentSldDriverId && currentSldDriverId === doc.id;
+        const blocked = selectionsInLastTwo >= 2 && !isSLD;
+        return {
+          id: doc.id,
+          name: d.name ?? "Unnamed",
+          price: Number(d.price ?? d.cost ?? d.value ?? 0),
+          tier: d.tier ?? null,
+          selectionsInLastTwo,
+          blocked,
+          isSLD,
+        };
+      });
+
+      const driversById = new Map(drivers.map((driver) => [driver.id, driver]));
+      const getEffectiveDriverPrice = (driver) => {
+        const base = Number(driver?.price || 0);
+        const isSld = !!currentSldDriverId && currentSldDriverId === driver?.id;
+        return isSld ? Math.round(base * 1.10 * 100) / 100 : base;
+      };
 
       // preload SLD if set
-      if (sldDriverId && root.querySelector("#sld-select")) {
+      if (currentSldDriverId && root.querySelector("#sld-select")) {
         const sel = root.querySelector("#sld-select");
-        sel.value = sldDriverId;
+        sel.value = currentSldDriverId;
 
-        const driver = driversById.get(sldDriverId);
+        const driver = driversById.get(currentSldDriverId);
         if (driver && root.querySelector("#sld-selected-msg")) {
           const sldPrice = Math.round(Number(driver.price || 0) * 1.10 * 100) / 100;
           root.querySelector("#sld-selected-msg").innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (${fmtMoney(sldPrice)} per event)`;
@@ -731,12 +749,16 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
             selectedTeamListEl.textContent = "No drivers selected yet.";
           } else {
             selectedTeamListEl.innerHTML = selectedDrivers
-              .map((driver) => `<div style="margin-bottom:4px;"><strong>${escapeHtml(driver.name)}</strong> <span class="muted">(${fmtMoney(driver.price)})</span></div>`)
+              .map((driver) => {
+                const effectivePrice = getEffectiveDriverPrice(driver);
+                const sldBadge = driver.id === currentSldDriverId ? ` <span class="muted">(SLD +10%)</span>` : "";
+                return `<div style="margin-bottom:4px;"><strong>${escapeHtml(driver.name)}</strong> <span class="muted">(${fmtMoney(effectivePrice)})</span>${sldBadge}</div>`;
+              })
               .join("");
           }
         }
 
-        const total = selectedDrivers.reduce((sum, driver) => sum + Number(driver.price || 0), 0);
+        const total = selectedDrivers.reduce((sum, driver) => sum + Number(getEffectiveDriverPrice(driver) || 0), 0);
         const budgetNum = Number(playerBudget) || 0;
         const remaining = budgetNum - total;
 
@@ -881,13 +903,14 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         }
 
         const driverIds = Array.from(selected);
-        const totalCost = driverIds.reduce((sum, id) => sum + Number(driversById.get(id)?.price || 0), 0);
+        const totalCost = driverIds.reduce((sum, id) => sum + Number(getEffectiveDriverPrice(driversById.get(id)) || 0), 0);
 
         const payload = {
           uid,
           displayName: displayName || "Player",
           driverIds,
           teamIds: driverIds,
+          sldDriverId: currentSldDriverId || null,
           totalCost: Number(totalCost) || 0,
           eventId,
           eventNo: getEventContext().eventNo ?? null,
