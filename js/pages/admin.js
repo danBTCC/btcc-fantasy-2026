@@ -760,6 +760,7 @@ const ADMIN_EMAILS = [
     window.loadAdminSubmissionTracker = loadAdminSubmissionTracker;
     window.runDriverValueEngineJ1 = runDriverValueEngineJ1;
     window.runPlayerBudgetEngineJ2 = runPlayerBudgetEngineJ2;
+    window.runDriverTierEngineJ3 = runDriverTierEngineJ3;
 
   async function loadAdminSubmissionTracker(root) {
     const mount = root.querySelector("#admin-submission-tracker");
@@ -1711,8 +1712,12 @@ if (banner) {
 
            const valueResult = await runDriverValueEngineJ1(root, eid);
            const budgetResult = await runPlayerBudgetEngineJ2(root, eid);
+           const tierResult = await runDriverTierEngineJ3(root, eid);
+
            setEngineMsg(
-           `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s).`
+             tierResult.skipped
+              ? `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers skipped for Event 1.`
+             : `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers assigned for ${tierResult.driverCount} driver(s).`
            );
           }
         } catch (e) {
@@ -2019,6 +2024,98 @@ async function runPlayerBudgetEngineJ2(root, eventId) {
   await batch.commit();
 
   return { playerCount };
+}
+
+async function runDriverTierEngineJ3(root, eventId) {
+  if (!window.btccDb) throw new Error("Database not ready");
+  if (!eventId) throw new Error("No event selected for tier engine");
+
+  const eventMeta = root.__eventMeta || {};
+  const eventNo = Number(eventMeta.eventNo || 0);
+
+  if (eventNo <= 1) {
+    return { driverCount: 0, skipped: true, reason: "Event 1 has no tiers" };
+  }
+
+  const standingsSnap = await window.btccDb
+    .collection("standings_drivers")
+    .doc("season_2026")
+    .collection("drivers")
+    .orderBy("pointsTotal", "desc")
+    .get();
+
+  if (standingsSnap.empty) {
+    throw new Error("No driver standings found for tier engine");
+  }
+
+  const rows = standingsSnap.docs.map((doc, idx) => {
+    const d = doc.data() || {};
+    return {
+      driverId: doc.id,
+      name: (d.name || doc.id).toString(),
+      pointsTotal: Number(d.pointsTotal || 0),
+      standingPos: idx + 1,
+    };
+  });
+
+  const batch = window.btccDb.batch();
+
+  rows.forEach((row) => {
+    let tier = "low";
+    if (row.standingPos >= 1 && row.standingPos <= 7) tier = "high";
+    else if (row.standingPos >= 8 && row.standingPos <= 17) tier = "middle";
+    else tier = "low";
+
+    const runRef = window.btccDb
+      .collection("driver_tier_runs")
+      .doc(eventId)
+      .collection("drivers")
+      .doc(row.driverId);
+
+    batch.set(
+      runRef,
+      {
+        eventId,
+        driverId: row.driverId,
+        name: row.name,
+        standingPos: row.standingPos,
+        pointsTotal: row.pointsTotal,
+        tier,
+        computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        engineVersion: "J3.0",
+      },
+      { merge: false }
+    );
+
+    const driverRef = window.btccDb.collection("drivers").doc(row.driverId);
+    batch.set(
+      driverRef,
+      {
+        tier,
+        tierStandingPos: row.standingPos,
+        tierEventId: eventId,
+        tierUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  });
+
+  batch.set(
+    window.btccDb.collection("driver_tier_runs").doc(eventId),
+    {
+      eventId,
+      eventNo,
+      gridSize: rows.length,
+      split: { high: 7, middle: 10, low: 7 },
+      computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      engineVersion: "J3.0",
+    },
+    { merge: true }
+  );
+
+  await batch.commit();
+
+  return { driverCount: rows.length, skipped: false };
 }
 
   // I1.4: Read-only preview of event_scores/{eventId}/players/*
