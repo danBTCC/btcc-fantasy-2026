@@ -754,8 +754,6 @@ const ADMIN_EMAILS = [
   }
 
     window.loadAdmin = loadAdmin;
-    window.loadSelectedEventMetaAndResults = loadSelectedEventMetaAndResults;
-    window.renderResultsPreview = renderResultsPreview;
     window.renderRaceForms = renderRaceForms;
     window.loadAdminSubmissionTracker = loadAdminSubmissionTracker;
     window.runDriverValueEngineJ1 = runDriverValueEngineJ1;
