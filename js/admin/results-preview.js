@@ -868,5 +868,6 @@ if (banner) {
   }
   // END renderResultsPreview
 
+  window.loadSelectedEventMetaAndResults = loadSelectedEventMetaAndResults;
   window.renderResultsPreview = renderResultsPreview;
 })();
