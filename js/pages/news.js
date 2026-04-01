@@ -10,8 +10,8 @@
 
         <!-- HOW TO PLAY -->
         <div class="card" style="margin-top:10px;">
-          <button class="collapseHeader" type="button" data-toggle="how-to-play-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
-            <h2 style="margin:0; display:flex; justify-content:space-between;">
+          <button class="collapseHeader" type="button" data-toggle="how-to-play-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0; color:var(--text);">
+            <h2 style="margin:0; display:flex; justify-content:space-between; color:var(--text);">
               <span>How to Play</span>
               <span class="tiny muted">▸</span>
             </h2>
@@ -57,6 +57,22 @@
     if (!root) return;
 
     renderNews(root);
+
+    // Collapse toggle logic
+    root.querySelectorAll("[data-toggle]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.getAttribute("data-toggle");
+        const el = root.querySelector(`#${targetId}`);
+        if (!el) return;
+
+        el.hidden = !el.hidden;
+
+        const chevron = btn.querySelector(".tiny");
+        if (chevron) {
+          chevron.textContent = el.hidden ? "▸" : "▾";
+        }
+      });
+    });
   }
 
   window.loadNews = loadNews;
