@@ -10,9 +10,12 @@ function setActiveTab(route) {
     v.hidden = v.dataset.view !== route;
   });
 
-  // When switching to Home, refresh the editable home news snippets.
   if (route === "home") {
     loadHomeNewsSnippets();
+  }
+
+  if (route === "news") {
+    window.loadNews?.();
   }
 }
 
