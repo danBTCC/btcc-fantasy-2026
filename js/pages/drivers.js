@@ -204,6 +204,22 @@
       const drivers = driversSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       const tdv = drivers.reduce((sum, driver) => sum + Number(driver.value || driver.cost || driver.price || 0), 0);
       const events = eventsSnap.docs;
+
+      const [selectionCounts, storedDriverStandings, driverPoints] = await Promise.all([
+        loadSelectionCounts(db, events),
+        loadStoredDriverStandings(db),
+        loadDriverPoints(db, events),
+      ]);
+
+      const getDriverPointsTotal = (driver) => {
+        if (storedDriverStandings.has(driver.id)) {
+          return Number(storedDriverStandings.get(driver.id) || 0);
+        }
+        if (typeof driver.pointsTotal === "number") return Number(driver.pointsTotal || 0);
+        if (typeof driver.points === "number") return Number(driver.points || 0);
+        return Number(driverPoints.get(driver.id) || 0);
+      };
+
       const driverOverviewRows = drivers
         .map((driver) => {
           const name = driver.name || "Unnamed";
@@ -213,12 +229,7 @@
           const value = Number(driver.value || driver.cost || driver.price || 0);
           const tier = formatTier(driver);
           const ep = calculateExpectedPoints(value, tdv);
-          const points = Number(
-            storedDriverStandings.get(driver.id) ??
-            driver.pointsTotal ??
-            driver.points ??
-            0
-          );
+          const points = getDriverPointsTotal(driver);
           const selections = Number(selectionCounts.get(driver.id) || 0);
           const tr = trendMeta(driver.trend);
 
@@ -248,21 +259,6 @@
           String(row.selections),
           row.trendIcon,
         ]);
-
-      const [selectionCounts, storedDriverStandings, driverPoints] = await Promise.all([
-        loadSelectionCounts(db, events),
-        loadStoredDriverStandings(db),
-        loadDriverPoints(db, events),
-      ]);
-
-      const getDriverPointsTotal = (driver) => {
-        if (storedDriverStandings.has(driver.id)) {
-          return Number(storedDriverStandings.get(driver.id) || 0);
-        }
-        if (typeof driver.pointsTotal === "number") return Number(driver.pointsTotal || 0);
-        if (typeof driver.points === "number") return Number(driver.points || 0);
-        return Number(driverPoints.get(driver.id) || 0);
-      };
 
       const selectionRows = drivers
         .map((driver) => {
