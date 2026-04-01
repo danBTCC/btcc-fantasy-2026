@@ -59,7 +59,8 @@
             <td style="padding:8px; border-bottom:1px solid var(--border);">${cats || "—"}</td>
             <td style="padding:8px; border-bottom:1px solid var(--border);">${active}</td>
             <td style="padding:8px; border-bottom:1px solid var(--border);" class="tiny muted">${doc.id}</td>
-            <td style="padding:8px; border-bottom:1px solid var(--border); text-align:right;">
+            <td style="padding:8px; border-bottom:1px solid var(--border); text-align:right; display:flex; gap:8px; justify-content:flex-end;">
+              <button type="button" class="tile tinyBtn" data-edit-driver="${doc.id}" style="padding:6px 10px;">Edit</button>
               <button type="button" class="tile tinyBtn" data-delete-driver="${doc.id}" style="padding:6px 10px;">Delete</button>
             </td>
           </tr>
@@ -86,6 +87,46 @@
           </table>
         </div>
       `;
+
+      mount.querySelectorAll("[data-edit-driver]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const driverId = btn.getAttribute("data-edit-driver");
+          if (!driverId || !window.btccDb) return;
+
+          try {
+            const snap = await window.btccDb.collection("drivers").doc(driverId).get();
+            if (!snap.exists) {
+              alert("Driver not found");
+              return;
+            }
+
+            const d = snap.data() || {};
+            const categories = Array.isArray(d.categories)
+              ? d.categories.join(", ")
+              : (d.category || "");
+            const price = Number(d.price ?? d.value ?? d.cost ?? 0);
+
+            const idInput = root.querySelector("#admin-driver-id");
+            const nameInput = root.querySelector("#admin-driver-name");
+            const valueInput = root.querySelector("#admin-driver-value");
+            const catInput = root.querySelector("#admin-driver-category");
+            const activeInput = root.querySelector("#admin-driver-active");
+            const msg = root.querySelector("#admin-driver-msg");
+            const saveBtn = root.querySelector("#admin-driver-save");
+
+            if (idInput) idInput.value = driverId;
+            if (nameInput) nameInput.value = d.name || "";
+            if (valueInput) valueInput.value = price.toFixed(2);
+            if (catInput) catInput.value = categories;
+            if (activeInput) activeInput.checked = d.active !== false;
+            if (saveBtn) saveBtn.textContent = "Update driver";
+            if (msg) msg.textContent = `Editing driver: ${d.name || driverId}`;
+          } catch (err) {
+            console.error("❌ Load driver for edit failed:", err);
+            alert(err?.message || "Failed to load driver for edit");
+          }
+        });
+      });
 
       mount.querySelectorAll("[data-delete-driver]").forEach((btn) => {
         btn.addEventListener("click", async () => {
@@ -171,16 +212,18 @@
         );
 
         if (idInput && !idInput.value.trim()) idInput.value = driverId;
+        btn.textContent = "Update driver";
         setMsg(`Saved driver: ${name}`);
-        btn.textContent = "Save driver";
         await loadAdminDriverList(root);
         await loadAdminDrivers(root);
       } catch (err) {
         console.error("❌ Save driver failed:", err);
         setMsg(err?.message || "Failed to save driver");
-        btn.textContent = "Save driver";
+        btn.textContent = root.querySelector("#admin-driver-id")?.value?.trim() ? "Update driver" : "Save driver";
       } finally {
         btn.disabled = false;
+        const idInputNow = root.querySelector("#admin-driver-id");
+        btn.textContent = idInputNow?.value?.trim() ? "Update driver" : "Save driver";
       }
     });
 
