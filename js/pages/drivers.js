@@ -254,7 +254,7 @@
           row.cats ? `${row.name} (${row.cats})` : row.name,
           `£${row.value.toFixed(2)}`,
           row.tier,
-          row.ep.toFixed(1),
+          Math.round(row.ep),
           String(row.points),
           String(row.selections),
           row.trendIcon,
