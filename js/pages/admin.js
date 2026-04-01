@@ -131,8 +131,12 @@ const ADMIN_EMAILS = [
       <h1>Admin</h1>
       <p class="muted">Admin unlocked for <strong>${email}</strong></p>
       
-            <div class="card" style="margin-top:12px;">
-        <h2 style="margin:0 0 6px 0;">Home Page News</h2>
+      <div class="card" style="margin-top:12px;">
+        <button type="button" class="admin-collapse-toggle" data-target="admin-home-news-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Home Page News</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-home-news-body" hidden style="margin-top:10px;">
         <p class="tiny muted" style="margin:0;">Editable home page snippets (not pulled from the News tab). Saved to <span class="tiny">meta/homeNews</span>.</p>
 
         <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
@@ -154,17 +158,27 @@ const ADMIN_EMAILS = [
             <div id="admin-home-news-msg" class="tiny muted"></div>
           </div>
         </div>
-      </div>
+        </div>
+        </div>
 
       <div class="card" style="margin-top:12px;">
-        <h2 style="margin:0 0 6px 0;">Submission Tracker</h2>
+        <button type="button" class="admin-collapse-toggle" data-target="admin-submission-tracker-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Submission Tracker</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-submission-tracker-body" hidden style="margin-top:10px;">
         <p class="tiny muted">Quick visual check of which players have submitted for Events 1–10.</p>
         <div id="admin-submission-tracker-msg" class="tiny muted" style="margin-top:8px;">Loading…</div>
         <div id="admin-submission-tracker" style="margin-top:10px;"></div>
+        </div>
       </div>
 
       <div class="card" style="margin-top:12px;">
-        <h2 style="margin:0 0 6px 0;">Player Manager</h2>
+        <button type="button" class="admin-collapse-toggle" data-target="admin-player-manager-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Player Manager</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-player-manager-body" hidden style="margin-top:10px;">
         <p class="tiny muted">Create or update a player using their Firebase UID.</p>
 
         <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
@@ -187,10 +201,15 @@ const ADMIN_EMAILS = [
           <button id="admin-player-save" class="tile">Save player</button>
           <div id="admin-player-msg" class="tiny muted"></div>
         </div>
-      </div>
+        </div>
+        </div>
 
       <div class="card" style="margin-top:12px;">
-        <h2 style="margin:0 0 6px 0;">Driver Manager</h2>
+        <button type="button" class="admin-collapse-toggle" data-target="admin-driver-manager-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Driver Manager</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-driver-manager-body" hidden style="margin-top:10px;">
         <p class="tiny muted">Create or update drivers and set their starting value/category/active status.</p>
 
         <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
@@ -223,10 +242,15 @@ const ADMIN_EMAILS = [
         </div>
 
         <div id="admin-driver-list" style="margin-top:12px;"></div>
-      </div>
+        </div>
+        </div>
 
       <div class="card" style="margin-top:12px;">
-        <h2 style="margin:0 0 6px 0;">Results Entry</h2>
+        <button type="button" class="admin-collapse-toggle" data-target="admin-results-entry-body" aria-expanded="true" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Results Entry</h2>
+          <span class="tiny muted" data-chevron>▾</span>
+        </button>
+        <div id="admin-results-entry-body" style="margin-top:10px;">
         <p class="tiny muted" style="margin:0;">
           Enter qualifying and race results for events. Results will be locked once confirmed.
         </p>
@@ -241,12 +265,14 @@ const ADMIN_EMAILS = [
 <div id="admin-races-form" style="margin-top:10px;"></div>
 <div id="admin-results-preview" style="margin-top:10px;"></div>
 <div id="admin-drivers-status" class="tiny muted" style="margin-top:10px;">Drivers: Loading…</div>
+        </div>
 
       <button id="admin-logout" class="tile" style="margin-top:12px;">Logout</button>
       `
     );
 
     root.querySelector("#admin-logout")?.addEventListener("click", handleLogout);
+    setupAdminCollapseToggles(root);
     loadAdminEventPicker(root);
     loadAdminDrivers(root);
     setupAdminHomeNews(root);
@@ -256,6 +282,30 @@ const ADMIN_EMAILS = [
     renderQualifyingForm(root);
     renderRaceForms(root);
     renderResultsPreview(root);
+  }
+
+  function setupAdminCollapseToggles(root) {
+    const toggles = root.querySelectorAll(".admin-collapse-toggle");
+    toggles.forEach((btn) => {
+      const targetId = btn.getAttribute("data-target");
+      if (!targetId) return;
+      const body = root.querySelector(`#${targetId}`);
+      const chevron = btn.querySelector("[data-chevron]");
+      if (!body) return;
+
+      const sync = () => {
+        const expanded = !body.hidden;
+        btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+        if (chevron) chevron.textContent = expanded ? "▾" : "▸";
+      };
+
+      btn.onclick = () => {
+        body.hidden = !body.hidden;
+        sync();
+      };
+
+      sync();
+    });
   }
 
   async function loadAdmin() {
