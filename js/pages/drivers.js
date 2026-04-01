@@ -152,37 +152,6 @@
     return totals;
   }
 
-  function renderDriverList(drivers, tdv) {
-    return `<ul class="driverList">
-      ${drivers
-        .map((driver) => {
-          const cats = Array.isArray(driver.categories)
-            ? driver.categories.join(", ")
-            : (driver.category || "");
-
-          const tr = trendMeta(driver.trend);
-          const expectedPoints = calculateExpectedPoints(driver.value, tdv);
-          const tierText = formatTier(driver);
-
-          return `
-            <li class="driverRow">
-              <span class="driverMain">
-                <strong>${escapeHtml(driver.name || "Unnamed")}</strong>
-                <span class="muted">(${escapeHtml(cats)})</span>
-              </span>
-
-              <span class="driverMeta">
-                <span class="money">£${Number(driver.value || 0).toFixed(2)}</span>
-                <span class="muted">• Tier: ${escapeHtml(tierText)}</span>
-                <span class="muted">• EP: ${expectedPoints.toFixed(1)}</span>
-                <span class="trend ${tr.cls}" title="Trend">${tr.icon}</span>
-              </span>
-            </li>
-          `;
-        })
-        .join("")}
-    </ul>`;
-  }
 
   function renderStatsTable(title, columns, rows, emptyMessage) {
     const head = columns.map((col) => `<th>${escapeHtml(col)}</th>`).join("");
@@ -235,6 +204,50 @@
       const drivers = driversSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       const tdv = drivers.reduce((sum, driver) => sum + Number(driver.value || driver.cost || driver.price || 0), 0);
       const events = eventsSnap.docs;
+      const driverOverviewRows = drivers
+        .map((driver) => {
+          const name = driver.name || "Unnamed";
+          const cats = Array.isArray(driver.categories)
+            ? driver.categories.join(", ")
+            : (driver.category || "");
+          const value = Number(driver.value || driver.cost || driver.price || 0);
+          const tier = formatTier(driver);
+          const ep = calculateExpectedPoints(value, tdv);
+          const points = Number(
+            storedDriverStandings.get(driver.id) ??
+            driver.pointsTotal ??
+            driver.points ??
+            0
+          );
+          const selections = Number(selectionCounts.get(driver.id) || 0);
+          const tr = trendMeta(driver.trend);
+
+          return {
+            name,
+            cats,
+            value,
+            tier,
+            ep,
+            points,
+            selections,
+            trendIcon: tr.icon,
+          };
+        })
+        .sort((a, b) => {
+          const epDiff = b.ep - a.ep;
+          if (epDiff !== 0) return epDiff;
+          return a.name.localeCompare(b.name);
+        })
+        .map((row, index) => [
+          String(index + 1),
+          row.cats ? `${row.name} (${row.cats})` : row.name,
+          `£${row.value.toFixed(2)}`,
+          row.tier,
+          row.ep.toFixed(1),
+          String(row.points),
+          String(row.selections),
+          row.trendIcon,
+        ]);
 
       const [selectionCounts, storedDriverStandings, driverPoints] = await Promise.all([
         loadSelectionCounts(db, events),
@@ -283,46 +296,14 @@
         })
         .map((row, index) => [String(index + 1), row.name, String(row.points)]);
 
-      const expectedPointsRows = drivers
-        .map((driver) => ({
-          name: driver.name || "Unnamed",
-          value: Number(driver.value || driver.cost || driver.price || 0),
-          tier: formatTier(driver),
-          ep: calculateExpectedPoints(driver.value || driver.cost || driver.price || 0, tdv),
-        }))
-        .sort((a, b) => {
-          const epDiff = b.ep - a.ep;
-          if (epDiff !== 0) return epDiff;
-          return a.name.localeCompare(b.name);
-        })
-        .map((row, index) => [
-          String(index + 1),
-          row.name,
-          `£${row.value.toFixed(2)}`,
-          row.tier,
-          row.ep.toFixed(1),
-        ]);
 
       container.innerHTML = `
         <div class="tiny muted" style="margin-bottom:10px;">Current PPV: ${PPV_2026} • Active Driver Total Value: £${tdv.toFixed(2)}</div>
-        ${renderDriverList(drivers, tdv)}
         ${renderStatsTable(
-          "Current Event Expected Points",
-          ["Pos", "Driver", "Value", "Tier", "EP"],
-          expectedPointsRows,
-          "No expected points available yet."
-        )}
-        ${renderStatsTable(
-          "Driver Selection Count",
-          ["Pos", "Driver", "Selections", "PPS"],
-          selectionRows,
-          "No submission data yet."
-        )}
-        ${renderStatsTable(
-          "Driver Points Standings",
-          ["Pos", "Driver", "Points"],
-          pointsRows,
-          "No driver points yet."
+          "Drivers Overview",
+          ["Pos", "Driver", "Value", "Tier", "EP", "Points", "Selections", "Trend"],
+          driverOverviewRows,
+          "No drivers available yet."
         )}
       `;
 
