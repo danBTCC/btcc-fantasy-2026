@@ -2,6 +2,7 @@
 // Exposes: window.loadSubmit()
 
 (function () {
+  const PPV_2026 = 930;
   function render(el, html) {
     el.innerHTML = html;
   }
@@ -374,7 +375,8 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 <div class="note" style="margin-top:10px;" id="team-summary">
   Selected: <strong id="team-count">0</strong> •
   Spend: <strong id="team-spend">£0.00</strong> •
-  Remaining: <strong id="team-remaining">£0.00</strong>
+  Remaining: <strong id="team-remaining">£0.00</strong> •
+  Team EP: <strong id="team-ep">0</strong>
   <div id="team-tier-summary" class="tiny muted" style="margin-top:6px;"></div>
 </div>
 <div class="note" style="margin-top:10px;" id="selected-team-panel">
@@ -619,6 +621,14 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       });
 
       const driversById = new Map(drivers.map((driver) => [driver.id, driver]));
+      const tdv = drivers.reduce((sum, driver) => sum + Number(driver.price || 0), 0);
+      const calculateExpectedPoints = (value) => {
+        const safeValue = Number(value || 0);
+        const safeTdv = Number(tdv || 0);
+        if (safeValue <= 0 || safeTdv <= 0) return 0;
+        return Math.round((PPV_2026 / safeTdv) * safeValue);
+      };
+      const getDriverExpectedPoints = (driver) => calculateExpectedPoints(driver?.price || 0);
       const getEffectiveDriverPrice = (driver) => {
         const base = Number(driver?.price || 0);
         const isSld = !!currentSldDriverId && currentSldDriverId === driver?.id;
@@ -741,6 +751,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         const countEl = root.querySelector("#team-count");
         const spendEl = root.querySelector("#team-spend");
         const remEl = root.querySelector("#team-remaining");
+        const epEl = root.querySelector("#team-ep");
 
         const selectedDrivers = Array.from(selected)
           .map((id) => driversById.get(id))
@@ -754,14 +765,16 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
             selectedTeamListEl.innerHTML = selectedDrivers
               .map((driver) => {
                 const effectivePrice = getEffectiveDriverPrice(driver);
+                const expectedPoints = getDriverExpectedPoints(driver);
                 const sldBadge = driver.id === currentSldDriverId ? ` <span class="muted">(SLD +10%)</span>` : "";
-                return `<div style="margin-bottom:4px;"><strong>${escapeHtml(driver.name)}</strong> <span class="muted">(${fmtMoney(effectivePrice)})</span>${sldBadge}</div>`;
+                return `<div style="margin-bottom:4px;"><strong>${escapeHtml(driver.name)}</strong> <span class="muted">(${fmtMoney(effectivePrice)} • EP: ${expectedPoints})</span>${sldBadge}</div>`;
               })
               .join("");
           }
         }
 
         const total = selectedDrivers.reduce((sum, driver) => sum + Number(getEffectiveDriverPrice(driver) || 0), 0);
+        const teamEp = selectedDrivers.reduce((sum, driver) => sum + Number(getDriverExpectedPoints(driver) || 0), 0);
         const budgetNum = Number(playerBudget) || 0;
         const remaining = budgetNum - total;
 
@@ -774,6 +787,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         if (countEl) countEl.textContent = String(selected.size);
         if (spendEl) spendEl.textContent = fmtMoney(total);
         if (remEl) remEl.textContent = fmtMoney(remaining);
+        if (epEl) epEl.textContent = String(teamEp);
 
         if (tierSummaryEl) {
           if (isTierEvent()) {
@@ -977,6 +991,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
                       <div style="font-weight:700; line-height:1.2;">${escapeHtml(driver.name)}</div>
                       <div class="tiny muted" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px 8px;">
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${fmtMoney(driver.price)}</span>
+                        <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">EP: ${getDriverExpectedPoints(driver)}</span>
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${escapeHtml(tierLabel)}</span>
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${escapeHtml(streakLabel)}</span>
                         ${driver.isSLD ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(34,197,94,.35); background:rgba(34,197,94,.10);">SLD</span>` : ""}
