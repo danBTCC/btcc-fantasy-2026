@@ -2,6 +2,7 @@
 // Exposes: window.loadDrivers()
 
 (function () {
+  const PPV_2026 = 930;
   function trendMeta(t) {
     if (t === "up") return { icon: "▲", cls: "up" };
     if (t === "down") return { icon: "▼", cls: "down" };
@@ -15,6 +16,20 @@
       .replace(/>/g, "&gt;")
       .replace(/\"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  }
+
+  function formatTier(driver) {
+    const tier = String(driver?.tier || "TBD");
+    const standingPos = Number(driver?.tierStandingPos || 0);
+    return standingPos > 0 ? `${tier} (#${standingPos})` : tier;
+  }
+
+  function calculateExpectedPoints(value, tdv) {
+    const safeValue = Number(value || 0);
+    const safeTdv = Number(tdv || 0);
+    if (safeValue <= 0 || safeTdv <= 0) return 0;
+    const vv = PPV_2026 / safeTdv;
+    return safeValue * vv;
   }
 
   function normaliseDriverIdsFromEntry(data) {
@@ -137,7 +152,7 @@
     return totals;
   }
 
-  function renderDriverList(drivers) {
+  function renderDriverList(drivers, tdv) {
     return `<ul class="driverList">
       ${drivers
         .map((driver) => {
@@ -146,6 +161,8 @@
             : (driver.category || "");
 
           const tr = trendMeta(driver.trend);
+          const expectedPoints = calculateExpectedPoints(driver.value, tdv);
+          const tierText = formatTier(driver);
 
           return `
             <li class="driverRow">
@@ -156,7 +173,8 @@
 
               <span class="driverMeta">
                 <span class="money">£${Number(driver.value || 0).toFixed(2)}</span>
-                <span class="muted">• Tier: ${escapeHtml(driver.tier || "TBD")}</span>
+                <span class="muted">• Tier: ${escapeHtml(tierText)}</span>
+                <span class="muted">• EP: ${expectedPoints.toFixed(1)}</span>
                 <span class="trend ${tr.cls}" title="Trend">${tr.icon}</span>
               </span>
             </li>
@@ -215,6 +233,7 @@
       }
 
       const drivers = driversSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const tdv = drivers.reduce((sum, driver) => sum + Number(driver.value || driver.cost || driver.price || 0), 0);
       const events = eventsSnap.docs;
 
       const [selectionCounts, storedDriverStandings, driverPoints] = await Promise.all([
@@ -264,8 +283,35 @@
         })
         .map((row, index) => [String(index + 1), row.name, String(row.points)]);
 
+      const expectedPointsRows = drivers
+        .map((driver) => ({
+          name: driver.name || "Unnamed",
+          value: Number(driver.value || driver.cost || driver.price || 0),
+          tier: formatTier(driver),
+          ep: calculateExpectedPoints(driver.value || driver.cost || driver.price || 0, tdv),
+        }))
+        .sort((a, b) => {
+          const epDiff = b.ep - a.ep;
+          if (epDiff !== 0) return epDiff;
+          return a.name.localeCompare(b.name);
+        })
+        .map((row, index) => [
+          String(index + 1),
+          row.name,
+          `£${row.value.toFixed(2)}`,
+          row.tier,
+          row.ep.toFixed(1),
+        ]);
+
       container.innerHTML = `
-        ${renderDriverList(drivers)}
+        <div class="tiny muted" style="margin-bottom:10px;">Current PPV: ${PPV_2026} • Active Driver Total Value: £${tdv.toFixed(2)}</div>
+        ${renderDriverList(drivers, tdv)}
+        ${renderStatsTable(
+          "Current Event Expected Points",
+          ["Pos", "Driver", "Value", "Tier", "EP"],
+          expectedPointsRows,
+          "No expected points available yet."
+        )}
         ${renderStatsTable(
           "Driver Selection Count",
           ["Pos", "Driver", "Selections", "PPS"],
@@ -280,7 +326,7 @@
         )}
       `;
 
-      console.log("✅ Drivers loaded:", driversSnap.size);
+      console.log("✅ Drivers loaded:", driversSnap.size, "TDV:", tdv);
       console.log("✅ Driver selection stats loaded:", selectionRows.length);
       console.log("✅ Driver points standings loaded:", pointsRows.length);
     } catch (err) {
