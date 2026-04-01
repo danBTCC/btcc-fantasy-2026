@@ -352,6 +352,9 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
 <div class="card" style="margin-top:12px;">
   <h2 style="margin:0 0 6px 0;">Team Submission</h2>
+  <div class="tiny muted" style="margin-bottom:8px;">
+    Need help? <a href="#" id="submit-help-link" style="color:#60a5fa; text-decoration:underline;">Click here to see How to Play →</a>
+  </div>
   <div id="sld-section" class="note" style="margin-top:10px;">
     <div style="font-weight:700; margin-bottom:6px;">SLD — Season Long Driver</div>
     <div class="tiny muted" style="margin-bottom:8px;">
@@ -401,6 +404,11 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
     );
 
     root.querySelector("#submit-logout")?.addEventListener("click", handleLogout);
+    root.querySelector("#submit-help-link")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const newsTab = document.querySelector('[data-route="news"]');
+      newsTab?.click();
+    });
     // Copy UID helper (for onboarding)
     root.querySelector("#submit-copy-uid")?.addEventListener("click", async () => {
       const uid = user?.uid || "";
