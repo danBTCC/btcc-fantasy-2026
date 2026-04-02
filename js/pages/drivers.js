@@ -167,7 +167,8 @@
 
     return `
       <section class="cardSection" style="margin-top:16px;">
-        <h3 style="margin:0 0 10px;">${escapeHtml(title)}</h3>
+        <h3 style="margin:0 0 6px;">${escapeHtml(title)}</h3>
+        <div class="tiny muted" style="margin-bottom:10px;">Tap Driver, Value, Tier, EP, Points or Selections to sort.</div>
         <div style="overflow-x:auto;">
           <table class="table" style="width:100%;">
             <thead>
@@ -315,12 +316,12 @@
           "Drivers Overview",
           [
             '<span data-sort="pos">Pos</span>',
-            '<span data-sort="name">Driver</span>',
-            '<span data-sort="value">Value</span>',
-            '<span data-sort="tier">Tier</span>',
-            '<span data-sort="ep">EP</span>',
-            '<span data-sort="points">Points</span>',
-            '<span data-sort="selections">Selections</span>',
+            '<span data-sort="name">Driver ⇅</span>',
+            '<span data-sort="value">Value ⇅</span>',
+            '<span data-sort="tier">Tier ⇅</span>',
+            '<span data-sort="ep">EP ⇅</span>',
+            '<span data-sort="points">Points ↓</span>',
+            '<span data-sort="selections">Selections ⇅</span>',
             'Trend'
           ],
           driverOverviewRows,
@@ -330,6 +331,7 @@
 
       container.querySelectorAll("[data-sort]").forEach((el) => {
         el.style.cursor = "pointer";
+        el.setAttribute("title", "Tap to sort");
         el.addEventListener("click", () => {
           const key = el.getAttribute("data-sort");
           if (!key || key === "pos") return;
@@ -346,6 +348,25 @@
           container.querySelector("tbody").innerHTML = driverOverviewRows
             .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
             .join("");
+
+          container.querySelectorAll("[data-sort]").forEach((headerEl) => {
+            const headerKey = headerEl.getAttribute("data-sort");
+            if (!headerKey || headerKey === "pos") return;
+            const label = headerKey === "name"
+              ? "Driver"
+              : headerKey === "value"
+              ? "Value"
+              : headerKey === "tier"
+              ? "Tier"
+              : headerKey === "ep"
+              ? "EP"
+              : headerKey === "points"
+              ? "Points"
+              : headerKey === "selections"
+              ? "Selections"
+              : headerEl.textContent.replace(/[⇅↑↓]/g, "").trim();
+            headerEl.textContent = `${label} ${sortKey === headerKey ? (sortDir === "asc" ? "↑" : "↓") : "⇅"}`;
+          });
         });
       });
 
