@@ -220,7 +220,10 @@
         return Number(driverPoints.get(driver.id) || 0);
       };
 
-      const driverOverviewRows = drivers
+      let sortKey = "points";
+      let sortDir = "desc";
+
+      const driverOverviewData = drivers
         .map((driver) => {
           const name = driver.name || "Unnamed";
           const cats = Array.isArray(driver.categories)
@@ -243,13 +246,23 @@
             selections,
             trendIcon: tr.icon,
           };
-        })
-        .sort((a, b) => {
-          const epDiff = b.ep - a.ep;
-          if (epDiff !== 0) return epDiff;
-          return a.name.localeCompare(b.name);
-        })
-        .map((row, index) => [
+        });
+
+      const getSortedRows = () => {
+        const sorted = [...driverOverviewData].sort((a, b) => {
+          const dir = sortDir === "asc" ? 1 : -1;
+
+          if (sortKey === "name") return dir * a.name.localeCompare(b.name);
+          if (sortKey === "value") return dir * (a.value - b.value);
+          if (sortKey === "tier") return dir * a.tier.localeCompare(b.tier);
+          if (sortKey === "ep") return dir * (a.ep - b.ep);
+          if (sortKey === "points") return dir * (a.points - b.points);
+          if (sortKey === "selections") return dir * (a.selections - b.selections);
+
+          return 0;
+        });
+
+        return sorted.map((row, index) => [
           String(index + 1),
           row.cats ? `${row.name} (${row.cats})` : row.name,
           `£${row.value.toFixed(2)}`,
@@ -259,6 +272,9 @@
           String(row.selections),
           row.trendIcon,
         ]);
+      };
+
+      let driverOverviewRows = getSortedRows();
 
       const selectionRows = drivers
         .map((driver) => {
@@ -297,11 +313,41 @@
         <div class="tiny muted" style="margin-bottom:10px;">Current PPV: ${PPV_2026} • Active Driver Total Value: £${tdv.toFixed(2)}</div>
         ${renderStatsTable(
           "Drivers Overview",
-          ["Pos", "Driver", "Value", "Tier", "EP", "Points", "Selections", "Trend"],
+          [
+            '<span data-sort="pos">Pos</span>',
+            '<span data-sort="name">Driver</span>',
+            '<span data-sort="value">Value</span>',
+            '<span data-sort="tier">Tier</span>',
+            '<span data-sort="ep">EP</span>',
+            '<span data-sort="points">Points</span>',
+            '<span data-sort="selections">Selections</span>',
+            'Trend'
+          ],
           driverOverviewRows,
           "No drivers available yet."
         )}
       `;
+
+      container.querySelectorAll("[data-sort]").forEach((el) => {
+        el.style.cursor = "pointer";
+        el.addEventListener("click", () => {
+          const key = el.getAttribute("data-sort");
+          if (!key || key === "pos") return;
+
+          if (sortKey === key) {
+            sortDir = sortDir === "asc" ? "desc" : "asc";
+          } else {
+            sortKey = key;
+            sortDir = "desc";
+          }
+
+          driverOverviewRows = getSortedRows();
+
+          container.querySelector("tbody").innerHTML = driverOverviewRows
+            .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
+            .join("");
+        });
+      });
 
       console.log("✅ Drivers loaded:", driversSnap.size, "TDV:", tdv);
       console.log("✅ Driver selection stats loaded:", selectionRows.length);
