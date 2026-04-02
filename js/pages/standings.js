@@ -4,6 +4,7 @@
 (function () {
   async function loadStandings() {
     const updatedEl = document.getElementById("standings-updated");
+    const updatedRowEl = updatedEl ? updatedEl.closest("p") : null;
     const playersEl = document.getElementById("standings-players");
     const teamsEl = document.getElementById("standings-teams");
     const teamsWrapEl = document.getElementById("standings-teams-wrap");
@@ -24,6 +25,8 @@
     if (race1El) race1El.textContent = "Loading…";
     if (race2El) race2El.textContent = "Loading…";
     if (race3El) race3El.textContent = "Loading…";
+    if (updatedEl) updatedEl.textContent = "—";
+    if (updatedRowEl) updatedRowEl.hidden = true;
       // --- Helpers (shared by all tables) ---
       const renderSimplePointsTable = (mountEl, rows, labelName) => {
         if (!mountEl) return;
@@ -413,9 +416,10 @@
           .get();
 
         if (metaSnap.exists && updatedEl) {
-          const ts = metaSnap.data().updatedAt;
-          if (ts && ts.toDate) {
+          const ts = metaSnap.data()?.updatedAt;
+          if (ts && typeof ts.toDate === "function") {
             updatedEl.textContent = ts.toDate().toLocaleString();
+            if (updatedRowEl) updatedRowEl.hidden = false;
           }
         }
       } catch (err) {

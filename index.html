@@ -121,7 +121,7 @@
     <section class="view" id="view-tables" data-view="tables" hidden>
       <div class="card">
         <h1>Standings</h1>
-        <p class="muted">Read-only standings tables.</p>
+        
         <p class="tiny muted">
           Last updated: <span id="standings-updated">—</span>
         </p>
@@ -135,17 +135,7 @@
       </div>
 
       <!-- Collapsible sections -->
-      <div class="card" style="margin-top:10px;">
-        <button class="collapseHeader" type="button" data-toggle="standings-teams-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
-          <h3 style="margin:0; display:flex; align-items:center; justify-content:space-between;">
-            <span>Teams</span>
-            <span class="tiny muted">▾</span>
-          </h3>
-        </button>
-        <div id="standings-teams-wrap" hidden style="margin-top:8px;">
-          <div id="standings-teams">Loading…</div>
-        </div>
-      </div>
+      
 
       <div class="card" style="margin-top:10px;">
         <button class="collapseHeader" type="button" data-toggle="standings-wingfoot-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
@@ -228,6 +218,18 @@
         </button>
         <div id="standings-race3-wrap" hidden style="margin-top:8px;">
           <div id="standings-race3">No data yet</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:10px;">
+        <button class="collapseHeader" type="button" data-toggle="standings-teams-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0;">
+          <h3 style="margin:0; display:flex; align-items:center; justify-content:space-between;">
+            <span>Teams</span>
+            <span class="tiny muted">▾</span>
+          </h3>
+        </button>
+        <div id="standings-teams-wrap" hidden style="margin-top:8px;">
+          <div id="standings-teams">Loading…</div>
         </div>
       </div>
     </section>

@@ -358,8 +358,8 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
   <div id="sld-section" class="note" style="margin-top:10px;">
     <div style="font-weight:700; margin-bottom:6px;">SLD — Season Long Driver</div>
     <div class="tiny muted" style="margin-bottom:8px;">
-      Optional. Choose one driver to lock in for the full season.<br>
-      Your SLD costs <strong>+10%</strong>, counts as one of your drivers, and ignores repetition rules.
+      This is an optional selection and is only available for selection in this submission period. Choose one driver to lock in for the full season.<br>
+      Your SLD costs <strong>+10%</strong>, counts as one of your drivers and tiers, and ignores repetition rules.
     </div>
 
     <select id="sld-select" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
