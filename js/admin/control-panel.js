@@ -838,6 +838,7 @@ if (banner) {
             await loadStandingsDriversPreview(root);
             await rebuildStandingsWingfootI3_4(root);
             await loadStandingsWingfootPreview(root);
+            await rebuildStandingsRace1(root);
 
            const valueResult = await runDriverValueEngineJ1(root, eid);
            const budgetResult = await runPlayerBudgetEngineJ2(root, eid);
