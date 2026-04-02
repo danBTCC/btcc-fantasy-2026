@@ -1524,6 +1524,42 @@ async function rebuildStandingsRace1(root) {
   const results = resultsSnap.data() || {};
   const race1Order = Array.isArray(results.race1) ? results.race1 : [];
 
+  const playerSnap = await window.btccDb.collection("players").get();
+  const playerMeta = new Map();
+  playerSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    playerMeta.set(doc.id, {
+      displayName: d.displayName || d.name || doc.id,
+    });
+  });
+
+  const normaliseDriverIdsFromEntry = (data) => {
+    if (!data || typeof data !== "object") return [];
+    const candidates = [
+      data.driverIds,
+      data.teamIds,
+      data.team,
+      data.drivers,
+      data.selectedDrivers,
+      data.picks,
+      data.selection,
+    ];
+    const arr = candidates.find((x) => Array.isArray(x)) || [];
+    return Array.from(
+      new Set(
+        arr
+          .map((item) => {
+            if (!item) return null;
+            if (typeof item === "string") return item;
+            if (typeof item === "object") return item.driverId || item.id || item.ref || null;
+            return null;
+          })
+          .filter(Boolean)
+          .map(String)
+      )
+    );
+  };
+
   let entriesSnap = await window.btccDb.collection("entries").doc(eid).collection("entries").get();
   if (entriesSnap.empty) {
     entriesSnap = await window.btccDb.collection("submissions").doc(eid).collection("entries").get();
@@ -1536,20 +1572,27 @@ async function rebuildStandingsRace1(root) {
   entriesSnap.forEach((doc) => {
     const uid = doc.id;
     const data = doc.data() || {};
-    const team = data.team || data.drivers || data.selectedDrivers || [];
+    const team = normaliseDriverIdsFromEntry(data);
 
     let total = 0;
     team.forEach((driverId) => {
-      const idx = race1Order.indexOf(driverId);
+      const idx = race1Order.indexOf(String(driverId));
       if (idx >= 0) total += racePoints(idx + 1);
     });
 
-    totals.set(uid, total);
+    totals.set(uid, {
+      uid,
+      displayName: playerMeta.get(uid)?.displayName || uid,
+      pointsTotal: total,
+    });
   });
 
-  const ranked = Array.from(totals.entries())
-    .map(([uid, pointsTotal]) => ({ uid, pointsTotal }))
-    .sort((a, b) => b.pointsTotal - a.pointsTotal)
+  const ranked = Array.from(totals.values())
+    .sort((a, b) => {
+      const pointsDiff = Number(b.pointsTotal || 0) - Number(a.pointsTotal || 0);
+      if (pointsDiff !== 0) return pointsDiff;
+      return String(a.displayName || "").localeCompare(String(b.displayName || ""));
+    })
     .map((row, i) => ({ ...row, position: i + 1 }));
 
   const batch = window.btccDb.batch();
@@ -1557,7 +1600,10 @@ async function rebuildStandingsRace1(root) {
 
   ranked.forEach((row) => {
     batch.set(base.collection("players").doc(row.uid), {
-      ...row,
+      uid: row.uid,
+      displayName: row.displayName,
+      pointsTotal: Number(row.pointsTotal || 0),
+      position: row.position,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
   });
