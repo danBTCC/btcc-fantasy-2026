@@ -1510,6 +1510,61 @@ async function loadStandingsDriversPreview(root) {
   }
 }
 // --- WINGFOOT STANDINGS REBUILD (I3.4) ---
+
+// --- RACE 1 STANDINGS REBUILD ---
+async function rebuildStandingsRace1(root) {
+  if (!window.btccDb) throw new Error("Database not ready");
+  const eid = root.__selectedEventId;
+  if (!eid) throw new Error("No event selected");
+
+  const resultsSnap = await window.btccDb.collection("results").doc(eid).get();
+  if (!resultsSnap.exists) throw new Error("No results found for event");
+
+  const results = resultsSnap.data() || {};
+  const race1Order = Array.isArray(results.race1) ? results.race1 : [];
+
+  let entriesSnap = await window.btccDb.collection("entries").doc(eid).collection("entries").get();
+  if (entriesSnap.empty) {
+    entriesSnap = await window.btccDb.collection("submissions").doc(eid).collection("entries").get();
+  }
+
+  const totals = new Map();
+
+  const racePoints = (pos) => (pos >= 1 && pos <= 24 ? 25 - pos : 0);
+
+  entriesSnap.forEach((doc) => {
+    const uid = doc.id;
+    const data = doc.data() || {};
+    const team = data.team || data.drivers || data.selectedDrivers || [];
+
+    let total = 0;
+    team.forEach((driverId) => {
+      const idx = race1Order.indexOf(driverId);
+      if (idx >= 0) total += racePoints(idx + 1);
+    });
+
+    totals.set(uid, total);
+  });
+
+  const ranked = Array.from(totals.entries())
+    .map(([uid, pointsTotal]) => ({ uid, pointsTotal }))
+    .sort((a, b) => b.pointsTotal - a.pointsTotal)
+    .map((row, i) => ({ ...row, position: i + 1 }));
+
+  const batch = window.btccDb.batch();
+  const base = window.btccDb.collection("standings_race1").doc("season_2026");
+
+  ranked.forEach((row) => {
+    batch.set(base.collection("players").doc(row.uid), {
+      ...row,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+
+  await batch.commit();
+
+  return { playerCount: ranked.length };
+}
 async function rebuildStandingsWingfootI3_4(root) {
   if (!window.btccDb) throw new Error("Database not ready");
   const eid = root.__selectedEventId;
@@ -1734,5 +1789,6 @@ window.rebuildStandingsPlayersI3 = rebuildStandingsPlayersI3;
 window.rebuildStandingsTeamsI3_2 = rebuildStandingsTeamsI3_2;
 window.rebuildStandingsDriversI3_3 = rebuildStandingsDriversI3_3;
 window.rebuildStandingsWingfootI3_4 = rebuildStandingsWingfootI3_4;
+window.rebuildStandingsRace1 = rebuildStandingsRace1;
 
 })();
