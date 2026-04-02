@@ -154,7 +154,7 @@
 
 
   function renderStatsTable(title, columns, rows, emptyMessage) {
-    const head = columns.map((col) => `<th>${escapeHtml(col)}</th>`).join("");
+    const head = columns.map((col) => `<th>${col}</th>`).join("");
 
     const body = rows.length
       ? rows
