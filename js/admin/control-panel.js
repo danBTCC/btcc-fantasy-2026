@@ -839,6 +839,7 @@ if (banner) {
             await rebuildStandingsWingfootI3_4(root);
             await loadStandingsWingfootPreview(root);
             await rebuildStandingsRace1(root);
+            await rebuildStandingsRace2(root);
 
            const valueResult = await runDriverValueEngineJ1(root, eid);
            const budgetResult = await runPlayerBudgetEngineJ2(root, eid);
@@ -1612,6 +1613,107 @@ async function rebuildStandingsRace1(root) {
 
   return { playerCount: ranked.length };
 }
+
+// --- RACE 2 STANDINGS REBUILD ---
+async function rebuildStandingsRace2(root) {
+  if (!window.btccDb) throw new Error("Database not ready");
+  const eid = root.__selectedEventId;
+  if (!eid) throw new Error("No event selected");
+
+  const resultsSnap = await window.btccDb.collection("results").doc(eid).get();
+  if (!resultsSnap.exists) throw new Error("No results found for event");
+
+  const results = resultsSnap.data() || {};
+  const race2Order = Array.isArray(results.race2) ? results.race2 : [];
+
+  const playerSnap = await window.btccDb.collection("players").get();
+  const playerMeta = new Map();
+  playerSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    playerMeta.set(doc.id, {
+      displayName: d.displayName || d.name || doc.id,
+    });
+  });
+
+  const normaliseDriverIdsFromEntry = (data) => {
+    if (!data || typeof data !== "object") return [];
+    const candidates = [
+      data.driverIds,
+      data.teamIds,
+      data.team,
+      data.drivers,
+      data.selectedDrivers,
+      data.picks,
+      data.selection,
+    ];
+    const arr = candidates.find((x) => Array.isArray(x)) || [];
+    return Array.from(
+      new Set(
+        arr
+          .map((item) => {
+            if (!item) return null;
+            if (typeof item === "string") return item;
+            if (typeof item === "object") return item.driverId || item.id || item.ref || null;
+            return null;
+          })
+          .filter(Boolean)
+          .map(String)
+      )
+    );
+  };
+
+  let entriesSnap = await window.btccDb.collection("entries").doc(eid).collection("entries").get();
+  if (entriesSnap.empty) {
+    entriesSnap = await window.btccDb.collection("submissions").doc(eid).collection("entries").get();
+  }
+
+  const totals = new Map();
+  const racePoints = (pos) => (pos >= 1 && pos <= 24 ? 25 - pos : 0);
+
+  entriesSnap.forEach((doc) => {
+    const uid = doc.id;
+    const data = doc.data() || {};
+    const team = normaliseDriverIdsFromEntry(data);
+
+    let total = 0;
+    team.forEach((driverId) => {
+      const idx = race2Order.indexOf(String(driverId));
+      if (idx >= 0) total += racePoints(idx + 1);
+    });
+
+    totals.set(uid, {
+      uid,
+      displayName: playerMeta.get(uid)?.displayName || uid,
+      pointsTotal: total,
+    });
+  });
+
+  const ranked = Array.from(totals.values())
+    .sort((a, b) => {
+      const pointsDiff = Number(b.pointsTotal || 0) - Number(a.pointsTotal || 0);
+      if (pointsDiff !== 0) return pointsDiff;
+      return String(a.displayName || "").localeCompare(String(b.displayName || ""));
+    })
+    .map((row, i) => ({ ...row, position: i + 1 }));
+
+  const batch = window.btccDb.batch();
+  const base = window.btccDb.collection("standings_race2").doc("season_2026");
+
+  ranked.forEach((row) => {
+    batch.set(base.collection("players").doc(row.uid), {
+      uid: row.uid,
+      displayName: row.displayName,
+      pointsTotal: Number(row.pointsTotal || 0),
+      position: row.position,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+
+  await batch.commit();
+
+  return { playerCount: ranked.length };
+}
+
 async function rebuildStandingsWingfootI3_4(root) {
   if (!window.btccDb) throw new Error("Database not ready");
   const eid = root.__selectedEventId;
@@ -1837,5 +1939,6 @@ window.rebuildStandingsTeamsI3_2 = rebuildStandingsTeamsI3_2;
 window.rebuildStandingsDriversI3_3 = rebuildStandingsDriversI3_3;
 window.rebuildStandingsWingfootI3_4 = rebuildStandingsWingfootI3_4;
 window.rebuildStandingsRace1 = rebuildStandingsRace1;
+window.rebuildStandingsRace2 = rebuildStandingsRace2;
 
 })();
