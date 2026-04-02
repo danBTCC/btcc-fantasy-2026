@@ -338,7 +338,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       <h1>Submit</h1>
       <p class="muted">Signed in as <strong>${email}</strong></p>
       <div class="note" style="margin-top:10px;">
-        <div class="tiny muted">Your UID (send this to admin if asked):</div>
+        <div class="tiny muted">Your UID (only needed if admin asks for it):</div>
         <div style="display:flex; gap:10px; align-items:center; margin-top:6px; flex-wrap:wrap;">
           <code id="submit-uid" style="padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">${user.uid}</code>
           <button type="button" id="submit-copy-uid" class="tile tinyBtn" style="padding:8px 10px;">Copy UID</button>
@@ -358,7 +358,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
   <div id="sld-section" class="note" style="margin-top:10px;">
     <div style="font-weight:700; margin-bottom:6px;">SLD — Season Long Driver</div>
     <div class="tiny muted" style="margin-bottom:8px;">
-      This is an optional selection and is only available for selection in this submission period. Choose one driver to lock in for the full season.<br>
+      Optional. Choose one driver to lock in for the full season.<br>
       Your SLD costs <strong>+10%</strong>, counts as one of your drivers and tiers, and ignores repetition rules.
     </div>
 
@@ -383,7 +383,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
   <div id="team-tier-summary" class="tiny muted" style="margin-top:6px;"></div>
 </div>
 <div class="note" style="margin-top:10px;" id="selected-team-panel">
-  <div style="font-weight:700; margin-bottom:6px;">Your current team</div>
+  <div style="font-weight:700; margin-bottom:6px; font-size:16px;">Your current team</div>
   <div id="selected-team-list" class="tiny muted">No drivers selected yet.</div>
 </div>
 
