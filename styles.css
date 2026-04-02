@@ -451,3 +451,65 @@ th {
 .homeNewsText {
   white-space: pre-line;
 }
+
+/* --- Submit page polish --- */
+#view-submit h1 {
+  font-size: 24px;
+}
+
+#view-submit h2 {
+  font-size: 18px;
+}
+
+#view-submit .muted {
+  line-height: 1.45;
+}
+
+#view-submit .tiny {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+#view-submit .note {
+  padding: 14px;
+}
+
+#view-submit #team-summary {
+  font-size: 16px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+#view-submit #team-summary strong {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+#view-submit #team-ep {
+  font-size: 20px;
+}
+
+#view-submit #selected-team-panel {
+  line-height: 1.5;
+}
+
+#view-submit #selected-team-list {
+  font-size: 14px;
+}
+
+#view-submit #selected-team-list strong {
+  color: var(--text);
+}
+
+#view-submit #submit-help-link {
+  font-weight: 600;
+}
+
+#view-submit .tile {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+#view-submit #driver-picker .tiny {
+  font-size: 13px;
+}
