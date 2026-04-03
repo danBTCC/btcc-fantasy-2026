@@ -167,7 +167,7 @@
     }
 
     const head = `
-      <table class="table" style="width:100%; border-collapse: collapse; font-size:14px;">
+            <table class="table" style="width:100%; border-collapse: collapse; font-size:14px; table-layout:auto;">
         <thead>
           <tr>
             <th style="text-align:left; padding:6px;">Driver</th>
