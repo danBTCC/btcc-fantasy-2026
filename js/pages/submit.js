@@ -107,7 +107,12 @@
       const name = d.displayName ?? "Unnamed";
       const budget = typeof d.budget === "number" ? d.budget : 0;
       const penalties = typeof d.penalties === "number" ? d.penalties : 0;
-      const last = d.lastSubmission && String(d.lastSubmission).trim() ? d.lastSubmission : "—";
+      let last = "—";
+      if (d.lastSubmission && typeof d.lastSubmission.toDate === "function") {
+        last = d.lastSubmission.toDate().toLocaleString("en-GB");
+      } else if (d.lastSubmission && String(d.lastSubmission).trim()) {
+        last = String(d.lastSubmission);
+      }
       const active = d.active === false ? "No" : "Yes";
 
       box.innerHTML = `
@@ -343,7 +348,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 </div>
 
 <div class="card" style="margin-top:12px;">
-  <h2 style="margin:0 0 6px 0;">Team Submission</h2>
+  <h2 style="margin:0 0 6px 0;">Driver Submission</h2>
   <div class="tiny muted" style="margin-bottom:8px;">
     Need help? <a href="#" id="submit-help-link" style="color:#60a5fa; text-decoration:underline;">Click here to see How to Play →</a>
   </div>
@@ -351,7 +356,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
     <div style="font-weight:700; margin-bottom:6px;">SLD — Season Long Driver</div>
     <div class="tiny muted" style="margin-bottom:8px;">
       Optional. Choose one driver to lock in for the full season.<br>
-      Your SLD costs <strong>+10%</strong>, counts as one of your drivers and tiers, and ignores repetition rules.
+      Your SLD costs <strong>+10%</strong>, counts as one of your drivers, counts towards your tier balance, and ignores repetition rules.
     </div>
 
     <select id="sld-select" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
@@ -498,14 +503,6 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       }
     }
 
-    let lastSavedEl = root.querySelector("#team-last-saved");
-    if (!lastSavedEl) {
-      lastSavedEl = document.createElement("div");
-      lastSavedEl.id = "team-last-saved";
-      lastSavedEl.className = "tiny muted";
-      lastSavedEl.style.marginTop = "6px";
-      saveBtn?.insertAdjacentElement("afterend", lastSavedEl);
-    }
 
     if (saveBtn) {
       saveBtn.textContent = isLockedNow() ? "Locked" : "Save changes";
@@ -854,11 +851,6 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
           updateSummary();
 
-          const sub = subSnap.data() || {};
-          if (sub.updatedAt) {
-            const d = typeof sub.updatedAt.toDate === "function" ? sub.updatedAt.toDate() : null;
-            if (d && lastSavedEl) lastSavedEl.textContent = `Last saved: ${d.toLocaleString("en-GB")}`;
-          }
 
           if (saveBtn && !isLockedNow()) {
             saveBtn.textContent = "Save changes";
@@ -913,12 +905,20 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         try {
           await ref.set({ ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
 
+          await window.btccDb.collection("players").doc(uid).set(
+            {
+              lastSubmission: firebase.firestore.FieldValue.serverTimestamp(),
+              lastSubmissionEventId: eventId,
+            },
+            { merge: true }
+          );
+
           if (validationEl) validationEl.hidden = true;
-          if (lastSavedEl) lastSavedEl.textContent = `Last saved: ${new Date().toLocaleString("en-GB")}`;
           if (saveBtn && !isLockedNow()) {
             saveBtn.textContent = "Save changes";
             saveBtn.disabled = false;
           }
+          loadPlayerProfile(root, uid);
           // Show temporary saved state message
           if (validationEl) {
             validationEl.hidden = false;
