@@ -107,6 +107,13 @@
       const name = d.displayName ?? "Unnamed";
       const budget = typeof d.budget === "number" ? d.budget : 0;
       const penalties = typeof d.penalties === "number" ? d.penalties : 0;
+      const budgetBoost = typeof d.budgetBoost === "number" ? d.budgetBoost : 0;
+      const deductibles = typeof d.deductibles === "number" ? d.deductibles : 0;
+      const availableBudget = typeof d.effectiveBudget === "number"
+        ? d.effectiveBudget
+        : (budget + budgetBoost - deductibles);
+      const pointsTotal = typeof d.pointsTotal === "number" ? d.pointsTotal : null;
+      const driversSelected = typeof d.driversSelected === "number" ? d.driversSelected : null;
       let last = "—";
       if (d.lastSubmission && typeof d.lastSubmission.toDate === "function") {
         last = d.lastSubmission.toDate().toLocaleString("en-GB");
@@ -117,11 +124,18 @@
 
       box.innerHTML = `
         <div><strong>${name}</strong></div>
-        <div class="tiny muted" style="margin-top:6px;">
+        <div class="tiny muted" style="margin-top:6px; line-height:1.55;">
           Active: ${active}<br>
+          Last submission: ${last}<br>
+          <br>
           Budget: £${budget.toFixed(2)}<br>
-          Penalties: ${penalties}<br>
-          Last submission: ${last}
+          Budget Boost: ${budgetBoost >= 0 ? "+" : ""}£${Math.abs(budgetBoost).toFixed(2)}<br>
+          Deductibles: -£${Math.abs(deductibles).toFixed(2)}<br>
+          Available Budget: £${availableBudget.toFixed(2)}<br>
+          <br>
+          Penalties: ${penalties}
+          ${pointsTotal !== null ? `<br>Points: ${pointsTotal}` : ""}
+          ${driversSelected !== null ? `<br>Drivers Selected: ${driversSelected}` : ""}
         </div>
       `;
     } catch (err) {
