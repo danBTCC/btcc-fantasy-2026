@@ -58,7 +58,7 @@
   .sort((a, b) => String(a.name || a.driverId || "").localeCompare(String(b.name || b.driverId || "")));
 
     const head = `
-      <table class="table" style="width:100%; border-collapse: collapse; font-size:14px;">
+            <table class="table" style="width:100%; border-collapse: collapse; font-size:14px; table-layout:auto;">
         <thead>
           <tr>
             <th style="text-align:left; padding:6px;">Driver</th>
@@ -94,7 +94,7 @@
     }
 
     const head = `
-      <table class="table" style="width:100%; border-collapse: collapse; font-size:14px;">
+     <table class="table" style="width:100%; border-collapse: collapse; font-size:14px;">
         <thead>
           <tr>
             <th style="text-align:left; padding:6px;">Player</th>
@@ -232,8 +232,8 @@
       }
 
       // Render shell first (fast), then progressively hydrate details.
-      el.innerHTML = `
-        <ul class="list">
+            el.innerHTML = `
+             <ul class="list" style="list-style:none; padding-left:0; margin:0;">
           ${snap.docs
             .map((doc) => {
               const d = doc.data() || {};
@@ -245,20 +245,20 @@
               const rounds = d.roundFrom && d.roundTo ? `R${d.roundFrom}–${d.roundTo}` : "";
 
               const officialUrl = safeUrl(d.officialResultsUrl || d.tslUrl || d.resultsUrl);
-              const officialLink = officialUrl
-                ? `<a class="tiny" href="${escapeHtml(officialUrl)}" target="_blank" rel="noopener noreferrer">Official results link</a>`
+                const officialLink = officialUrl
+                ? `<a class="tiny" href="${escapeHtml(officialUrl)}" target="_blank" rel="noopener noreferrer" style="color:#60a5fa; text-decoration:underline;">Official results link</a>`
                 : `<span class="tiny muted">Official results link: —</span>`;
 
               return `
-                <li class="eventItem" data-event-id="${escapeHtml(doc.id)}">
+               <li class="eventItem" data-event-id="${escapeHtml(doc.id)}" style="list-style:none; margin-bottom:12px; padding-left:0;">
                   <div class="eventHeader" data-toggle="event-details" style="cursor:pointer; padding:4px 0;">
                      <strong style="font-size:18px;">Event ${d.eventNo ?? "—"}</strong> — ${escapeHtml(d.venue ?? d.name ?? "Unnamed")}<br>
                      <span class="tiny muted">${escapeHtml(rounds)} • ${escapeHtml(dates)} • ${escapeHtml(status)}</span>
                      <div class="tiny muted" style="margin-top:4px;">▾ Click to expand</div>
                   </div>
 
-                  <div class="eventDetails" hidden>
-  <div class="tiny" style="margin: 6px 0;">${officialLink}</div>
+                  <div class="eventDetails" hidden style="margin-top:8px; padding-left:0;">
+    <div class="tiny" style="margin:8px 0 0 0;">${officialLink}</div>
 
   <div style="margin-top:12px;">
     <div class="tiny muted" style="margin-bottom:6px;">Driver finishing positions (official order)</div>
