@@ -140,7 +140,7 @@
           Available Budget: £${availableBudget.toFixed(2)}<br>
           <br>
           Penalties: ${penalties}
-          ${pointsTotal !== null ? `<br>Points: ${pointsTotal}` : ""}
+          ${pointsTotal !== null ? `<br>Championship Points: ${pointsTotal}` : ""}
           ${driversSelected !== null ? `<br>Drivers Selected: ${driversSelected}` : ""}
         </div>
       `;
@@ -409,7 +409,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 </div>
 
 <button id="team-save" class="tile" style="margin-top:10px;" disabled>
-  Save team (next step)
+  Save changes
 </button>
 
 <div id="driver-picker" class="list" style="margin-top:10px;">
@@ -432,9 +432,14 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
     // Load picker using budget from player profile doc (read-only)
     window.btccDb.collection("players").doc(user.uid).get().then(s => {
       const data = s.exists ? (s.data() || {}) : {};
-      const b = typeof data.budget === "number" ? data.budget : 0;
+      const baseBudget = typeof data.budget === "number" ? data.budget : 0;
+      const budgetBoost = typeof data.budgetBoost === "number" ? data.budgetBoost : 0;
+      const deductibles = typeof data.deductibles === "number" ? data.deductibles : 0;
+      const availableBudget = typeof data.effectiveBudget === "number"
+        ? data.effectiveBudget
+        : (baseBudget + budgetBoost - deductibles);
       const name = data.displayName || (user.email || "Player");
-      loadDriverPicker(root, b, user.uid, name);
+      loadDriverPicker(root, availableBudget, user.uid, name);
     });
   }
 
@@ -929,6 +934,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
             {
               lastSubmission: firebase.firestore.FieldValue.serverTimestamp(),
               lastSubmissionEventId: eventId,
+              driversSelected: selected.size,
             },
             { merge: true }
           );
