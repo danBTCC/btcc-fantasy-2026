@@ -68,26 +68,6 @@ async function checkFirebaseAndReadMeta() {
       const data = snap.data();
       console.log("📦 Firestore meta/app:", data);
 
-      // Show on page
-      let el = document.querySelector("#meta-readout");
-      if (!el) {
-        el = document.createElement("div");
-        el.id = "meta-readout";
-        el.style.marginTop = "8px";
-        el.style.opacity = "0.85";
-        el.style.fontSize = "0.95rem";
-
-        const statusCard =
-          document.querySelector("#status") ||
-          document.querySelector(".status") ||
-          document.querySelector("main");
-
-        (statusCard || document.body).appendChild(el);
-      }
-
-      const name = data.name ?? "BTCC Fantasy League";
-      const version = data.version ?? "";
-      el.textContent = `Firestore read OK: ${name} ${version}`.trim();
     } catch (err) {
       console.warn("⚠️ Firestore read failed:", err);
     }
