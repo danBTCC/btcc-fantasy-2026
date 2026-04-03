@@ -58,7 +58,7 @@
   .sort((a, b) => String(a.name || a.driverId || "").localeCompare(String(b.name || b.driverId || "")));
 
     const head = `
-      <table class="table tiny" style="width:100%; border-collapse: collapse;">
+      <table class="table" style="width:100%; border-collapse: collapse; font-size:14px;">
         <thead>
           <tr>
             <th style="text-align:left; padding:6px;">Driver</th>
@@ -94,7 +94,7 @@
     }
 
     const head = `
-      <table class="table tiny" style="width:100%; border-collapse: collapse;">
+      <table class="table" style="width:100%; border-collapse: collapse; font-size:14px;">
         <thead>
           <tr>
             <th style="text-align:left; padding:6px;">Player</th>
@@ -167,7 +167,7 @@
     }
 
     const head = `
-      <table class="table tiny" style="width:100%; border-collapse: collapse;">
+      <table class="table" style="width:100%; border-collapse: collapse; font-size:14px;">
         <thead>
           <tr>
             <th style="text-align:left; padding:6px;">Driver</th>
@@ -251,27 +251,27 @@
 
               return `
                 <li class="eventItem" data-event-id="${escapeHtml(doc.id)}">
-                  <div class="eventHeader" data-toggle="event-details">
-                    <strong>Event ${d.eventNo ?? "—"}</strong> — ${escapeHtml(d.venue ?? d.name ?? "Unnamed")}<br>
-                    <span class="tiny muted">${escapeHtml(rounds)} • ${escapeHtml(dates)} • ${escapeHtml(status)}</span>
-                    <div class="tiny muted">▾ Details</div>
+                  <div class="eventHeader" data-toggle="event-details" style="cursor:pointer; padding:4px 0;">
+                     <strong style="font-size:18px;">Event ${d.eventNo ?? "—"}</strong> — ${escapeHtml(d.venue ?? d.name ?? "Unnamed")}<br>
+                     <span class="tiny muted">${escapeHtml(rounds)} • ${escapeHtml(dates)} • ${escapeHtml(status)}</span>
+                     <div class="tiny muted" style="margin-top:4px;">▾ Click to expand</div>
                   </div>
 
                   <div class="eventDetails" hidden>
   <div class="tiny" style="margin: 6px 0;">${officialLink}</div>
 
-  <div style="margin-top:10px;">
+  <div style="margin-top:12px;">
     <div class="tiny muted" style="margin-bottom:6px;">Driver finishing positions (official order)</div>
     <div class="note" data-slot="results">Loading results…</div>
   </div>
 
-  <div style="margin-top:10px;">
-    <div class="tiny muted" style="margin-bottom:6px;">Player points (this event)</div>
+  <div style="margin-top:14px;">
+    <div class="tiny muted" style="margin-bottom:6px;">Player points</div>
     <div data-slot="playerScores">Loading…</div>
   </div>
 
-  <div style="margin-top:10px;">
-    <div class="tiny muted" style="margin-bottom:6px;">Driver fantasy points (this event)</div>
+  <div style="margin-top:14px;">
+    <div class="tiny muted" style="margin-bottom:6px;">Driver fantasy points</div>
     <div data-slot="driverScores">Loading…</div>
   </div>
 </div>
