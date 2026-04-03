@@ -93,7 +93,10 @@
     box.textContent = "Loading profile…";
 
     try {
-      const snap = await window.btccDb.collection("players").doc(uid).get();
+      const [snap, standingsSnap] = await Promise.all([
+        window.btccDb.collection("players").doc(uid).get(),
+        window.btccDb.collection("standings_players").doc("season_2026").collection("players").doc(uid).get(),
+      ]);
 
       if (!snap.exists) {
         box.innerHTML = `
@@ -112,7 +115,10 @@
       const availableBudget = typeof d.effectiveBudget === "number"
         ? d.effectiveBudget
         : (budget + budgetBoost - deductibles);
-      const pointsTotal = typeof d.pointsTotal === "number" ? d.pointsTotal : null;
+      const standingsData = standingsSnap.exists ? (standingsSnap.data() || {}) : {};
+      const pointsTotal = typeof standingsData.pointsTotal === "number"
+        ? standingsData.pointsTotal
+        : (typeof standingsData.points === "number" ? standingsData.points : null);
       const driversSelected = typeof d.driversSelected === "number" ? d.driversSelected : null;
       let last = "—";
       if (d.lastSubmission && typeof d.lastSubmission.toDate === "function") {
