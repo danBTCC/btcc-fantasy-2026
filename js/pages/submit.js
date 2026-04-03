@@ -337,14 +337,6 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       `
       <h1>Submit</h1>
       <p class="muted">Signed in as <strong>${email}</strong></p>
-      <div class="note" style="margin-top:10px;">
-        <div class="tiny muted">Your UID (only needed if admin asks for it):</div>
-        <div style="display:flex; gap:10px; align-items:center; margin-top:6px; flex-wrap:wrap;">
-          <code id="submit-uid" style="padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">${user.uid}</code>
-          <button type="button" id="submit-copy-uid" class="tile tinyBtn" style="padding:8px 10px;">Copy UID</button>
-          <span id="submit-uid-msg" class="tiny muted"></span>
-        </div>
-      </div>
 
     <div class="note" style="margin-top:12px;" id="player-profile">
   Loading profile…
@@ -408,33 +400,6 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       e.preventDefault();
       const newsTab = document.querySelector('[data-route="news"]');
       newsTab?.click();
-    });
-    // Copy UID helper (for onboarding)
-    root.querySelector("#submit-copy-uid")?.addEventListener("click", async () => {
-      const uid = user?.uid || "";
-      const msgEl = root.querySelector("#submit-uid-msg");
-      try {
-        await navigator.clipboard.writeText(uid);
-        if (msgEl) msgEl.textContent = "Copied";
-        setTimeout(() => { if (msgEl) msgEl.textContent = ""; }, 1500);
-      } catch (e) {
-        // Fallback for older browsers
-        try {
-          const tmp = document.createElement("textarea");
-          tmp.value = uid;
-          tmp.style.position = "fixed";
-          tmp.style.left = "-9999px";
-          document.body.appendChild(tmp);
-          tmp.focus();
-          tmp.select();
-          document.execCommand("copy");
-          document.body.removeChild(tmp);
-          if (msgEl) msgEl.textContent = "Copied";
-          setTimeout(() => { if (msgEl) msgEl.textContent = ""; }, 1500);
-        } catch (e2) {
-          if (msgEl) msgEl.textContent = "Copy failed";
-        }
-      }
     });
     loadPlayerProfile(root, user.uid);
     loadNextEventSummary(root);
