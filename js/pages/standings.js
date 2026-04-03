@@ -408,24 +408,6 @@
         console.log("✅ Race 3 standings loaded:", rows.length);
       }
 
-      // ---- Last updated ----
-      try {
-        const metaSnap = await window.btccDb
-          .collection("meta")
-          .doc("standings")
-          .get();
-
-        if (metaSnap.exists && updatedEl) {
-          const ts = metaSnap.data()?.updatedAt;
-          if (ts && typeof ts.toDate === "function") {
-            updatedEl.textContent = ts.toDate().toLocaleString();
-            if (updatedRowEl) updatedRowEl.hidden = false;
-          }
-        }
-      } catch (err) {
-        console.warn("⚠ Could not read meta/standings:", err);
-      }
-
     } catch (err) {
       console.error("❌ loadStandings failed:", err);
       if (playersEl) {
