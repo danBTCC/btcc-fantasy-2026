@@ -67,6 +67,7 @@
               <th style="text-align:right; padding:6px;">R1</th>
               <th style="text-align:right; padding:6px;">R2</th>
               <th style="text-align:right; padding:6px;">R3</th>
+              <th style="text-align:right; padding:6px;">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -81,6 +82,7 @@
             <td style="padding:6px; text-align:right;">${n(r.r1Pos)}</td>
             <td style="padding:6px; text-align:right;">${n(r.r2Pos)}</td>
             <td style="padding:6px; text-align:right;">${n(r.r3Pos)}</td>
+            <td style="padding:6px; text-align:right;">—</td>
           </tr>
         `;
       })
