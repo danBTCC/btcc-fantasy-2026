@@ -54,21 +54,22 @@
     const n = (v) => (typeof v === "number" && v > 0 ? v : "—");
 
     const sorted = rows
-  .slice()
-  .sort((a, b) => String(a.name || a.driverId || "").localeCompare(String(b.name || b.driverId || "")));
+      .slice()
+      .sort((a, b) => String(a.name || a.driverId || "").localeCompare(String(b.name || b.driverId || "")));
 
     const head = `
-            <table class="table" style="width:100%; border-collapse: collapse; font-size:14px; table-layout:auto;">
-        <thead>
-          <tr>
-            <th style="text-align:left; padding:6px;">Driver</th>
-            <th style="text-align:right; padding:6px;">Q</th>
-            <th style="text-align:right; padding:6px;">R1</th>
-            <th style="text-align:right; padding:6px;">R2</th>
-            <th style="text-align:right; padding:6px;">R3</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div style="overflow-x:auto;">
+        <table class="table" style="width:100%; border-collapse: collapse; font-size:14px; table-layout:auto;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:6px;">Driver</th>
+              <th style="text-align:right; padding:6px;">Q</th>
+              <th style="text-align:right; padding:6px;">R1</th>
+              <th style="text-align:right; padding:6px;">R2</th>
+              <th style="text-align:right; padding:6px;">R3</th>
+            </tr>
+          </thead>
+          <tbody>
     `;
 
     const body = sorted
@@ -85,7 +86,7 @@
       })
       .join("");
 
-    return head + body + `</tbody></table>`;
+    return head + body + `</tbody></table></div>`;
   };
 
   const renderPlayerScoresTable = (rows) => {
@@ -94,18 +95,19 @@
     }
 
     const head = `
-     <table class="table" style="width:100%; border-collapse: collapse; font-size:14px;">
-        <thead>
-          <tr>
-            <th style="text-align:left; padding:6px;">Player</th>
-            <th style="text-align:right; padding:6px;">Q</th>
-            <th style="text-align:right; padding:6px;">R1</th>
-            <th style="text-align:right; padding:6px;">R2</th>
-            <th style="text-align:right; padding:6px;">R3</th>
-            <th style="text-align:right; padding:6px;">Total</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div style="overflow-x:auto;">
+        <table class="table" style="width:100%; border-collapse: collapse; font-size:14px; table-layout:auto;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:6px;">Player</th>
+              <th style="text-align:right; padding:6px;">Q</th>
+              <th style="text-align:right; padding:6px;">R1</th>
+              <th style="text-align:right; padding:6px;">R2</th>
+              <th style="text-align:right; padding:6px;">R3</th>
+              <th style="text-align:right; padding:6px;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
     `;
 
     // Sort rows by Total (desc) so the table is always in standings order.
@@ -156,7 +158,7 @@
       })
       .join("");
 
-    const foot = `</tbody></table>`;
+    const foot = `</tbody></table></div>`;
     return head + body + foot;
   };
 
@@ -167,18 +169,19 @@
     }
 
     const head = `
-            <table class="table" style="width:100%; border-collapse: collapse; font-size:14px; table-layout:auto;">
-        <thead>
-          <tr>
-            <th style="text-align:left; padding:6px;">Driver</th>
-            <th style="text-align:right; padding:6px;">Q</th>
-            <th style="text-align:right; padding:6px;">R1</th>
-            <th style="text-align:right; padding:6px;">R2</th>
-            <th style="text-align:right; padding:6px;">R3</th>
-            <th style="text-align:right; padding:6px;">Total</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div style="overflow-x:auto;">
+        <table class="table" style="width:100%; border-collapse: collapse; font-size:14px; table-layout:auto;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:6px;">Driver</th>
+              <th style="text-align:right; padding:6px;">Q</th>
+              <th style="text-align:right; padding:6px;">R1</th>
+              <th style="text-align:right; padding:6px;">R2</th>
+              <th style="text-align:right; padding:6px;">R3</th>
+              <th style="text-align:right; padding:6px;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
     `;
 
     const n = (v) => (typeof v === "number" ? v : "—");
@@ -198,7 +201,7 @@
       })
       .join("");
 
-    const foot = `</tbody></table>`;
+    const foot = `</tbody></table></div>`;
     return head + body + foot;
   };
 
