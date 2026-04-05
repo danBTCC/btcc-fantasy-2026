@@ -266,8 +266,8 @@
     <div class="tiny" style="margin:8px 0 0 0;">${officialLink}</div>
 
   <div style="margin-top:12px;">
-    <div class="tiny muted" style="margin-bottom:6px;">Driver finishing positions (official order)</div>
-    <div class="note" data-slot="results">Loading results…</div>
+   <div class="tiny muted" style="margin-bottom:6px;">Driver finishing positions (official order)</div>
+   <div data-slot="results">Loading results…</div>
   </div>
 
   <div style="margin-top:14px;">
