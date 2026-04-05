@@ -87,7 +87,7 @@ body {
     padding: 8px 12px;
     overflow: auto;
 
-    background: rgba(8, 20, 39, 0.96);
+    background: rgba(6, 16, 32, 0.98);
     border-bottom: 1px solid rgba(255,255,255,0.08);
 
     backdrop-filter: blur(8px);
@@ -111,7 +111,7 @@ body {
     );
 
     border-bottom: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
 }
 
 .raceBanner::before {
@@ -121,19 +121,29 @@ body {
     background:
         linear-gradient(
             90deg,
-            rgba(255,255,255,0.06) 0%,
-            rgba(255,255,255,0.10) 30%,
-            rgba(255,255,255,0.04) 60%,
+            rgba(255,255,255,0.08) 0%,
+            rgba(255,255,255,0.16) 30%,
+            rgba(255,255,255,0.06) 60%,
             rgba(255,255,255,0.00) 100%
         ),
         repeating-linear-gradient(
             135deg,
-            rgba(255,255,255,0.10) 0px,
-            rgba(255,255,255,0.10) 14px,
+            rgba(255,255,255,0.18) 0px,
+            rgba(255,255,255,0.18) 14px,
             transparent 14px,
             transparent 28px
         );
+    animation: raceBannerShimmer 6s linear infinite;
     pointer-events: none;
+}
+
+@keyframes raceBannerShimmer {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(40px);
+    }
 }
 
 .tabs::before {
