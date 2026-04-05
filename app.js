@@ -92,19 +92,17 @@ function formatCountdownLong(ms) {
 // Loads the editable Home page snippets saved by Admin (meta/homeNews)
 async function loadHomeNewsSnippets() {
   try {
-    const elGossip = document.getElementById("home-news-gossip");
     const elLatest = document.getElementById("home-news-latest");
     const elPrev = document.getElementById("home-news-previous");
 
     // If we're not on the Home view (or markup not present), do nothing.
-    if (!elGossip || !elLatest || !elPrev) return;
+    if (!elLatest || !elPrev) return;
 
     const db =
       window.btccDb ||
       (typeof firebase !== "undefined" && firebase.apps?.length ? firebase.firestore() : null);
 
     if (!db) {
-      elGossip.textContent = "—";
       elLatest.textContent = "—";
       elPrev.textContent = "—";
       return;
@@ -115,7 +113,6 @@ async function loadHomeNewsSnippets() {
 
     const safeText = (v) => (typeof v === "string" && v.trim().length ? v.trim() : "—");
 
-    elGossip.textContent = safeText(d.pitLane);
     elLatest.textContent = safeText(d.latestEvent);
     elPrev.textContent = safeText(d.previousEvent);
   } catch (err) {
