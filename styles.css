@@ -79,8 +79,7 @@ body {
 
 .tabs {
     position: sticky;
-    top: 0;
-    z-index: 100;
+    top: 60px;
 
     display: flex;
     gap: 8px;
@@ -92,6 +91,33 @@ body {
 
     backdrop-filter: blur(6px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+
+.raceBanner {
+  height: 60px;
+  width: 100%;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(11, 61, 145, 0.95) 0%,
+      rgba(11, 61, 145, 0.7) 40%,
+      rgba(11, 61, 145, 0.3) 70%,
+      transparent 100%
+    ),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,255,255,0.12) 0px,
+      rgba(255,255,255,0.12) 12px,
+      transparent 12px,
+      transparent 24px
+    );
+
+  position: sticky;
+  top: 0;
+  z-index: 110;
+
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .tabs::before {
