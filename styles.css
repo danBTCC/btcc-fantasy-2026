@@ -80,63 +80,64 @@ body {
 .tabs {
     position: sticky;
     top: 60px;
+    z-index: 100;
 
     display: flex;
     gap: 8px;
     padding: 8px 12px;
     overflow: auto;
 
-    background: linear-gradient(180deg, #0a1930 0%, #091527 100%);
+    background: rgba(8, 20, 39, 0.96);
     border-bottom: 1px solid rgba(255,255,255,0.08);
 
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(8px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.35);
 }
 
 .raceBanner {
-  height: 60px;
-  width: 100%;
+    height: 60px;
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 110;
+    overflow: hidden;
 
-  background:
-    linear-gradient(
-      90deg,
-      rgba(11, 61, 145, 0.95) 0%,
-      rgba(11, 61, 145, 0.7) 40%,
-      rgba(11, 61, 145, 0.3) 70%,
-      transparent 100%
-    ),
-    repeating-linear-gradient(
-      135deg,
-      rgba(255,255,255,0.12) 0px,
-      rgba(255,255,255,0.12) 12px,
-      transparent 12px,
-      transparent 24px
+    background: linear-gradient(
+        90deg,
+        #123f95 0%,
+        #103a86 38%,
+        #0d316f 68%,
+        #0a234d 100%
     );
 
-  position: sticky;
-  top: 0;
-  z-index: 110;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
 
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+.raceBanner::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,0.06) 0%,
+            rgba(255,255,255,0.10) 30%,
+            rgba(255,255,255,0.04) 60%,
+            rgba(255,255,255,0.00) 100%
+        ),
+        repeating-linear-gradient(
+            135deg,
+            rgba(255,255,255,0.10) 0px,
+            rgba(255,255,255,0.10) 14px,
+            transparent 14px,
+            transparent 28px
+        );
+    pointer-events: none;
 }
 
 .tabs::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-
-    background: repeating-linear-gradient(
-        90deg,
-        #ffffff 0px,
-        #ffffff 6px,
-        transparent 6px,
-        transparent 12px
-    );
-
-    opacity: 0.25;
+    content: none;
 }
 
 .tab {
