@@ -2,15 +2,14 @@
   // ============================================================
   // ADMIN: HOME PAGE NEWS (Editable text boxes)
   // Stores data at meta/homeNews
-  // Fields: pitLane, latestEvent, previousEvent, updatedAt, updatedBy
+  // Fields: latestEvent, previousEvent, updatedAt, updatedBy
   // ============================================================
   async function loadAdminHomeNews(root) {
     const msg = root.querySelector("#admin-home-news-msg");
-    const pit = root.querySelector("#admin-home-news-pit");
     const latest = root.querySelector("#admin-home-news-latest");
     const prev = root.querySelector("#admin-home-news-prev");
 
-    if (!pit || !latest || !prev) return;
+    if (!latest || !prev) return;
 
     if (!window.btccDb) {
       if (msg) msg.textContent = "Database not ready.";
@@ -22,7 +21,6 @@
       const snap = await window.btccDb.collection("meta").doc("homeNews").get();
       const d = snap.exists ? (snap.data() || {}) : {};
 
-      pit.value = (d.pitLane || "").toString();
       latest.value = (d.latestEvent || "").toString();
       prev.value = (d.previousEvent || "").toString();
 
@@ -38,7 +36,6 @@
     if (!saveBtn) return;
 
     const msg = root.querySelector("#admin-home-news-msg");
-    const pit = root.querySelector("#admin-home-news-pit");
     const latest = root.querySelector("#admin-home-news-latest");
     const prev = root.querySelector("#admin-home-news-prev");
 
@@ -52,7 +49,6 @@
         return;
       }
 
-      const pitLane = (pit?.value || "").trim();
       const latestEvent = (latest?.value || "").trim();
       const previousEvent = (prev?.value || "").trim();
 
@@ -66,7 +62,6 @@
 
         await window.btccDb.collection("meta").doc("homeNews").set(
           {
-            pitLane,
             latestEvent,
             previousEvent,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
