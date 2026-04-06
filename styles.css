@@ -181,7 +181,7 @@ body {
 .container {
     width: min(980px, 100%);
     margin: 0 auto;
-    padding: 10px 14px 14px;
+    padding: 8px 14px 14px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -192,6 +192,10 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 14px;
+}
+
+#home-message {
+    margin-top: 0;
 }
 
 h1 {
