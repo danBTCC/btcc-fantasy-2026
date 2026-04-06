@@ -413,23 +413,56 @@ const ADMIN_EMAILS = [
 
       mount.innerHTML = snap.docs.map((doc) => {
         const d = doc.data() || {};
-        const title = (d.title || "Untitled").toString();
-        const content = (d.content || "").toString();
-        const createdBy = (d.createdBy || "admin").toString();
+        const rawCreatedBy = (d.createdBy || "admin").toString();
+        const createdBy = rawCreatedBy.includes("@")
+          ? "Dan"
+          : rawCreatedBy.replace(/^"+|"+$/g, "").trim() || "Dan";
+        const title = (d.title || "Untitled").toString().replace(/^"+|"+$/g, "").trim();
+        const content = (d.content || "").toString().replace(/^"+|"+$/g, "").trim();
         const createdAt = d.createdAt && typeof d.createdAt.toDate === "function"
           ? d.createdAt.toDate().toLocaleString("en-GB")
           : "—";
 
         return `
           <div class="note" style="margin-top:10px;">
-            <div style="font-weight:700; color:var(--text);">${title}</div>
-            <div class="tiny muted" style="margin-top:4px;">${createdAt} • ${createdBy}</div>
-            <div class="tiny muted" style="margin-top:8px; white-space:pre-line;">${content}</div>
+            <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+              <div style="min-width:0; flex:1;">
+                <div style="font-weight:700; color:var(--text);">${title}</div>
+                <div class="tiny muted" style="margin-top:4px;">${createdAt} • ${createdBy}</div>
+                <div class="tiny muted" style="margin-top:8px; white-space:pre-line;">${content}</div>
+              </div>
+              <button type="button" class="tile tinyBtn admin-news-delete" data-news-id="${doc.id}" style="width:auto; min-width:88px; padding:8px 10px; flex:0 0 auto;">Delete</button>
+            </div>
           </div>
         `;
       }).join("");
 
       if (msg) msg.textContent = `Loaded ${snap.size} news post(s).`;
+
+      mount.querySelectorAll(".admin-news-delete").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const newsId = btn.getAttribute("data-news-id");
+          if (!newsId || !window.btccDb) return;
+
+          const confirmed = window.confirm("Delete this news post?");
+          if (!confirmed) return;
+
+          const previousText = btn.textContent;
+          try {
+            btn.disabled = true;
+            btn.textContent = "Deleting…";
+            if (msg) msg.textContent = "Deleting…";
+            await window.btccDb.collection("news").doc(newsId).delete();
+            if (msg) msg.textContent = "News post deleted.";
+            await loadAdminNewsManager(root);
+          } catch (err) {
+            console.error("❌ delete news failed:", err);
+            if (msg) msg.textContent = err?.message || "Failed to delete news post.";
+            btn.disabled = false;
+            btn.textContent = previousText;
+          }
+        });
+      });
     } catch (err) {
       console.error("❌ loadAdminNewsManager failed:", err);
       if (msg) msg.textContent = err?.message || "Failed to load news posts.";
@@ -470,7 +503,7 @@ const ADMIN_EMAILS = [
         setMsg("");
 
         const user = firebase.auth().currentUser;
-        const who = user?.email || "admin";
+        const who = user?.displayName || "Dan";
 
         await window.btccDb.collection("news").add({
           title,
