@@ -2,6 +2,14 @@
 // Exposes: window.loadNews()
 
 (function () {
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
 
   function renderNews(root) {
     root.innerHTML = `
@@ -56,6 +64,42 @@
     if (!root) return;
 
     renderNews(root);
+
+    const list = root.querySelector("#news-list");
+
+    if (list && window.btccDb) {
+      try {
+        const snap = await window.btccDb
+          .collection("news")
+          .orderBy("createdAt", "desc")
+          .get();
+
+        if (snap.empty) {
+          list.innerHTML = `<div class="note">No news yet.</div>`;
+        } else {
+          list.innerHTML = snap.docs.map((doc) => {
+            const d = doc.data() || {};
+            const title = d.title || "Untitled";
+            const content = d.content || "";
+            const createdBy = d.createdBy || "admin";
+            const createdAt = d.createdAt && typeof d.createdAt.toDate === "function"
+              ? d.createdAt.toDate().toLocaleString("en-GB")
+              : "—";
+
+            return `
+              <div class="note" style="margin-top:10px;">
+                <div style="font-weight:700; color:var(--text);">${escapeHtml(title)}</div>
+                <div class="tiny muted" style="margin-top:4px;">${escapeHtml(createdAt)} • ${escapeHtml(createdBy)}</div>
+                <div class="tiny muted" style="margin-top:8px; white-space:pre-line;">${escapeHtml(content)}</div>
+              </div>
+            `;
+          }).join("");
+        }
+      } catch (err) {
+        console.error("❌ Failed to load news:", err);
+        list.innerHTML = `<div class="note warnNote">Failed to load news.</div>`;
+      }
+    }
 
     // Collapse toggle logic
     root.querySelectorAll("[data-toggle]").forEach((btn) => {
