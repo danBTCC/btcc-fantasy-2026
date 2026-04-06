@@ -181,10 +181,10 @@ body {
 .container {
     width: min(980px, 100%);
     margin: 0 auto;
-    padding: 16px 14px 14px;
+    padding: 10px 14px 14px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
 }
 
 .card {
@@ -195,7 +195,7 @@ body {
 }
 
 h1 {
-    margin: 0 0 8px 0;
+    margin: 0 0 6px 0;
     font-size: 22px;
 }
 
