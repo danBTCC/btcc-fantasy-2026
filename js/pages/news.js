@@ -11,6 +11,13 @@
       .replace(/'/g, "&#39;");
   }
 
+  function formatNewsAuthor(value) {
+    const raw = String(value ?? "").replace(/^"+|"+$/g, "").trim();
+    if (!raw) return "Dan";
+    if (raw.includes("@")) return "Dan";
+    return raw;
+  }
+
   function renderNews(root) {
     root.innerHTML = `
       <!-- HOW TO PLAY (separate card) -->
@@ -79,9 +86,9 @@
         } else {
           list.innerHTML = snap.docs.map((doc) => {
             const d = doc.data() || {};
-            const title = d.title || "Untitled";
-            const content = d.content || "";
-            const createdBy = d.createdBy || "admin";
+            const title = String(d.title || "Untitled").replace(/^"+|"+$/g, "").trim();
+            const content = String(d.content || "").replace(/^"+|"+$/g, "").trim();
+            const createdBy = formatNewsAuthor(d.createdBy || "Dan");
             const createdAt = d.createdAt && typeof d.createdAt.toDate === "function"
               ? d.createdAt.toDate().toLocaleString("en-GB")
               : "—";
