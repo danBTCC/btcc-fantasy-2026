@@ -41,7 +41,7 @@
       </div>
 
       <!-- NEWS -->
-      <div class="card">
+      <div class="card" style="margin-top:10px;">
         <h1>News</h1>
 
         <div id="news-list" style="margin-top:12px;">
