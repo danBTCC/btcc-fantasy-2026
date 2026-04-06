@@ -112,6 +112,10 @@ body {
 
     border-bottom: 1px solid rgba(255,255,255,0.08);
     box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .raceBanner::before {
@@ -133,17 +137,24 @@ body {
             transparent 14px,
             transparent 28px
         );
-    animation: raceBannerShimmer 6s linear infinite;
     pointer-events: none;
 }
 
-@keyframes raceBannerShimmer {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(40px);
-    }
+.raceBanner::after {
+    content: "BTCC Fantasy League 2026";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 0.4px;
+    color: rgba(234, 241, 255, 0.96);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.35);
+    pointer-events: none;
+    z-index: 1;
 }
 
 .tabs::before {
