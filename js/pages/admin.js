@@ -161,6 +161,34 @@ const ADMIN_EMAILS = [
         </div>
         </div>
 
+            <div class="card" style="margin-top:12px;">
+        <button type="button" class="admin-collapse-toggle" data-target="admin-news-manager-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">News Manager</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-news-manager-body" hidden style="margin-top:10px;">
+          <p class="tiny muted" style="margin:0;">Post updates to the News page. Newest posts appear first.</p>
+
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <label class="tiny muted">News title</label>
+            <input id="admin-news-title" type="text" placeholder="Event 1 – Donington Summary"
+              style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" />
+
+            <label class="tiny muted">News content</label>
+            <textarea id="admin-news-content" rows="5" placeholder="Write your update here..."
+              style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
+
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:4px;">
+              <button id="admin-news-save" class="tile">Post news</button>
+              <button id="admin-news-reload" class="tile tinyBtn" type="button">Reload</button>
+              <div id="admin-news-msg" class="tiny muted"></div>
+            </div>
+          </div>
+
+          <div id="admin-news-list" style="margin-top:12px;"></div>
+        </div>
+      </div>  
+
       <div class="card" style="margin-top:12px;">
         <button type="button" class="admin-collapse-toggle" data-target="admin-submission-tracker-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
           <h2 style="margin:0;">Submission Tracker</h2>
@@ -276,6 +304,7 @@ const ADMIN_EMAILS = [
     loadAdminEventPicker(root);
     loadAdminDrivers(root);
     setupAdminHomeNews(root);
+    setupAdminNewsManager(root);
     loadAdminSubmissionTracker(root);
     setupAdminPlayerManager(root);
     setupAdminDriverManager(root);
@@ -283,6 +312,8 @@ const ADMIN_EMAILS = [
     renderRaceForms(root);
     renderResultsPreview(root);
   }
+
+
 
   function setupAdminCollapseToggles(root) {
     const toggles = root.querySelectorAll(".admin-collapse-toggle");
@@ -347,11 +378,131 @@ const ADMIN_EMAILS = [
     window.loadSelectedEventMetaAndResults = loadSelectedEventMetaAndResults;
     window.renderResultsPreview = renderResultsPreview;
     window.renderRaceForms = renderRaceForms;
+    window.loadAdminNewsManager = loadAdminNewsManager;
+    window.setupAdminNewsManager = setupAdminNewsManager;
     window.loadAdminSubmissionTracker = loadAdminSubmissionTracker;
     window.runDriverValueEngineJ1 = runDriverValueEngineJ1;
     window.runPlayerBudgetEngineJ2 = runPlayerBudgetEngineJ2;
     window.runDriverTierEngineJ3 = runDriverTierEngineJ3;
     window.runBudgetBoostEngineJ4 = runBudgetBoostEngineJ4;
+
+    async function loadAdminNewsManager(root) {
+    const mount = root.querySelector("#admin-news-list");
+    const msg = root.querySelector("#admin-news-msg");
+    if (!mount) return;
+
+    if (!window.btccDb) {
+      if (msg) msg.textContent = "Database not ready.";
+      mount.innerHTML = "";
+      return;
+    }
+
+    try {
+      if (msg) msg.textContent = "Loading…";
+
+      const snap = await window.btccDb
+        .collection("news")
+        .orderBy("createdAt", "desc")
+        .get();
+
+      if (snap.empty) {
+        mount.innerHTML = `<div class="note">No news posts yet.</div>`;
+        if (msg) msg.textContent = "No saved news posts yet.";
+        return;
+      }
+
+      mount.innerHTML = snap.docs.map((doc) => {
+        const d = doc.data() || {};
+        const title = (d.title || "Untitled").toString();
+        const content = (d.content || "").toString();
+        const createdBy = (d.createdBy || "admin").toString();
+        const createdAt = d.createdAt && typeof d.createdAt.toDate === "function"
+          ? d.createdAt.toDate().toLocaleString("en-GB")
+          : "—";
+
+        return `
+          <div class="note" style="margin-top:10px;">
+            <div style="font-weight:700; color:var(--text);">${title}</div>
+            <div class="tiny muted" style="margin-top:4px;">${createdAt} • ${createdBy}</div>
+            <div class="tiny muted" style="margin-top:8px; white-space:pre-line;">${content}</div>
+          </div>
+        `;
+      }).join("");
+
+      if (msg) msg.textContent = `Loaded ${snap.size} news post(s).`;
+    } catch (err) {
+      console.error("❌ loadAdminNewsManager failed:", err);
+      if (msg) msg.textContent = err?.message || "Failed to load news posts.";
+      mount.innerHTML = `<div class="note warnNote">Failed to load news posts.</div>`;
+    }
+  }
+
+  function setupAdminNewsManager(root) {
+    const saveBtn = root.querySelector("#admin-news-save");
+    const reloadBtn = root.querySelector("#admin-news-reload");
+    const titleEl = root.querySelector("#admin-news-title");
+    const contentEl = root.querySelector("#admin-news-content");
+    const msg = root.querySelector("#admin-news-msg");
+
+    if (!saveBtn || !titleEl || !contentEl) return;
+
+    const setMsg = (text) => {
+      if (msg) msg.textContent = text;
+    };
+
+    saveBtn.addEventListener("click", async () => {
+      if (!window.btccDb) {
+        setMsg("Database not ready.");
+        return;
+      }
+
+      const title = (titleEl.value || "").trim();
+      const content = (contentEl.value || "").trim();
+
+      if (!title || !content) {
+        setMsg("Title and content are required.");
+        return;
+      }
+
+      try {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Posting…";
+        setMsg("");
+
+        const user = firebase.auth().currentUser;
+        const who = user?.email || "admin";
+
+        await window.btccDb.collection("news").add({
+          title,
+          content,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          createdBy: who,
+        });
+
+        titleEl.value = "";
+        contentEl.value = "";
+        setMsg("News posted.");
+        await loadAdminNewsManager(root);
+      } catch (err) {
+        console.error("❌ admin news save failed:", err);
+        setMsg(err?.message || "Failed to post news.");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Post news";
+      }
+    });
+
+    reloadBtn?.addEventListener("click", async () => {
+      reloadBtn.disabled = true;
+      try {
+        await loadAdminNewsManager(root);
+      } finally {
+        reloadBtn.disabled = false;
+      }
+    });
+
+    loadAdminNewsManager(root);
+  }
 
   async function loadAdminSubmissionTracker(root) {
     const mount = root.querySelector("#admin-submission-tracker");
