@@ -189,6 +189,20 @@ const ADMIN_EMAILS = [
         </div>
       </div>  
 
+            <div class="card" style="margin-top:12px;">
+        <button type="button" class="admin-collapse-toggle" data-target="admin-maths-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Maths / Formula</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-maths-body" hidden style="margin-top:10px;">
+          <p class="tiny muted" style="margin:0;">Read-only planning values for the next event. This does not alter locked historic results, values, points, budgets, or EP.</p>
+
+          <div id="admin-maths-summary" class="note" style="margin-top:10px;">
+            Loading maths summary…
+          </div>
+        </div>
+      </div>
+
       <div class="card" style="margin-top:12px;">
         <button type="button" class="admin-collapse-toggle" data-target="admin-submission-tracker-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
           <h2 style="margin:0;">Submission Tracker</h2>
@@ -288,10 +302,10 @@ const ADMIN_EMAILS = [
         </div>
 
         <div id="admin-lock-banner" class="note warnNote" hidden style="margin-top:10px;"></div>
-<div id="admin-results-entry" class="tiny muted" style="margin-top:8px;"></div>
-<div id="admin-results-form" style="margin-top:10px;"></div>
-<div id="admin-races-form" style="margin-top:10px;"></div>
-<div id="admin-results-preview" style="margin-top:10px;"></div>
+        <div id="admin-results-entry" class="tiny muted" style="margin-top:8px;"></div>
+        <div id="admin-results-form" style="margin-top:10px;"></div>
+        <div id="admin-races-form" style="margin-top:10px;"></div>
+        <div id="admin-results-preview" style="margin-top:10px;"></div>
 <div id="admin-drivers-status" class="tiny muted" style="margin-top:10px;">Drivers: Loading…</div>
         </div>
 
@@ -305,6 +319,7 @@ const ADMIN_EMAILS = [
     loadAdminDrivers(root);
     setupAdminHomeNews(root);
     setupAdminNewsManager(root);
+    loadAdminMathsSummary(root);
     loadAdminSubmissionTracker(root);
     setupAdminPlayerManager(root);
     setupAdminDriverManager(root);
@@ -380,6 +395,7 @@ const ADMIN_EMAILS = [
     window.renderRaceForms = renderRaceForms;
     window.loadAdminNewsManager = loadAdminNewsManager;
     window.setupAdminNewsManager = setupAdminNewsManager;
+    window.loadAdminMathsSummary = loadAdminMathsSummary;
     window.loadAdminSubmissionTracker = loadAdminSubmissionTracker;
     window.runDriverValueEngineJ1 = runDriverValueEngineJ1;
     window.runPlayerBudgetEngineJ2 = runPlayerBudgetEngineJ2;
@@ -535,6 +551,59 @@ const ADMIN_EMAILS = [
     });
 
     loadAdminNewsManager(root);
+  }
+
+    async function loadAdminMathsSummary(root) {
+    const mount = root.querySelector("#admin-maths-summary");
+    if (!mount) return;
+
+    if (!window.btccDb) {
+      mount.innerHTML = `<div class="tiny muted">Database not ready.</div>`;
+      return;
+    }
+
+    if (typeof window.getPpvForActiveDriverCount !== "function") {
+      mount.innerHTML = `<div class="tiny muted">PPV lookup is not available.</div>`;
+      return;
+    }
+
+    try {
+      const driversSnap = await window.btccDb.collection("drivers").get();
+
+      const activeDrivers = driversSnap.docs
+        .map((doc) => {
+          const d = doc.data() || {};
+          return {
+            id: doc.id,
+            name: (d.name || doc.id).toString(),
+            active: d.active !== false,
+            value: Number(d.value || d.cost || d.price || 0),
+          };
+        })
+        .filter((d) => d.active);
+
+      const activeDriverCount = activeDrivers.length;
+      if (!activeDriverCount) {
+        mount.innerHTML = `<div class="tiny muted">No active drivers found.</div>`;
+        return;
+      }
+
+      const tdv = activeDrivers.reduce((sum, d) => sum + Number(d.value || 0), 0);
+      const ppv = window.getPpvForActiveDriverCount(activeDriverCount);
+      const vv = tdv > 0 ? (ppv / tdv) : 0;
+
+      mount.innerHTML = `
+        <div class="tiny muted" style="line-height:1.6;">
+          Active drivers: <strong style="color:var(--text);">${activeDriverCount}</strong><br>
+          PPV: <strong style="color:var(--text);">${ppv}</strong><br>
+          TDV: <strong style="color:var(--text);">£${Number(window.roundMoney2 ? window.roundMoney2(tdv) : tdv).toFixed(2)}</strong><br>
+          VV: <strong style="color:var(--text);">${Number(window.roundMoney2 ? window.roundMoney2(vv) : vv).toFixed(2)}</strong>
+        </div>
+      `;
+    } catch (err) {
+      console.error("❌ loadAdminMathsSummary failed:", err);
+      mount.innerHTML = `<div class="tiny muted">${err?.message || "Failed to load maths summary."}</div>`;
+    }
   }
 
   async function loadAdminSubmissionTracker(root) {
