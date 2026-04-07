@@ -3,12 +3,35 @@
 // Keep the original engine code in js/pages/admin.js until this file is confirmed working.
 
 (function () {
-  const PPV_2026 = 930;
+  const PPV_LOOKUP_2026 = {
+    15: 390,
+    16: 438,
+    17: 489,
+    18: 543,
+    19: 600,
+    20: 660,
+    21: 723,
+    22: 789,
+    23: 858,
+    24: 930,
+  };
   const PTR_2026 = 0.10;
   const MIN_DRIVER_VALUE_2026 = 0.10;
 
   function roundMoney2(v) {
     return Math.round((Number(v || 0) + Number.EPSILON) * 100) / 100;
+  }
+
+  function getPpvForActiveDriverCount(activeDriverCount) {
+    const count = Number(activeDriverCount || 0);
+    if (!Number.isFinite(count)) throw new Error("Invalid active driver count for PPV lookup");
+
+    const ppv = PPV_LOOKUP_2026[count];
+    if (typeof ppv !== "number") {
+      throw new Error(`No PPV configured for active driver count: ${count}`);
+    }
+
+    return ppv;
   }
 
   async function runDriverValueEngineJ1(root, eventId) {
@@ -46,7 +69,8 @@
       throw new Error("Total Driver Value (TDV) is zero");
     }
 
-    const vv = PPV_2026 / tdv;
+    const ppv = getPpvForActiveDriverCount(activeDrivers.length);
+    const vv = ppv / tdv;
 
     const gpMap = new Map();
 
@@ -134,7 +158,7 @@
       window.btccDb.collection("driver_value_runs").doc(eventId),
       {
         eventId,
-        ppv: PPV_2026,
+        ppv,
         tdv: roundMoney2(tdv),
         vv: roundMoney2(vv),
         ptr: PTR_2026,
@@ -519,6 +543,8 @@
     };
   }
 
+  window.PPV_LOOKUP_2026 = PPV_LOOKUP_2026;
+  window.getPpvForActiveDriverCount = getPpvForActiveDriverCount;
   window.runDriverValueEngineJ1 = runDriverValueEngineJ1;
   window.runPlayerBudgetEngineJ2 = runPlayerBudgetEngineJ2;
   window.runDriverTierEngineJ3 = runDriverTierEngineJ3;
