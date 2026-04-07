@@ -567,6 +567,11 @@ const ADMIN_EMAILS = [
       return;
     }
 
+    if (typeof window.getTierSplitForActiveDriverCount !== "function") {
+      mount.innerHTML = `<div class="tiny muted">Tier split lookup is not available.</div>`;
+      return;
+    }
+
     try {
       const driversSnap = await window.btccDb.collection("drivers").get();
 
@@ -591,11 +596,13 @@ const ADMIN_EMAILS = [
       const tdv = activeDrivers.reduce((sum, d) => sum + Number(d.value || 0), 0);
       const ppv = window.getPpvForActiveDriverCount(activeDriverCount);
       const vv = tdv > 0 ? (ppv / tdv) : 0;
+      const split = window.getTierSplitForActiveDriverCount(activeDriverCount);
 
       mount.innerHTML = `
         <div class="tiny muted" style="line-height:1.6;">
           Active drivers: <strong style="color:var(--text);">${activeDriverCount}</strong><br>
           PPV: <strong style="color:var(--text);">${ppv}</strong><br>
+          Tier split: <strong style="color:var(--text);">${split.high} / ${split.middle} / ${split.low}</strong><br>
           TDV: <strong style="color:var(--text);">£${Number(window.roundMoney2 ? window.roundMoney2(tdv) : tdv).toFixed(2)}</strong><br>
           VV: <strong style="color:var(--text);">${Number(window.roundMoney2 ? window.roundMoney2(vv) : vv).toFixed(2)}</strong>
         </div>
