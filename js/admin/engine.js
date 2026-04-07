@@ -15,6 +15,18 @@
     23: 858,
     24: 930,
   };
+  const TIER_SPLIT_LOOKUP_2026 = {
+    15: { high: 5, middle: 5, low: 5 },
+    16: { high: 5, middle: 6, low: 5 },
+    17: { high: 5, middle: 7, low: 5 },
+    18: { high: 5, middle: 8, low: 5 },
+    19: { high: 5, middle: 9, low: 5 },
+    20: { high: 6, middle: 8, low: 6 },
+    21: { high: 6, middle: 9, low: 6 },
+    22: { high: 6, middle: 10, low: 6 },
+    23: { high: 7, middle: 9, low: 7 },
+    24: { high: 7, middle: 10, low: 7 },
+  };
   const PTR_2026 = 0.10;
   const MIN_DRIVER_VALUE_2026 = 0.10;
 
@@ -32,6 +44,18 @@
     }
 
     return ppv;
+  }
+
+  function getTierSplitForActiveDriverCount(activeDriverCount) {
+    const count = Number(activeDriverCount || 0);
+    if (!Number.isFinite(count)) throw new Error("Invalid active driver count for tier lookup");
+
+    const split = TIER_SPLIT_LOOKUP_2026[count];
+    if (!split) {
+      throw new Error(`No tier split configured for active driver count: ${count}`);
+    }
+
+    return split;
   }
 
   async function runDriverValueEngineJ1(root, eventId) {
@@ -344,14 +368,19 @@
         standingPos: idx + 1,
       };
     });
+    const split = getTierSplitForActiveDriverCount(rows.length);
 
     const batch = window.btccDb.batch();
 
     rows.forEach((row) => {
       let tier = "low";
-      if (row.standingPos >= 1 && row.standingPos <= 7) tier = "high";
-      else if (row.standingPos >= 8 && row.standingPos <= 17) tier = "middle";
-      else tier = "low";
+      if (row.standingPos >= 1 && row.standingPos <= split.high) {
+        tier = "high";
+      } else if (row.standingPos > split.high && row.standingPos <= (split.high + split.middle)) {
+        tier = "middle";
+      } else {
+        tier = "low";
+      }
 
       const runRef = window.btccDb.collection("driver_tier_runs").doc(eventId).collection("drivers").doc(row.driverId);
       batch.set(
@@ -388,7 +417,7 @@
         eventId,
         eventNo,
         gridSize: rows.length,
-        split: { high: 7, middle: 10, low: 7 },
+        split,
         computedAt: firebase.firestore.FieldValue.serverTimestamp(),
         engineVersion: "J3.0",
       },
@@ -544,7 +573,9 @@
   }
 
   window.PPV_LOOKUP_2026 = PPV_LOOKUP_2026;
+  window.TIER_SPLIT_LOOKUP_2026 = TIER_SPLIT_LOOKUP_2026;
   window.getPpvForActiveDriverCount = getPpvForActiveDriverCount;
+  window.getTierSplitForActiveDriverCount = getTierSplitForActiveDriverCount;
   window.runDriverValueEngineJ1 = runDriverValueEngineJ1;
   window.runPlayerBudgetEngineJ2 = runPlayerBudgetEngineJ2;
   window.runDriverTierEngineJ3 = runDriverTierEngineJ3;
