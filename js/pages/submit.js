@@ -16,6 +16,10 @@
       .replace(/'/g, "&#39;");
   }
 
+  function roundMoney2(v) {
+    return Math.round((Number(v || 0) + Number.EPSILON) * 100) / 100;
+  }
+
   async function handleLogin(e, root) {
     e.preventDefault();
 
@@ -388,8 +392,13 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 <div class="tiny muted">
   Next event: <strong id="submit-next-event">Loading…</strong><br>
   Status: <strong id="submit-submission-status">—</strong><br>
-  Lockout: <strong id="submit-lockout">—</strong>
+  Lockout: <strong id="submit-lockout">—</strong><br>
   Time left: <strong id="submit-time-left">—</strong>
+</div>
+
+<div id="star-driver-panel" class="note" style="margin-top:10px;">
+  <div style="font-weight:700; margin-bottom:6px;">Star Drivers</div>
+  <div id="star-driver-summary" class="tiny muted">Loading star drivers…</div>
 </div>
 
 <div class="note" style="margin-top:10px;" id="team-summary">
@@ -538,10 +547,11 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       const ctx = getEventContext();
       const currentEventNo = Number(ctx.eventNo || 0);
 
-      const [driversSnap, eventsSnap, playerSnap] = await Promise.all([
+            const [driversSnap, eventsSnap, playerSnap, currentEventSnap] = await Promise.all([
         window.btccDb.collection("drivers").orderBy("name").get(),
         window.btccDb.collection("events").orderBy("eventNo").get(),
         window.btccDb.collection("players").doc(uid).get(),
+        window.btccDb.collection("events").doc(ctx.eventId).get(),
       ]);
 
       if (driversSnap.empty) {
@@ -550,6 +560,13 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       }
 
       const playerData = playerSnap.exists ? (playerSnap.data() || {}) : {};
+            const currentEventData = currentEventSnap.exists ? (currentEventSnap.data() || {}) : {};
+      const starDriverAId = currentEventNo >= 2
+        ? (currentEventData.starDriverAId || currentEventData.starDriverA || null)
+        : null;
+      const starDriverBId = currentEventNo >= 2
+        ? (currentEventData.starDriverBId || currentEventData.starDriverB || null)
+        : null;
       let currentSldDriverId = playerData.sldDriverId || playerData.sld || null;
 
       const previousEvents = eventsSnap.docs
@@ -616,6 +633,30 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       });
 
       const driversById = new Map(drivers.map((driver) => [driver.id, driver]));
+
+            const starSummaryEl = root.querySelector("#star-driver-summary");
+      const starDriverA = starDriverAId ? driversById.get(starDriverAId) : null;
+      const starDriverB = starDriverBId ? driversById.get(starDriverBId) : null;
+
+      if (starSummaryEl) {
+        if (currentEventNo < 2) {
+          starSummaryEl.innerHTML = `Event 1: no Star Drivers apply.`;
+        } else {
+          const underdogText = starDriverA
+            ? `${escapeHtml(starDriverA.name)} (Underdog Driver • -20%)`
+            : `Not set yet`;
+          const formText = starDriverB
+            ? `${escapeHtml(starDriverB.name)} (Form Driver • +5%)`
+            : `Not set yet`;
+
+          starSummaryEl.innerHTML = `
+            Underdog Driver: <strong style="color:var(--text);">${underdogText}</strong><br>
+            Form Driver: <strong style="color:var(--text);">${formText}</strong><br>
+            <span class="tiny muted">SLD always overrides Star Driver pricing.</span>
+          `;
+        }
+      }
+
       const tdv = drivers.reduce((sum, driver) => sum + Number(driver.price || 0), 0);
       const calculateExpectedPoints = (value) => {
         const safeValue = Number(value || 0);
@@ -624,10 +665,22 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         return Math.round((PPV_2026 / safeTdv) * safeValue);
       };
       const getDriverExpectedPoints = (driver) => calculateExpectedPoints(driver?.price || 0);
-      const getEffectiveDriverPrice = (driver) => {
+            const getEffectiveDriverPrice = (driver) => {
         const base = Number(driver?.price || 0);
+        if (base <= 0) return 0;
+
         const isSld = !!currentSldDriverId && currentSldDriverId === driver?.id;
-        return isSld ? Math.round(base * 1.10 * 100) / 100 : base;
+        if (isSld) return roundMoney2(base * 1.10);
+
+        if (starDriverAId && driver?.id === starDriverAId) {
+          return roundMoney2(base * 0.80);
+        }
+
+        if (starDriverBId && driver?.id === starDriverBId) {
+          return roundMoney2(base * 1.05);
+        }
+
+        return base;
       };
 
       // ---- SLD setup (Event 1 only) ----
@@ -758,11 +811,13 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
             selectedTeamListEl.textContent = "No drivers selected yet.";
           } else {
             selectedTeamListEl.innerHTML = selectedDrivers
-              .map((driver) => {
+                .map((driver) => {
                 const effectivePrice = getEffectiveDriverPrice(driver);
                 const expectedPoints = getDriverExpectedPoints(driver);
                 const sldBadge = driver.id === currentSldDriverId ? ` <span class="muted">(SLD +10%)</span>` : "";
-                return `<div style="margin-bottom:4px;"><strong>${escapeHtml(driver.name)}</strong> <span class="muted">(${fmtMoney(effectivePrice)} • EP: ${expectedPoints})</span>${sldBadge}</div>`;
+                const underdogBadge = !sldBadge && starDriverAId && driver.id === starDriverAId ? ` <span class="muted">(Underdog -20%)</span>` : "";
+                const formBadge = !sldBadge && starDriverBId && driver.id === starDriverBId ? ` <span class="muted">(Form +5%)</span>` : "";
+                return `<div style="margin-bottom:4px;"><strong>${escapeHtml(driver.name)}</strong> <span class="muted">(${fmtMoney(effectivePrice)} • EP: ${expectedPoints})</span>${sldBadge}${underdogBadge}${formBadge}</div>`;
               })
               .join("");
           }
@@ -989,11 +1044,14 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
                     <div style="flex:1; min-width:0;">
                       <div style="font-weight:700; line-height:1.2;">${escapeHtml(driver.name)}</div>
                       <div class="tiny muted" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px 8px;">
-                        <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${fmtMoney(driver.price)}</span>
+                                                <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">Base ${fmtMoney(driver.price)}</span>
+                        <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">Event ${fmtMoney(getEffectiveDriverPrice(driver))}</span>
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">EP: ${getDriverExpectedPoints(driver)}</span>
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${escapeHtml(tierLabel)}</span>
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${escapeHtml(streakLabel)}</span>
-                        ${driver.isSLD ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(34,197,94,.35); background:rgba(34,197,94,.10);">SLD</span>` : ""}
+                        ${driver.isSLD ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(34,197,94,.35); background:rgba(34,197,94,.10);">SLD +10%</span>` : ""}
+                        ${!driver.isSLD && starDriverAId && driver.id === starDriverAId ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(96,165,250,.35); background:rgba(96,165,250,.10);">Underdog -20%</span>` : ""}
+                        ${!driver.isSLD && starDriverBId && driver.id === starDriverBId ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(251,191,36,.35); background:rgba(251,191,36,.10);">Form +5%</span>` : ""}
                         ${driver.blocked ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(250,204,21,.35); background:rgba(250,204,21,.10);">Blocked next event</span>` : ""}
                       </div>
                     </div>
