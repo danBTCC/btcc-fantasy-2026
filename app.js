@@ -213,6 +213,20 @@ async function runPageLoaders() {
   if (window.loadSubmit) await window.loadSubmit();
 }
 
+let isRefreshing = false;
+
+document.addEventListener("touchmove", (e) => {
+  if (isRefreshing) return;
+
+  const currentY = e.touches[0].clientY;
+
+  if (window.scrollY === 0 && currentY > startY + 80) {
+    isRefreshing = true;
+    location.reload();
+  }
+});
+
+
 // ---------- App Boot ----------
 document.addEventListener("DOMContentLoaded", async () => {
   // Build stamp
