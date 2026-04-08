@@ -204,6 +204,38 @@ const ADMIN_EMAILS = [
       </div>
 
       <div class="card" style="margin-top:12px;">
+        <button type="button" class="admin-collapse-toggle" data-target="admin-star-drivers-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Star Drivers</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-star-drivers-body" hidden style="margin-top:10px;">
+          <p class="tiny muted" style="margin:0;">Set the Underdog Driver (-20%) and Form Driver (+5%) for the currently selected event. Event 1 does not use Star Drivers.</p>
+
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <label class="tiny muted">Underdog Driver (Star Driver A)</label>
+            <select id="admin-star-driver-a"
+              style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+              <option value="">Loading drivers…</option>
+            </select>
+
+            <label class="tiny muted">Form Driver (Star Driver B)</label>
+            <select id="admin-star-driver-b"
+              style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+              <option value="">Loading drivers…</option>
+            </select>
+
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:4px;">
+              <button id="admin-star-drivers-save" class="tile">Save Star Drivers</button>
+              <button id="admin-star-drivers-reload" class="tile tinyBtn" type="button">Reload</button>
+              <div id="admin-star-drivers-msg" class="tiny muted"></div>
+            </div>
+          </div>
+
+          <div id="admin-star-drivers-current" class="note" style="margin-top:12px;">Loading current Star Drivers…</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
         <button type="button" class="admin-collapse-toggle" data-target="admin-submission-tracker-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
           <h2 style="margin:0;">Submission Tracker</h2>
           <span class="tiny muted" data-chevron>▸</span>
@@ -320,6 +352,7 @@ const ADMIN_EMAILS = [
     setupAdminHomeNews(root);
     setupAdminNewsManager(root);
     loadAdminMathsSummary(root);
+    setupAdminStarDrivers(root);
     loadAdminSubmissionTracker(root);
     setupAdminPlayerManager(root);
     setupAdminDriverManager(root);
@@ -396,7 +429,183 @@ const ADMIN_EMAILS = [
     window.loadAdminNewsManager = loadAdminNewsManager;
     window.setupAdminNewsManager = setupAdminNewsManager;
     window.loadAdminMathsSummary = loadAdminMathsSummary;
+    window.loadAdminStarDrivers = loadAdminStarDrivers;
+    window.setupAdminStarDrivers = setupAdminStarDrivers;
     window.loadAdminSubmissionTracker = loadAdminSubmissionTracker;
+
+  async function loadAdminStarDrivers(root) {
+    const selectA = root.querySelector("#admin-star-driver-a");
+    const selectB = root.querySelector("#admin-star-driver-b");
+    const currentBox = root.querySelector("#admin-star-drivers-current");
+    const msg = root.querySelector("#admin-star-drivers-msg");
+
+    if (!selectA || !selectB || !currentBox) return;
+
+    if (!window.btccDb) {
+      if (msg) msg.textContent = "Database not ready.";
+      return;
+    }
+
+    const eventSelect = root.querySelector("#admin-event-select");
+    const eventId = eventSelect?.value;
+    if (!eventId) {
+      selectA.innerHTML = `<option value="">Select an event first</option>`;
+      selectB.innerHTML = `<option value="">Select an event first</option>`;
+      currentBox.innerHTML = `Select an event to manage Star Drivers.`;
+      return;
+    }
+
+    try {
+      if (msg) msg.textContent = "Loading…";
+
+      const [driversSnap, eventSnap] = await Promise.all([
+        window.btccDb.collection("drivers").orderBy("name").get(),
+        window.btccDb.collection("events").doc(eventId).get(),
+      ]);
+
+      const eventData = eventSnap.exists ? (eventSnap.data() || {}) : {};
+      const eventNo = Number(eventData.eventNo || 0);
+      const currentA = (eventData.starDriverAId || eventData.starDriverA || "").toString();
+      const currentB = (eventData.starDriverBId || eventData.starDriverB || "").toString();
+
+      const activeDrivers = driversSnap.docs
+        .map((doc) => {
+          const d = doc.data() || {};
+          return {
+            id: doc.id,
+            name: (d.name || doc.id).toString(),
+            active: d.active !== false,
+          };
+        })
+        .filter((driver) => driver.active)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      const buildOptions = (selectedId) => {
+        return [
+          `<option value="">Not set</option>`,
+          ...activeDrivers.map((driver) => {
+            const selected = driver.id === selectedId ? " selected" : "";
+            return `<option value="${driver.id}"${selected}>${driver.name}</option>`;
+          }),
+        ].join("");
+      };
+
+      selectA.innerHTML = buildOptions(currentA);
+      selectB.innerHTML = buildOptions(currentB);
+
+      if (eventNo < 2) {
+        selectA.disabled = true;
+        selectB.disabled = true;
+        currentBox.innerHTML = `Event 1 does not use Star Drivers.`;
+      } else {
+        selectA.disabled = false;
+        selectB.disabled = false;
+
+        const nameA = activeDrivers.find((driver) => driver.id === currentA)?.name || "Not set";
+        const nameB = activeDrivers.find((driver) => driver.id === currentB)?.name || "Not set";
+
+        currentBox.innerHTML = `
+          <div class="tiny muted" style="line-height:1.6;">
+            Current event: <strong style="color:var(--text);">Event ${eventNo}</strong><br>
+            Underdog Driver: <strong style="color:var(--text);">${nameA}</strong><br>
+            Form Driver: <strong style="color:var(--text);">${nameB}</strong>
+          </div>
+        `;
+      }
+
+      if (msg) msg.textContent = "Loaded.";
+    } catch (err) {
+      console.error("❌ loadAdminStarDrivers failed:", err);
+      if (msg) msg.textContent = err?.message || "Failed to load Star Drivers.";
+      currentBox.innerHTML = `<div class="tiny muted">Failed to load Star Drivers.</div>`;
+    }
+  }
+
+  function setupAdminStarDrivers(root) {
+    const saveBtn = root.querySelector("#admin-star-drivers-save");
+    const reloadBtn = root.querySelector("#admin-star-drivers-reload");
+    const selectA = root.querySelector("#admin-star-driver-a");
+    const selectB = root.querySelector("#admin-star-driver-b");
+    const msg = root.querySelector("#admin-star-drivers-msg");
+    const eventSelect = root.querySelector("#admin-event-select");
+
+    if (!saveBtn || !selectA || !selectB) return;
+
+    const setMsg = (text) => {
+      if (msg) msg.textContent = text;
+    };
+
+    const reload = async () => {
+      await loadAdminStarDrivers(root);
+    };
+
+    eventSelect?.addEventListener("change", reload);
+
+    reloadBtn?.addEventListener("click", async () => {
+      reloadBtn.disabled = true;
+      try {
+        await reload();
+      } finally {
+        reloadBtn.disabled = false;
+      }
+    });
+
+    saveBtn.addEventListener("click", async () => {
+      if (!window.btccDb) {
+        setMsg("Database not ready.");
+        return;
+      }
+
+      const eventId = eventSelect?.value;
+      if (!eventId) {
+        setMsg("Select an event first.");
+        return;
+      }
+
+      const aId = (selectA.value || "").trim();
+      const bId = (selectB.value || "").trim();
+
+      if (aId && bId && aId === bId) {
+        setMsg("Underdog Driver and Form Driver must be different.");
+        return;
+      }
+
+      try {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving…";
+        setMsg("");
+
+        const eventRef = window.btccDb.collection("events").doc(eventId);
+        const eventSnap = await eventRef.get();
+        const eventData = eventSnap.exists ? (eventSnap.data() || {}) : {};
+        const eventNo = Number(eventData.eventNo || 0);
+
+        if (eventNo < 2) {
+          setMsg("Event 1 does not use Star Drivers.");
+          return;
+        }
+
+        await eventRef.set(
+          {
+            starDriverAId: aId || null,
+            starDriverBId: bId || null,
+          },
+          { merge: true }
+        );
+
+        setMsg("Star Drivers saved.");
+        await reload();
+      } catch (err) {
+        console.error("❌ saveAdminStarDrivers failed:", err);
+        setMsg(err?.message || "Failed to save Star Drivers.");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Star Drivers";
+      }
+    });
+
+    reload();
+  }
     window.runDriverValueEngineJ1 = runDriverValueEngineJ1;
     window.runPlayerBudgetEngineJ2 = runPlayerBudgetEngineJ2;
     window.runDriverTierEngineJ3 = runDriverTierEngineJ3;
