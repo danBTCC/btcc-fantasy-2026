@@ -34,6 +34,10 @@
     return Math.round((Number(v || 0) + Number.EPSILON) * 100) / 100;
   }
 
+  function floorMoney2(v) {
+    return Math.floor((Number(v || 0) + Number.EPSILON) * 100) / 100;
+  }
+
   function getPpvForActiveDriverCount(activeDriverCount) {
     const count = Number(activeDriverCount || 0);
     if (!Number.isFinite(count)) throw new Error("Invalid active driver count for PPV lookup");
@@ -453,6 +457,8 @@
       14: 0.16,
       15: 0.17,
       16: 0.18,
+      17: 0.19,
+      18: 0.20,
     };
 
     const multiplier = eventNo <= 1 ? 0 : (eventNo === 2 ? 0.5 : 1);
@@ -508,8 +514,8 @@
 
     allRows.forEach((row, idx) => {
       const effectivePos = Number(row.standingPos || (idx + 1));
-      const fullBoost = Number(ladder[Math.min(effectivePos, 16)] ?? 0.18);
-      const appliedBoost = roundMoney2(fullBoost * multiplier);
+      const fullBoost = Number(ladder[Math.min(effectivePos, 18)] ?? 0.20);
+      const appliedBoost = floorMoney2(fullBoost * multiplier);
       const player = playersMap.get(row.uid) || { budget: 10, displayName: row.displayName };
       const baseBudget = roundMoney2(Number(player.budget || 10));
       const effectiveBudget = roundMoney2(baseBudget + appliedBoost);
@@ -581,4 +587,5 @@
   window.runDriverTierEngineJ3 = runDriverTierEngineJ3;
   window.runBudgetBoostEngineJ4 = runBudgetBoostEngineJ4;
   window.roundMoney2 = roundMoney2;
+  window.floorMoney2 = floorMoney2;
 })();
