@@ -212,6 +212,11 @@ const ADMIN_EMAILS = [
           <p class="tiny muted" style="margin:0;">Set the Underdog Driver (-20%) and Form Driver (+5%) for the currently selected event. Event 1 does not use Star Drivers.</p>
 
           <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <label class="tiny muted">Event</label>
+            <select id="admin-star-drivers-event"
+              style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+              <option value="">Loading events…</option>
+            </select>
             <label class="tiny muted">Underdog Driver (Star Driver A)</label>
             <select id="admin-star-driver-a"
               style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
@@ -446,7 +451,7 @@ const ADMIN_EMAILS = [
       return;
     }
 
-    const eventSelect = root.querySelector("#admin-event-select");
+    const eventSelect = root.querySelector("#admin-star-drivers-event");
     const eventId = eventSelect?.value;
     if (!eventId) {
       selectA.innerHTML = `<option value="">Select an event first</option>`;
@@ -458,12 +463,32 @@ const ADMIN_EMAILS = [
     try {
       if (msg) msg.textContent = "Loading…";
 
-      const [driversSnap, eventSnap] = await Promise.all([
+      const [driversSnap, eventSnap, eventsSnap] = await Promise.all([
         window.btccDb.collection("drivers").orderBy("name").get(),
         window.btccDb.collection("events").doc(eventId).get(),
+        window.btccDb.collection("events").orderBy("eventNo").get(),
       ]);
 
       const eventData = eventSnap.exists ? (eventSnap.data() || {}) : {};
+      const eventOptions = eventsSnap.docs
+        .map((doc) => {
+          const d = doc.data() || {};
+          const eventNo = Number(d.eventNo || 0);
+          const venue = (d.venue || d.name || doc.id).toString();
+          return {
+            id: doc.id,
+            eventNo,
+            label: eventNo ? `Event ${eventNo} — ${venue}` : venue,
+          };
+        })
+        .sort((a, b) => a.eventNo - b.eventNo);
+
+      if (eventSelect) {
+        eventSelect.innerHTML = eventOptions.map((ev) => {
+          const selected = ev.id === eventId ? " selected" : "";
+          return `<option value="${ev.id}"${selected}>${ev.label}</option>`;
+        }).join("");
+      }
       const eventNo = Number(eventData.eventNo || 0);
       const currentA = (eventData.starDriverAId || eventData.starDriverA || "").toString();
       const currentB = (eventData.starDriverBId || eventData.starDriverB || "").toString();
@@ -527,7 +552,7 @@ const ADMIN_EMAILS = [
     const selectA = root.querySelector("#admin-star-driver-a");
     const selectB = root.querySelector("#admin-star-driver-b");
     const msg = root.querySelector("#admin-star-drivers-msg");
-    const eventSelect = root.querySelector("#admin-event-select");
+    const eventSelect = root.querySelector("#admin-star-drivers-event");
 
     if (!saveBtn || !selectA || !selectB) return;
 
@@ -604,7 +629,20 @@ const ADMIN_EMAILS = [
       }
     });
 
-    reload();
+    if (eventSelect && !eventSelect.value) {
+      window.btccDb.collection("events").orderBy("eventNo").get().then((snap) => {
+        const rows = snap.docs
+          .map((doc) => ({ id: doc.id, eventNo: Number(doc.data()?.eventNo || 0) }))
+          .sort((a, b) => a.eventNo - b.eventNo);
+        const firstStarEvent = rows.find((row) => row.eventNo >= 2) || rows[0];
+        if (firstStarEvent) {
+          eventSelect.value = firstStarEvent.id;
+        }
+        reload();
+      }).catch(() => reload());
+    } else {
+      reload();
+    }
   }
     window.runDriverValueEngineJ1 = runDriverValueEngineJ1;
     window.runPlayerBudgetEngineJ2 = runPlayerBudgetEngineJ2;
