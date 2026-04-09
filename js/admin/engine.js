@@ -89,11 +89,11 @@
     let pool = [];
 
     if (categoryKey === "manufacturer") {
-      pool = drivers.filter((d) => d.category === "M");
+      pool = drivers.filter((d) => (d.categories || []).includes("M"));
     } else if (categoryKey === "independent") {
-      pool = drivers.filter((d) => d.category === "I");
+      pool = drivers.filter((d) => (d.categories || []).includes("I"));
     } else if (categoryKey === "jacksears") {
-      pool = drivers.filter((d) => d.jsEligible === true);
+      pool = drivers.filter((d) => (d.categories || []).includes("JS"));
     }
 
     const sorted = pool
@@ -140,8 +140,7 @@
           id: doc.id,
           name: (d.name || doc.id).toString(),
           active: d.active !== false,
-          category: (d.category || "").toString(),
-          jsEligible: d.js === true || d.jsEligible === true || d.category === "JS",
+          categories: Array.isArray(d.categories) ? d.categories : [],
         };
       })
       .filter((d) => d.active);
@@ -264,9 +263,9 @@
     return {
       playerCount: activePlayers.length,
       eventCount: eventRows.length,
-      manufacturerDrivers: activeDrivers.filter((d) => d.category === "M").length,
-      independentDrivers: activeDrivers.filter((d) => d.category === "I").length,
-      jackSearsDrivers: activeDrivers.filter((d) => d.jsEligible === true).length,
+      manufacturerDrivers: activeDrivers.filter((d) => (d.categories || []).includes("M")).length,
+      independentDrivers: activeDrivers.filter((d) => (d.categories || []).includes("I")).length,
+      jackSearsDrivers: activeDrivers.filter((d) => (d.categories || []).includes("JS")).length,
     };
   }
 
