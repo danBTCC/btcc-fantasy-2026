@@ -62,6 +62,214 @@
     return split;
   }
 
+  async function getEntryDocsForEvent(eventId) {
+    const primary = await window.btccDb.collection("entries").doc(eventId).collection("entries").get();
+    if (!primary.empty) return primary;
+
+    const fallback = await window.btccDb.collection("submissions").doc(eventId).collection("entries").get();
+    return fallback;
+  }
+
+  function safeTeamIdsFromEntry(entry) {
+    const candidates = [
+      entry?.team,
+      entry?.drivers,
+      entry?.selectedDrivers,
+      entry?.driverIds,
+      entry?.picks,
+      entry?.selection,
+    ];
+    const arr = candidates.find((x) => Array.isArray(x));
+    const ids = Array.isArray(arr) ? arr.filter(Boolean).map(String) : [];
+    if (ids.length < 3 || ids.length > 6) return [];
+    return Array.from(new Set(ids));
+  }
+
+  function buildCategoryDriverPoints(drivers, gpMap, categoryKey) {
+    let pool = [];
+
+    if (categoryKey === "manufacturer") {
+      pool = drivers.filter((d) => d.category === "M");
+    } else if (categoryKey === "independent") {
+      pool = drivers.filter((d) => d.category === "I");
+    } else if (categoryKey === "jacksears") {
+      pool = drivers.filter((d) => d.jsEligible === true);
+    }
+
+    const sorted = pool
+      .map((driver) => ({
+        ...driver,
+        gp: Number(gpMap.get(driver.id) || 0),
+      }))
+      .sort((a, b) => {
+        if (b.gp !== a.gp) return b.gp - a.gp;
+        return a.name.localeCompare(b.name);
+      });
+
+    const total = sorted.length;
+    const pointsMap = new Map();
+    sorted.forEach((driver, idx) => {
+      const pts = total - idx;
+      pointsMap.set(driver.id, Number(pts || 0));
+    });
+
+    return {
+      rows: sorted,
+      pointsMap,
+      categorySize: total,
+    };
+  }
+
+  async function runCategoryStandingsEngineJ5(root, eventId) {
+    if (!window.btccDb) throw new Error("Database not ready");
+    if (!eventId) throw new Error("No event selected for category standings engine");
+
+    const eventMeta = root.__eventMeta || {};
+    const selectedEventNo = Number(eventMeta.eventNo || 0);
+
+    const [driversSnap, playersSnap, eventsSnap] = await Promise.all([
+      window.btccDb.collection("drivers").get(),
+      window.btccDb.collection("players").get(),
+      window.btccDb.collection("events").orderBy("eventNo").get(),
+    ]);
+
+    const activeDrivers = driversSnap.docs
+      .map((doc) => {
+        const d = doc.data() || {};
+        return {
+          id: doc.id,
+          name: (d.name || doc.id).toString(),
+          active: d.active !== false,
+          category: (d.category || "").toString(),
+          jsEligible: d.js === true || d.jsEligible === true || d.category === "JS",
+        };
+      })
+      .filter((d) => d.active);
+
+    if (!activeDrivers.length) {
+      throw new Error("No active drivers found for category standings engine");
+    }
+
+    const activePlayers = playersSnap.docs
+      .map((doc) => {
+        const d = doc.data() || {};
+        return {
+          uid: doc.id,
+          displayName: (d.displayName || d.name || doc.id).toString(),
+          active: d.active !== false,
+        };
+      })
+      .filter((p) => p.active);
+
+    const eventRows = eventsSnap.docs
+      .map((doc) => {
+        const d = doc.data() || {};
+        return {
+          id: doc.id,
+          eventNo: Number(d.eventNo || 0),
+        };
+      })
+      .filter((row) => !selectedEventNo || row.eventNo <= selectedEventNo)
+      .sort((a, b) => a.eventNo - b.eventNo);
+
+    const seasonTotals = {
+      manufacturer: new Map(),
+      independent: new Map(),
+      jacksears: new Map(),
+    };
+
+    activePlayers.forEach((player) => {
+      seasonTotals.manufacturer.set(player.uid, 0);
+      seasonTotals.independent.set(player.uid, 0);
+      seasonTotals.jacksears.set(player.uid, 0);
+    });
+
+    for (const ev of eventRows) {
+      const [scoresSnap, entriesSnap] = await Promise.all([
+        window.btccDb.collection("event_scores").doc(ev.id).collection("players").get(),
+        getEntryDocsForEvent(ev.id),
+      ]);
+
+      const gpMap = new Map();
+      scoresSnap.forEach((doc) => {
+        const data = doc.data() || {};
+        const perDriver = data.perDriver || {};
+        Object.entries(perDriver).forEach(([driverId, pts]) => {
+          const prev = Number(gpMap.get(String(driverId)) || 0);
+          gpMap.set(String(driverId), prev + Number(pts || 0));
+        });
+      });
+
+      const manufacturer = buildCategoryDriverPoints(activeDrivers, gpMap, "manufacturer");
+      const independent = buildCategoryDriverPoints(activeDrivers, gpMap, "independent");
+      const jacksears = buildCategoryDriverPoints(activeDrivers, gpMap, "jacksears");
+
+      entriesSnap.forEach((doc) => {
+        const uid = doc.id;
+        if (!seasonTotals.manufacturer.has(uid)) return;
+
+        const entry = doc.data() || {};
+        const teamIds = safeTeamIdsFromEntry(entry);
+
+        const mPts = teamIds.reduce((sum, driverId) => sum + Number(manufacturer.pointsMap.get(driverId) || 0), 0);
+        const iPts = teamIds.reduce((sum, driverId) => sum + Number(independent.pointsMap.get(driverId) || 0), 0);
+        const jsPts = teamIds.reduce((sum, driverId) => sum + Number(jacksears.pointsMap.get(driverId) || 0), 0);
+
+        seasonTotals.manufacturer.set(uid, Number(seasonTotals.manufacturer.get(uid) || 0) + Number(mPts || 0));
+        seasonTotals.independent.set(uid, Number(seasonTotals.independent.get(uid) || 0) + Number(iPts || 0));
+        seasonTotals.jacksears.set(uid, Number(seasonTotals.jacksears.get(uid) || 0) + Number(jsPts || 0));
+      });
+    }
+
+    const batch = window.btccDb.batch();
+    const categories = [
+      { key: "manufacturer", collection: "standings_manufacturer" },
+      { key: "independent", collection: "standings_independent" },
+      { key: "jacksears", collection: "standings_jacksears" },
+    ];
+
+    categories.forEach(({ key, collection }) => {
+      const seasonRef = window.btccDb.collection(collection).doc("season_2026");
+      batch.set(
+        seasonRef,
+        {
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastEventId: eventId,
+          playerCount: activePlayers.length,
+          engineVersion: "J5.0",
+        },
+        { merge: true }
+      );
+
+      activePlayers.forEach((player) => {
+        const pointsTotal = Number(seasonTotals[key].get(player.uid) || 0);
+        const playerRef = seasonRef.collection("players").doc(player.uid);
+        batch.set(
+          playerRef,
+          {
+            uid: player.uid,
+            displayName: player.displayName,
+            name: player.displayName,
+            pointsTotal,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            engineVersion: "J5.0",
+          },
+          { merge: true }
+        );
+      });
+    });
+
+    await batch.commit();
+
+    return {
+      playerCount: activePlayers.length,
+      eventCount: eventRows.length,
+      manufacturerDrivers: activeDrivers.filter((d) => d.category === "M").length,
+      independentDrivers: activeDrivers.filter((d) => d.category === "I").length,
+      jackSearsDrivers: activeDrivers.filter((d) => d.jsEligible === true).length,
+    };
+  }
+
   async function runDriverValueEngineJ1(root, eventId) {
     if (!window.btccDb) throw new Error("Database not ready");
     if (!eventId) throw new Error("No event selected for value engine");
@@ -243,20 +451,6 @@
       });
     });
 
-    const safeTeamIdsFromEntry = (entry) => {
-      const candidates = [
-        entry?.team,
-        entry?.drivers,
-        entry?.selectedDrivers,
-        entry?.driverIds,
-        entry?.picks,
-        entry?.selection,
-      ];
-      const arr = candidates.find((x) => Array.isArray(x));
-      const ids = Array.isArray(arr) ? arr.filter(Boolean).map(String) : [];
-      if (ids.length < 3 || ids.length > 6) return [];
-      return Array.from(new Set(ids));
-    };
 
     const batch = window.btccDb.batch();
     let playerCount = 0;
@@ -586,6 +780,7 @@
   window.runPlayerBudgetEngineJ2 = runPlayerBudgetEngineJ2;
   window.runDriverTierEngineJ3 = runDriverTierEngineJ3;
   window.runBudgetBoostEngineJ4 = runBudgetBoostEngineJ4;
+  window.runCategoryStandingsEngineJ5 = runCategoryStandingsEngineJ5;
   window.roundMoney2 = roundMoney2;
   window.floorMoney2 = floorMoney2;
 })();

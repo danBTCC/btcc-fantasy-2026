@@ -846,6 +846,7 @@ if (banner) {
            const budgetResult = await runPlayerBudgetEngineJ2(root, eid);
            const tierResult = await runDriverTierEngineJ3(root, eid);
            const boostResult = await runBudgetBoostEngineJ4(root, eid);
+           const categoryResult = await runCategoryStandingsEngineJ5(root, eid);
 
            setEngineMsg(
             tierResult.skipped
