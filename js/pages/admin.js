@@ -438,57 +438,72 @@ const ADMIN_EMAILS = [
     window.setupAdminStarDrivers = setupAdminStarDrivers;
     window.loadAdminSubmissionTracker = loadAdminSubmissionTracker;
 
-  async function loadAdminStarDrivers(root) {
+    async function loadAdminStarDrivers(root) {
     const selectA = root.querySelector("#admin-star-driver-a");
     const selectB = root.querySelector("#admin-star-driver-b");
     const currentBox = root.querySelector("#admin-star-drivers-current");
     const msg = root.querySelector("#admin-star-drivers-msg");
+    const eventSelect = root.querySelector("#admin-star-drivers-event");
 
-    if (!selectA || !selectB || !currentBox) return;
+    if (!selectA || !selectB || !currentBox || !eventSelect) return;
 
     if (!window.btccDb) {
       if (msg) msg.textContent = "Database not ready.";
       return;
     }
 
-    const eventSelect = root.querySelector("#admin-star-drivers-event");
-    const eventId = eventSelect?.value;
-    if (!eventId) {
-      selectA.innerHTML = `<option value="">Select an event first</option>`;
-      selectB.innerHTML = `<option value="">Select an event first</option>`;
-      currentBox.innerHTML = `Select an event to manage Star Drivers.`;
-      return;
-    }
-
     try {
       if (msg) msg.textContent = "Loading…";
 
-      const [driversSnap, eventSnap, eventsSnap] = await Promise.all([
+      const [driversSnap, eventsSnap] = await Promise.all([
         window.btccDb.collection("drivers").orderBy("name").get(),
-        window.btccDb.collection("events").doc(eventId).get(),
         window.btccDb.collection("events").orderBy("eventNo").get(),
       ]);
 
-      const eventData = eventSnap.exists ? (eventSnap.data() || {}) : {};
-      const eventOptions = eventsSnap.docs
+      const eventRows = eventsSnap.docs
         .map((doc) => {
           const d = doc.data() || {};
           const eventNo = Number(d.eventNo || 0);
           const venue = (d.venue || d.name || doc.id).toString();
           return {
             id: doc.id,
+            data: d,
             eventNo,
             label: eventNo ? `Event ${eventNo} — ${venue}` : venue,
           };
         })
         .sort((a, b) => a.eventNo - b.eventNo);
 
-      if (eventSelect) {
-        eventSelect.innerHTML = eventOptions.map((ev) => {
-          const selected = ev.id === eventId ? " selected" : "";
-          return `<option value="${ev.id}"${selected}>${ev.label}</option>`;
-        }).join("");
+      if (!eventRows.length) {
+        eventSelect.innerHTML = `<option value="">No events found</option>`;
+        selectA.innerHTML = `<option value="">No drivers available</option>`;
+        selectB.innerHTML = `<option value="">No drivers available</option>`;
+        currentBox.innerHTML = `No events available.`;
+        if (msg) msg.textContent = "No events found.";
+        return;
       }
+
+      let selectedEventId = eventSelect.value;
+      if (!selectedEventId) {
+        const firstStarEvent = eventRows.find((row) => row.eventNo >= 2) || eventRows[0];
+        selectedEventId = firstStarEvent?.id || "";
+      }
+
+      eventSelect.innerHTML = eventRows.map((ev) => {
+        const selected = ev.id === selectedEventId ? " selected" : "";
+        return `<option value="${ev.id}"${selected}>${ev.label}</option>`;
+      }).join("");
+
+      const selectedEvent = eventRows.find((ev) => ev.id === selectedEventId);
+      if (!selectedEvent) {
+        selectA.innerHTML = `<option value="">Select an event first</option>`;
+        selectB.innerHTML = `<option value="">Select an event first</option>`;
+        currentBox.innerHTML = `Select an event to manage Star Drivers.`;
+        if (msg) msg.textContent = "Select an event.";
+        return;
+      }
+
+      const eventData = selectedEvent.data || {};
       const eventNo = Number(eventData.eventNo || 0);
       const currentA = (eventData.starDriverAId || eventData.starDriverA || "").toString();
       const currentB = (eventData.starDriverBId || eventData.starDriverB || "").toString();
