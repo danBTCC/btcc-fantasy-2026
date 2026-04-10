@@ -346,6 +346,32 @@ const ADMIN_EMAILS = [
 <div id="admin-drivers-status" class="tiny muted" style="margin-top:10px;">Drivers: Loading…</div>
         </div>
 
+      <div class="card" style="margin-top:12px;">
+        <button type="button" class="admin-collapse-toggle" data-target="admin-pitstop-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Pit Stop Pot</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-pitstop-body" hidden style="margin-top:10px;">
+          <p class="tiny muted">Manual tracker for Pit Stop Pot (does not affect main game).</p>
+          <label class="tiny muted">Current Pot</label>
+          <input id="admin-pitstop-pot" type="number" step="0.01" />
+          <label class="tiny muted">Rollover Amount</label>
+          <input id="admin-pitstop-jackpot" type="number" step="0.01" />
+          <label class="tiny muted">Last Winner</label>
+          <input id="admin-pitstop-winner" type="text" />
+          <label class="tiny muted">Next Draw</label>
+          <input id="admin-pitstop-next" type="text" />
+          <label class="tiny muted">Events (JSON)</label>
+          <textarea id="admin-pitstop-events" rows="4"></textarea>
+          <label class="tiny muted">Head to Head (JSON)</label>
+          <textarea id="admin-pitstop-h2h" rows="4"></textarea>
+          <label class="tiny muted">Payments (JSON)</label>
+          <textarea id="admin-pitstop-players" rows="4"></textarea>
+          <button id="admin-pitstop-save" class="tile" style="margin-top:10px;">Save Pit Stop Data</button>
+          <div id="admin-pitstop-msg" class="tiny muted"></div>
+        </div>
+      </div>
+
       <button id="admin-logout" class="tile" style="margin-top:12px;">Logout</button>
       `
     );
@@ -361,6 +387,7 @@ const ADMIN_EMAILS = [
     loadAdminSubmissionTracker(root);
     setupAdminPlayerManager(root);
     setupAdminDriverManager(root);
+    setupAdminPitStop(root);
     renderQualifyingForm(root);
     renderRaceForms(root);
     renderResultsPreview(root);
@@ -983,5 +1010,46 @@ const ADMIN_EMAILS = [
       mount.innerHTML = `<div class="note warnNote">Failed to load submission tracker.</div>`;
     }
   }
+
+// --- Pit Stop Pot Admin Editor ---
+function setupAdminPitStop(root) {
+  const saveBtn = root.querySelector("#admin-pitstop-save");
+  const msg = root.querySelector("#admin-pitstop-msg");
+
+  if (!saveBtn) return;
+
+  saveBtn.addEventListener("click", async () => {
+    if (!window.btccDb) {
+      msg.textContent = "DB not ready";
+      return;
+    }
+
+    try {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving…";
+      msg.textContent = "";
+
+      const data = {
+        currentPot: Number(root.querySelector("#admin-pitstop-pot")?.value || 0),
+        jackpot: Number(root.querySelector("#admin-pitstop-jackpot")?.value || 0),
+        lastWinner: root.querySelector("#admin-pitstop-winner")?.value || "",
+        nextDraw: root.querySelector("#admin-pitstop-next")?.value || "",
+        events: JSON.parse(root.querySelector("#admin-pitstop-events")?.value || "[]"),
+        headToHead: JSON.parse(root.querySelector("#admin-pitstop-h2h")?.value || "[]"),
+        players: JSON.parse(root.querySelector("#admin-pitstop-players")?.value || "[]")
+      };
+
+      await window.btccDb.collection("pitstop").doc("tracker").set(data);
+
+      msg.textContent = "Saved";
+    } catch (err) {
+      console.error(err);
+      msg.textContent = "Invalid JSON or save failed";
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save Pit Stop Data";
+    }
+  });
+}
 
 })();
