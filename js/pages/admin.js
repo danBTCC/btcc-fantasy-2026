@@ -352,23 +352,58 @@ const ADMIN_EMAILS = [
           <span class="tiny muted" data-chevron>▸</span>
         </button>
         <div id="admin-pitstop-body" hidden style="margin-top:10px;">
-          <p class="tiny muted">Manual tracker for Pit Stop Pot (does not affect main game).</p>
-          <label class="tiny muted">Current Pot</label>
-          <input id="admin-pitstop-pot" type="number" step="0.01" />
-          <label class="tiny muted">Rollover Amount</label>
-          <input id="admin-pitstop-jackpot" type="number" step="0.01" />
-          <label class="tiny muted">Last Winner</label>
-          <input id="admin-pitstop-winner" type="text" />
-          <label class="tiny muted">Next Draw</label>
-          <input id="admin-pitstop-next" type="text" />
-          <label class="tiny muted">Events (JSON)</label>
-          <textarea id="admin-pitstop-events" rows="4"></textarea>
-          <label class="tiny muted">Head to Head (JSON)</label>
-          <textarea id="admin-pitstop-h2h" rows="4"></textarea>
-          <label class="tiny muted">Payments (JSON)</label>
-          <textarea id="admin-pitstop-players" rows="4"></textarea>
-          <button id="admin-pitstop-save" class="tile" style="margin-top:10px;">Save Pit Stop Data</button>
-          <div id="admin-pitstop-msg" class="tiny muted"></div>
+          <p class="tiny muted" style="margin:0;">Manual tracker for Pit Stop Pot. This does not affect the main Fantasy League game.</p>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-top:12px;">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label class="tiny muted">Current Pot</label>
+              <input id="admin-pitstop-pot" type="number" step="0.01"
+                style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" />
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label class="tiny muted">Rollover Amount</label>
+              <input id="admin-pitstop-jackpot" type="number" step="0.01"
+                style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" />
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label class="tiny muted">Last Winner</label>
+              <input id="admin-pitstop-winner" type="text"
+                style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" />
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label class="tiny muted">Next Draw</label>
+              <input id="admin-pitstop-next" type="text"
+                style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" />
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label class="tiny muted">Events (JSON)</label>
+              <textarea id="admin-pitstop-events" rows="5"
+                style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label class="tiny muted">Head to Head (JSON)</label>
+              <textarea id="admin-pitstop-h2h" rows="5"
+                style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label class="tiny muted">Payments (JSON)</label>
+              <textarea id="admin-pitstop-players" rows="5"
+                style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px;">
+            <button id="admin-pitstop-save" class="tile">Save Pit Stop Data</button>
+            <div id="admin-pitstop-msg" class="tiny muted"></div>
+          </div>
         </div>
       </div>
 
@@ -1041,10 +1076,10 @@ function setupAdminPitStop(root) {
 
       await window.btccDb.collection("pitstop").doc("tracker").set(data);
 
-      msg.textContent = "Saved";
+      msg.textContent = "Pit Stop data saved.";
     } catch (err) {
       console.error(err);
-      msg.textContent = "Invalid JSON or save failed";
+      msg.textContent = "Invalid JSON or save failed.";
     } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = "Save Pit Stop Data";
