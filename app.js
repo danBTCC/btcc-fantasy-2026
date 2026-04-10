@@ -17,11 +17,16 @@ function setActiveTab(route) {
   if (route === "news") {
     window.loadNews?.();
   }
+
+  if (route === "pitstop") {
+    window.loadPitStop?.();
+}
+
 }
 
 function getRouteFromHash() {
   const raw = (window.location.hash || "#home").replace("#", "").trim().toLowerCase();
- const allowed = new Set(["home", "submit", "tables", "drivers", "results", "news", "admin"]);
+ const allowed = new Set(["home", "submit", "tables", "drivers", "results", "news", "pitstop", "admin"]);
   return allowed.has(raw) ? raw : "home";
 }
 
@@ -211,6 +216,7 @@ async function runPageLoaders() {
   if (window.loadResults) await window.loadResults();
   if (window.loadAdmin) await window.loadAdmin();
   if (window.loadSubmit) await window.loadSubmit();
+  if (window.loadPitStop) await window.loadPitStop();
 }
 
 let isRefreshing = false;
