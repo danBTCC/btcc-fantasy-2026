@@ -1,5 +1,3 @@
-
-
 // js/pages/pitstop.js
 // Pit Stop Pot page (read-only for players, admin-editable later)
 // Exposes: window.loadPitStop()
@@ -27,7 +25,7 @@
           Current pot: <strong style="color:var(--text);">£0.00</strong><br>
           Last winner: <strong style="color:var(--text);">—</strong><br>
           Next draw: <strong style="color:var(--text);">—</strong><br>
-          Current jackpot: <strong style="color:var(--text);">£0.00</strong>
+          Current Rollover Amount: <strong style="color:var(--text);">£0.00</strong>
         </div>
       </div>
 
@@ -37,6 +35,52 @@
           Race 10 – Jackpot<br>
           Race 20 – Jackpot<br>
           Race 30 – Jackpot
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:10px;">
+        <h2 style="margin-top:0;">Event Breakdown</h2>
+        <div class="note" style="overflow-x:auto; margin-top:10px;">
+          <table class="table" style="width:100%; min-width:860px; border-collapse:collapse; font-size:14px;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:6px;">Event</th>
+                <th style="text-align:left; padding:6px;">3 Selected Players</th>
+                <th style="text-align:left; padding:6px;">Payouts</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:6px;">No event breakdown data yet.</td>
+                <td style="padding:6px;">—</td>
+                <td style="padding:6px;">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:10px;">
+        <h2 style="margin-top:0;">Special Rollover Head-to-Head</h2>
+        <div class="note" style="overflow-x:auto; margin-top:10px;">
+          <table class="table" style="width:100%; min-width:760px; border-collapse:collapse; font-size:14px;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:6px;">Race</th>
+                <th style="text-align:left; padding:6px;">Head-to-Head</th>
+                <th style="text-align:left; padding:6px;">Winner</th>
+                <th style="text-align:right; padding:6px;">Payout</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:6px;">No head-to-head data yet.</td>
+                <td style="padding:6px;">—</td>
+                <td style="padding:6px;">—</td>
+                <td style="padding:6px; text-align:right;">£0.00</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -86,7 +130,7 @@
           Current pot: <strong style="color:var(--text);">£${currentPot}</strong><br>
           Last winner: <strong style="color:var(--text);">${lastWinner}</strong><br>
           Next draw: <strong style="color:var(--text);">${nextDraw}</strong><br>
-          Current jackpot: <strong style="color:var(--text);">£${jackpot}</strong>
+          Current Rollover Amount: <strong style="color:var(--text);">£${jackpot}</strong>
         </div>
       </div>
 
@@ -96,6 +140,116 @@
           Race 10 – Jackpot<br>
           Race 20 – Jackpot<br>
           Race 30 – Jackpot
+        </div>
+      </div>
+    `;
+  }
+
+  function buildEventBreakdownHtml(events) {
+    const rows = Array.isArray(events) ? events : [];
+
+    const body = rows.length
+      ? rows.map((event) => {
+          const eventLabel = escapeHtml(event.eventLabel || event.event || "Event");
+          const selectedPlayers = Array.isArray(event.selectedPlayers) ? event.selectedPlayers : [];
+          const payouts = Array.isArray(event.payouts) ? event.payouts : [];
+
+          const selectedText = selectedPlayers.length
+            ? selectedPlayers.map((name) => escapeHtml(name)).join(", ")
+            : "—";
+
+          const payoutText = payouts.length
+            ? payouts
+                .map((item) => {
+                  const name = escapeHtml(item.name || "Player");
+                  const amount = Number(item.amount || 0).toFixed(2);
+                  return `${name} (£${amount})`;
+                })
+                .join(", ")
+            : "—";
+
+          return `
+            <tr>
+              <td style="padding:6px; white-space:nowrap;">${eventLabel}</td>
+              <td style="padding:6px;">${selectedText}</td>
+              <td style="padding:6px;">${payoutText}</td>
+            </tr>
+          `;
+        }).join("")
+      : `
+          <tr>
+            <td style="padding:6px;">No event breakdown data yet.</td>
+            <td style="padding:6px;">—</td>
+            <td style="padding:6px;">—</td>
+          </tr>
+        `;
+
+    return `
+      <div class="card" style="margin-top:10px;">
+        <h2 style="margin-top:0;">Event Breakdown</h2>
+        <div class="note" style="overflow-x:auto; margin-top:10px;">
+          <table class="table" style="width:100%; min-width:860px; border-collapse:collapse; font-size:14px;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:6px;">Event</th>
+                <th style="text-align:left; padding:6px;">3 Selected Players</th>
+                <th style="text-align:left; padding:6px;">Payouts</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${body}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildHeadToHeadHtml(headToHead) {
+    const rows = Array.isArray(headToHead) ? headToHead : [];
+
+    const body = rows.length
+      ? rows.map((item) => {
+          const race = escapeHtml(item.race || item.eventLabel || "Race");
+          const matchup = escapeHtml(item.matchup || "—");
+          const winner = escapeHtml(item.winner || "—");
+          const payout = Number(item.payout || 0).toFixed(2);
+
+          return `
+            <tr>
+              <td style="padding:6px; white-space:nowrap;">${race}</td>
+              <td style="padding:6px;">${matchup}</td>
+              <td style="padding:6px;">${winner}</td>
+              <td style="padding:6px; text-align:right; white-space:nowrap;">£${payout}</td>
+            </tr>
+          `;
+        }).join("")
+      : `
+          <tr>
+            <td style="padding:6px;">No head-to-head data yet.</td>
+            <td style="padding:6px;">—</td>
+            <td style="padding:6px;">—</td>
+            <td style="padding:6px; text-align:right;">£0.00</td>
+          </tr>
+        `;
+
+    return `
+      <div class="card" style="margin-top:10px;">
+        <h2 style="margin-top:0;">Special Rollover Head-to-Head</h2>
+        <div class="note" style="overflow-x:auto; margin-top:10px;">
+          <table class="table" style="width:100%; min-width:760px; border-collapse:collapse; font-size:14px;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:6px;">Race</th>
+                <th style="text-align:left; padding:6px;">Head-to-Head</th>
+                <th style="text-align:left; padding:6px;">Winner</th>
+                <th style="text-align:right; padding:6px;">Payout</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${body}
+            </tbody>
+          </table>
         </div>
       </div>
     `;
@@ -168,9 +322,11 @@
 
       const data = snap.data() || {};
       const summaryHtml = buildSummaryHtml(data);
+      const eventBreakdownHtml = buildEventBreakdownHtml(data.events || []);
+      const headToHeadHtml = buildHeadToHeadHtml(data.headToHead || []);
       const tableHtml = buildPaymentTableHtml(data.players || []);
 
-      root.innerHTML = `${summaryHtml}${tableHtml}`;
+      root.innerHTML = `${summaryHtml}${eventBreakdownHtml}${headToHeadHtml}${tableHtml}`;
     } catch (err) {
       console.error("❌ loadPitStop failed:", err);
       root.innerHTML = `
