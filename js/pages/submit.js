@@ -1085,7 +1085,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
            if (driver.isSLD) {
              if (validationEl) {
                validationEl.hidden = false;
-               validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Your SLD counts as one of your drivers. Remove or change the SLD selection above if you do not want this driver locked into the team.</span>`;
+               validationEl.innerHTML = `<strong>Fix this:</strong><br><span class="tiny muted">Your SLD counts as one of your drivers. Remove or change the SLD selection above if you do not want this driver locked for the season.</span>`;
              }
              return;
           }
