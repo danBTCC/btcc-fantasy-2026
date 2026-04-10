@@ -32,24 +32,67 @@
         <div id="how-to-play-wrap" hidden style="margin-top:10px;">
           <div class="tiny muted">
 
-            <p><strong>Build your team</strong></p>
+            <p><strong>🏁 BTCC Fantasy League – How to Play</strong></p>
+
+            <p><strong>Budget</strong></p>
             <ul>
-              <li>Select 3–6 drivers</li>
-              <li>Stay within your budget</li>
-              <li>Optional SLD (+10%)</li>
+              <li>You start with a £10.00 budget</li>
+              <li>You must stay within this when selecting your team</li>
+              <li>Driver prices may change during the season</li>
+            </ul>
+
+            <p><strong>Picking Your Team</strong></p>
+            <ul>
+              <li>Select 3–6 drivers each event</li>
+              <li>Event 1: Free choice</li>
+              <li>From Event 2 onwards: Tier rules apply</li>
+            </ul>
+
+            <p><strong>Tier System (from Event 2)</strong></p>
+            <ul>
+              <li>Drivers split into High / Mid / Low tiers based on standings</li>
+              <li>Pick at least 1 driver from each tier</li>
+              <li>Maximum 2 drivers per tier</li>
+            </ul>
+
+            <p><strong>Repetition Rule</strong></p>
+            <ul>
+              <li>You cannot pick the same driver 3 events in a row</li>
+            </ul>
+
+            <p><strong>Star Drivers (from Event 2)</strong></p>
+            <ul>
+              <li>Underdog Driver → 20% cheaper (community vote)</li>
+              <li>Form Driver → 5% more expensive (championship leader)</li>
+              <li>Season Long Driver overrides both</li>
+            </ul>
+
+            <p><strong>Season Long Driver (SLD)</strong></p>
+            <ul>
+              <li>Optional, chosen before Event 1</li>
+              <li>+10% cost, locked for the season</li>
+              <li>Counts as a driver and ignores repetition rules</li>
+            </ul>
+
+            <p><strong>Lockout</strong></p>
+            <ul>
+              <li>Teams lock at 15:00 on race weekend (Saturday)</li>
+            </ul>
+
+            <p><strong>Submitting Your Team</strong></p>
+            <ul>
+              <li>You can edit your team until lockout</li>
+              <li>Your last saved team counts</li>
             </ul>
 
             <p><strong>Scoring</strong></p>
             <ul>
-              <li>Points based on race results</li>
-              <li>Driver values change after each event</li>
+              <li>Drivers score points based on race results</li>
+              <li>Your team total is the sum of your selected drivers</li>
             </ul>
 
-            <p><strong>Tips</strong></p>
-            <ul>
-              <li>Expected Points is a guide, not a guarantee</li>
-              <li>Track form matters</li>
-            </ul>
+            <p><strong>Need Help?</strong><br>
+            If you want a more detailed explanation, just ask 👍</p>
 
           </div>
         </div>
