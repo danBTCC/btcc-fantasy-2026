@@ -345,6 +345,7 @@ const ADMIN_EMAILS = [
         <div id="admin-results-preview" style="margin-top:10px;"></div>
 <div id="admin-drivers-status" class="tiny muted" style="margin-top:10px;">Drivers: Loading…</div>
         </div>
+      </div>
 
       <div class="card" style="margin-top:12px;">
         <button type="button" class="admin-collapse-toggle" data-target="admin-pitstop-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
@@ -352,7 +353,7 @@ const ADMIN_EMAILS = [
           <span class="tiny muted" data-chevron>▸</span>
         </button>
         <div id="admin-pitstop-body" hidden style="margin-top:10px;">
-          <p class="tiny muted" style="margin:0;">Manual tracker for Pit Stop Pot. This does not affect the main Fantasy League game.</p>
+          <p class="tiny muted" style="margin:0;">Simple manual tracker for Pit Stop Pot. You can type normal text, or paste rows copied from Numbers/Excel.</p>
 
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-top:12px;">
             <div style="display:flex; flex-direction:column; gap:6px;">
@@ -362,7 +363,7 @@ const ADMIN_EMAILS = [
             </div>
 
             <div style="display:flex; flex-direction:column; gap:6px;">
-              <label class="tiny muted">Rollover Amount</label>
+              <label class="tiny muted">Current Rollover Amount</label>
               <input id="admin-pitstop-jackpot" type="number" step="0.01"
                 style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);" />
             </div>
@@ -382,20 +383,20 @@ const ADMIN_EMAILS = [
 
           <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
             <div style="display:flex; flex-direction:column; gap:6px;">
-              <label class="tiny muted">Events (JSON)</label>
-              <textarea id="admin-pitstop-events" rows="5"
+              <label class="tiny muted">Payment Tracker Table</label>
+              <textarea id="admin-pitstop-payments-table" rows="8" placeholder="Paste rows from Numbers/Excel here. Use tabs between columns and new lines between rows."
                 style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
             </div>
 
             <div style="display:flex; flex-direction:column; gap:6px;">
-              <label class="tiny muted">Head to Head (JSON)</label>
-              <textarea id="admin-pitstop-h2h" rows="5"
+              <label class="tiny muted">Event Breakdown Table</label>
+              <textarea id="admin-pitstop-events-table" rows="6" placeholder="Example columns: Event[TAB]3 Selected Players[TAB]Payouts"
                 style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
             </div>
 
             <div style="display:flex; flex-direction:column; gap:6px;">
-              <label class="tiny muted">Payments (JSON)</label>
-              <textarea id="admin-pitstop-players" rows="5"
+              <label class="tiny muted">Head-to-Head Table</label>
+              <textarea id="admin-pitstop-h2h-table" rows="6" placeholder="Example columns: Race[TAB]Head-to-Head[TAB]Winner[TAB]Payout"
                 style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
             </div>
           </div>
@@ -1053,38 +1054,70 @@ function setupAdminPitStop(root) {
 
   if (!saveBtn) return;
 
+  const fields = {
+    currentPot: root.querySelector("#admin-pitstop-pot"),
+    jackpot: root.querySelector("#admin-pitstop-jackpot"),
+    lastWinner: root.querySelector("#admin-pitstop-winner"),
+    nextDraw: root.querySelector("#admin-pitstop-next"),
+    paymentsTable: root.querySelector("#admin-pitstop-payments-table"),
+    eventsTable: root.querySelector("#admin-pitstop-events-table"),
+    headToHeadTable: root.querySelector("#admin-pitstop-h2h-table"),
+  };
+
+  async function loadExisting() {
+    if (!window.btccDb) return;
+    try {
+      const snap = await window.btccDb.collection("pitstop").doc("tracker").get();
+      if (!snap.exists) return;
+      const data = snap.data() || {};
+
+      if (fields.currentPot) fields.currentPot.value = Number(data.currentPot || 0);
+      if (fields.jackpot) fields.jackpot.value = Number(data.jackpot || 0);
+      if (fields.lastWinner) fields.lastWinner.value = data.lastWinner || "";
+      if (fields.nextDraw) fields.nextDraw.value = data.nextDraw || "";
+      if (fields.paymentsTable) fields.paymentsTable.value = data.paymentsTable || "";
+      if (fields.eventsTable) fields.eventsTable.value = data.eventsTable || "";
+      if (fields.headToHeadTable) fields.headToHeadTable.value = data.headToHeadTable || "";
+    } catch (err) {
+      console.error("❌ load Pit Stop data failed:", err);
+    }
+  }
+
   saveBtn.addEventListener("click", async () => {
     if (!window.btccDb) {
-      msg.textContent = "DB not ready";
+      if (msg) msg.textContent = "Database not ready.";
       return;
     }
 
     try {
       saveBtn.disabled = true;
       saveBtn.textContent = "Saving…";
-      msg.textContent = "";
+      if (msg) msg.textContent = "";
 
       const data = {
-        currentPot: Number(root.querySelector("#admin-pitstop-pot")?.value || 0),
-        jackpot: Number(root.querySelector("#admin-pitstop-jackpot")?.value || 0),
-        lastWinner: root.querySelector("#admin-pitstop-winner")?.value || "",
-        nextDraw: root.querySelector("#admin-pitstop-next")?.value || "",
-        events: JSON.parse(root.querySelector("#admin-pitstop-events")?.value || "[]"),
-        headToHead: JSON.parse(root.querySelector("#admin-pitstop-h2h")?.value || "[]"),
-        players: JSON.parse(root.querySelector("#admin-pitstop-players")?.value || "[]")
+        currentPot: Number(fields.currentPot?.value || 0),
+        jackpot: Number(fields.jackpot?.value || 0),
+        lastWinner: fields.lastWinner?.value || "",
+        nextDraw: fields.nextDraw?.value || "",
+        paymentsTable: fields.paymentsTable?.value || "",
+        eventsTable: fields.eventsTable?.value || "",
+        headToHeadTable: fields.headToHeadTable?.value || "",
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       };
 
-      await window.btccDb.collection("pitstop").doc("tracker").set(data);
+      await window.btccDb.collection("pitstop").doc("tracker").set(data, { merge: true });
 
-      msg.textContent = "Pit Stop data saved.";
+      if (msg) msg.textContent = "Pit Stop data saved.";
     } catch (err) {
-      console.error(err);
-      msg.textContent = "Invalid JSON or save failed.";
+      console.error("❌ save Pit Stop data failed:", err);
+      if (msg) msg.textContent = err?.message || "Save failed.";
     } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = "Save Pit Stop Data";
     }
   });
+
+  loadExisting();
 }
 
 })();
