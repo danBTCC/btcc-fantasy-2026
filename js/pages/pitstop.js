@@ -24,7 +24,7 @@
     root.innerHTML = `
       <div class="card">
         <h1>Pit Stop Pot</h1>
-        <p class="muted"></p>
+        <p class="muted"> All draws are screen recorded and shared in the WhatsApp group </p>
       </div>
 
       <div class="card" style="margin-top:10px;">
