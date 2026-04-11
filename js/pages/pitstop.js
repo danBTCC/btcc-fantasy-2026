@@ -24,7 +24,7 @@
     root.innerHTML = `
       <div class="card">
         <h1>Pit Stop Pot</h1>
-        <p class="muted">Simple tracker (separate from Fantasy League scoring)</p>
+        <p class="muted"></p>
       </div>
 
       <div class="card" style="margin-top:10px;">
