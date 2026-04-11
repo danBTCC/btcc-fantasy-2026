@@ -12,6 +12,17 @@
       .replace(/'/g, "&#39;");
   }
 
+  function parseTableText(raw) {
+    const text = String(raw || "").trim();
+    if (!text) return [];
+
+    return text
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => line.split("\t").map((cell) => cell.trim()));
+  }
+
   function renderFallback(root) {
     root.innerHTML = `
       <div class="card">
@@ -145,34 +156,20 @@
     `;
   }
 
-  function buildEventBreakdownHtml(events) {
-    const rows = Array.isArray(events) ? events : [];
+  function buildEventBreakdownHtml(rawTable) {
+    const rows = parseTableText(rawTable);
 
     const body = rows.length
-      ? rows.map((event) => {
-          const eventLabel = escapeHtml(event.eventLabel || event.event || "Event");
-          const selectedPlayers = Array.isArray(event.selectedPlayers) ? event.selectedPlayers : [];
-          const payouts = Array.isArray(event.payouts) ? event.payouts : [];
-
-          const selectedText = selectedPlayers.length
-            ? selectedPlayers.map((name) => escapeHtml(name)).join(", ")
-            : "—";
-
-          const payoutText = payouts.length
-            ? payouts
-                .map((item) => {
-                  const name = escapeHtml(item.name || "Player");
-                  const amount = Number(item.amount || 0).toFixed(2);
-                  return `${name} (£${amount})`;
-                })
-                .join(", ")
-            : "—";
+      ? rows.map((cols) => {
+          const eventLabel = escapeHtml(cols[0] || "Event");
+          const selectedPlayers = escapeHtml(cols[1] || "—");
+          const payouts = escapeHtml(cols[2] || "—");
 
           return `
             <tr>
               <td style="padding:6px; white-space:nowrap;">${eventLabel}</td>
-              <td style="padding:6px;">${selectedText}</td>
-              <td style="padding:6px;">${payoutText}</td>
+              <td style="padding:6px;">${selectedPlayers}</td>
+              <td style="padding:6px;">${payouts}</td>
             </tr>
           `;
         }).join("")
@@ -205,22 +202,22 @@
     `;
   }
 
-  function buildHeadToHeadHtml(headToHead) {
-    const rows = Array.isArray(headToHead) ? headToHead : [];
+  function buildHeadToHeadHtml(rawTable) {
+    const rows = parseTableText(rawTable);
 
     const body = rows.length
-      ? rows.map((item) => {
-          const race = escapeHtml(item.race || item.eventLabel || "Race");
-          const matchup = escapeHtml(item.matchup || "—");
-          const winner = escapeHtml(item.winner || "—");
-          const payout = Number(item.payout || 0).toFixed(2);
+      ? rows.map((cols) => {
+          const race = escapeHtml(cols[0] || "Race");
+          const matchup = escapeHtml(cols[1] || "—");
+          const winner = escapeHtml(cols[2] || "—");
+          const payout = escapeHtml(cols[3] || "£0.00");
 
           return `
             <tr>
               <td style="padding:6px; white-space:nowrap;">${race}</td>
               <td style="padding:6px;">${matchup}</td>
               <td style="padding:6px;">${winner}</td>
-              <td style="padding:6px; text-align:right; white-space:nowrap;">£${payout}</td>
+              <td style="padding:6px; text-align:right; white-space:nowrap;">${payout}</td>
             </tr>
           `;
         }).join("")
@@ -255,35 +252,32 @@
     `;
   }
 
-  function buildPaymentTableHtml(players) {
-    const raceHeaders = Array.from({ length: 10 }, (_, i) => `R${i + 1}`);
+  function buildPaymentTableHtml(rawTable) {
+    const rows = parseTableText(rawTable);
 
-    const rows = Array.isArray(players) ? players : [];
+    const headerCols = rows[0] || [];
+    const bodyRows = rows.length > 1 ? rows.slice(1) : [];
 
-    const body = rows.length
-      ? rows.map((player) => {
-          const name = escapeHtml(player.name || "Player");
-          const payments = player.payments || {};
-          const paidCount = raceHeaders.reduce((sum, race) => sum + (payments[race] ? 1 : 0), 0);
-          const total = (paidCount * 4).toFixed(2);
+    const defaultHeaders = ["Player", "R1", "R2", "R3", "R4", "R5", "R6", "Total"];
+    const headers = headerCols.length ? headerCols : defaultHeaders;
 
-          const cells = raceHeaders.map((race) => {
-            const paid = !!payments[race];
-            return `<td style="padding:6px; text-align:center;">${paid ? "✔" : "—"}</td>`;
+    const body = bodyRows.length
+      ? bodyRows.map((cols) => {
+          const rendered = headers.map((_, idx) => {
+            const value = escapeHtml(cols[idx] || "");
+            const isFirst = idx === 0;
+            const isLast = idx === headers.length - 1;
+            const align = isFirst ? "left" : isLast ? "right" : "center";
+            const nowrap = isFirst || isLast ? " white-space:nowrap;" : "";
+            return `<td style="padding:6px; text-align:${align};${nowrap}">${value || "—"}</td>`;
           }).join("");
 
-          return `
-            <tr>
-              <td style="padding:6px; white-space:nowrap;">${name}</td>
-              ${cells}
-              <td style="padding:6px; text-align:right; white-space:nowrap;">£${total}</td>
-            </tr>
-          `;
+          return `<tr>${rendered}</tr>`;
         }).join("")
       : `
           <tr>
             <td style="padding:6px;">No payment data yet.</td>
-            <td colspan="11" style="padding:6px;"></td>
+            <td colspan="${Math.max(headers.length - 1, 1)}" style="padding:6px;"></td>
           </tr>
         `;
 
@@ -294,9 +288,10 @@
           <table class="table" style="width:100%; min-width:1060px; border-collapse:collapse; font-size:14px;">
             <thead>
               <tr>
-                <th style="text-align:left; padding:6px;">Player</th>
-                ${raceHeaders.map((race) => `<th style="text-align:center; padding:6px;">${race}</th>`).join("")}
-                <th style="text-align:right; padding:6px;">Total</th>
+                ${headers.map((header, idx) => {
+                  const align = idx === 0 ? "left" : idx === headers.length - 1 ? "right" : "center";
+                  return `<th style="text-align:${align}; padding:6px;">${escapeHtml(header)}</th>`;
+                }).join("")}
               </tr>
             </thead>
             <tbody>
@@ -322,9 +317,9 @@
 
       const data = snap.data() || {};
       const summaryHtml = buildSummaryHtml(data);
-      const eventBreakdownHtml = buildEventBreakdownHtml(data.events || []);
-      const headToHeadHtml = buildHeadToHeadHtml(data.headToHead || []);
-      const tableHtml = buildPaymentTableHtml(data.players || []);
+      const eventBreakdownHtml = buildEventBreakdownHtml(data.eventsTable || "");
+      const headToHeadHtml = buildHeadToHeadHtml(data.headToHeadTable || "");
+      const tableHtml = buildPaymentTableHtml(data.paymentsTable || "");
 
       root.innerHTML = `${summaryHtml}${eventBreakdownHtml}${headToHeadHtml}${tableHtml}`;
     } catch (err) {
