@@ -816,7 +816,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
                 const sldBadge = driver.id === currentSldDriverId ? ` <span class="muted">(SLD +10%)</span>` : "";
                 const underdogBadge = !sldBadge && starDriverAId && driver.id === starDriverAId ? ` <span class="muted">(Underdog -20%)</span>` : "";
                 const formBadge = !sldBadge && starDriverBId && driver.id === starDriverBId ? ` <span class="muted">(Form +5%)</span>` : "";
-                return `<div style="margin-bottom:4px;"><strong>${escapeHtml(driver.name)}</strong> <span class="muted">(${fmtMoney(effectivePrice)} • EP: ${expectedPoints})</span>${sldBadge}${underdogBadge}${formBadge}</div>`;
+                return `<div style="margin-bottom:4px;"><strong>${escapeHtml(driver.name)}</strong> <span class="muted">(Price ${fmtMoney(effectivePrice)} • EP: ${expectedPoints})</span>${sldBadge}${underdogBadge}${formBadge}</div>`;
               })
               .join("");
           }
@@ -1043,8 +1043,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
                     <div style="flex:1; min-width:0;">
                       <div style="font-weight:700; line-height:1.2;">${escapeHtml(driver.name)}</div>
                       <div class="tiny muted" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px 8px;">
-                                                <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">Base ${fmtMoney(driver.price)}</span>
-                        <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">Event ${fmtMoney(getEffectiveDriverPrice(driver))}</span>
+                        <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">Price ${fmtMoney(getEffectiveDriverPrice(driver))}</span>
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">EP: ${getDriverExpectedPoints(driver)}</span>
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${escapeHtml(tierLabel)}</span>
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${escapeHtml(streakLabel)}</span>
