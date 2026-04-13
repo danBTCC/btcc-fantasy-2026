@@ -341,7 +341,6 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       </form>
 
       <p class="tiny muted" style="margin-top:10px;">
-        After login, you’ll see your profile summary here (next step).
       </p>
       `
     );
