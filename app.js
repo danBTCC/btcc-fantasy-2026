@@ -126,7 +126,7 @@ async function loadHomeNewsSnippets() {
 }
 
 // Finds the next event by dateFrom/eventNo and shows it on the Home "Next event" card.
-// Lockout rule (for now): dateFrom @ 15:00 local time (UK users).
+// Lockout rule (for now): dateFrom @ 14:00 local time (UK users).
 async function loadNextEventCountdown() {
   const nameEl = document.getElementById("next-event-name");
   const countdownEl = document.getElementById("next-event-countdown");
@@ -160,11 +160,11 @@ async function loadNextEventCountdown() {
       return;
     }
 
-    // Build lockout datetime from dateFrom (YYYY-MM-DD) at 15:00 local.
+    // Build lockout datetime from dateFrom (YYYY-MM-DD) at 14:00 local.
     const parsed = events
       .filter(e => typeof e.dateFrom === "string" && e.dateFrom.length >= 10)
       .map(e => {
-        const lockout = new Date(`${e.dateFrom}T15:00:00`);
+        const lockout = new Date(`${e.dateFrom}T14:00:00`);
         return { ...e, lockout };
       })
       // ensure ascending by eventNo just in case

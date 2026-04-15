@@ -76,7 +76,7 @@
 
             <p><strong>Lockout</strong></p>
             <ul>
-              <li>Teams lock at 15:00 on race weekend (Saturday)</li>
+              <li>Teams lock at 14:00 on race weekend (Saturday)</li>
             </ul>
 
             <p><strong>Submitting Your Team</strong></p>
