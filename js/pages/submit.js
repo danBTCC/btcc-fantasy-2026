@@ -248,7 +248,7 @@
       const dateRange = fmtDateRange(chosen.from, chosen.to);
 
       let lockout = chosen.from ? new Date(chosen.from) : null;
-      if (lockout) lockout.setHours(15, 0, 0, 0);
+      if (lockout) lockout.setHours(14, 0, 0, 0);
 
       const open = lockout ? now < lockout : false;
 
