@@ -24,7 +24,7 @@
       <div class="card">
         <button class="collapseHeader" type="button" data-toggle="how-to-play-wrap" style="width:100%; text-align:left; background:transparent; border:0; padding:0; color:var(--text);">
           <h2 style="margin:0; display:flex; justify-content:space-between; color:var(--text);">
-            <span>How to Play</span>
+            <span>How to Play (click to expand)</span>
             <span class="tiny muted">▸</span>
           </h2>
         </button>
