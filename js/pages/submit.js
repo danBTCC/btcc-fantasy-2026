@@ -221,6 +221,7 @@
           roundTo: d.roundTo ?? null,
           from,
           to,
+          status: (d.status || "").toString().toLowerCase(),
         };
       });
 
@@ -230,19 +231,27 @@
         return x;
       };
 
-      const endOfDay = (d) => {
-        const x = new Date(d);
-        x.setHours(23, 59, 59, 999);
-        return x;
-      };
+      const liveEvent = events
+        .filter((e) => e.status === "live")
+        .sort((a, b) => Number(a.eventNo || 0) - Number(b.eventNo || 0))[0];
 
-      const isInRange = (e) => e.from && e.to && now >= startOfDay(e.from) && now <= endOfDay(e.to);
+      const upcoming = events
+        .filter((e) => e.status === "upcoming")
+        .sort((a, b) => {
+          const aNo = Number(a.eventNo || 0);
+          const bNo = Number(b.eventNo || 0);
+          if (aNo !== bNo) return aNo - bNo;
+          if (a.from && b.from) return a.from - b.from;
+          if (a.from) return -1;
+          if (b.from) return 1;
+          return 0;
+        });
 
-      const future = events
+      const datedFuture = events
         .filter((e) => e.from && startOfDay(e.from) >= startOfDay(now))
         .sort((a, b) => a.from - b.from);
 
-      const chosen = events.find(isInRange) || future[0] || events[events.length - 1];
+      const chosen = liveEvent || upcoming[0] || datedFuture[0] || events[events.length - 1];
 
       const rounds = chosen.roundFrom && chosen.roundTo ? `R${chosen.roundFrom}–${chosen.roundTo}` : "";
       const dateRange = fmtDateRange(chosen.from, chosen.to);

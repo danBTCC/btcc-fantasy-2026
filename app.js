@@ -160,21 +160,26 @@ async function loadNextEventCountdown() {
       return;
     }
 
-    // Build lockout datetime from dateFrom (YYYY-MM-DD) at 14:00 local.
     const parsed = events
       .filter(e => typeof e.dateFrom === "string" && e.dateFrom.length >= 10)
       .map(e => {
         const lockout = new Date(`${e.dateFrom}T14:00:00`);
-        return { ...e, lockout };
+        return {
+          ...e,
+          lockout,
+          status: String(e.status || "").toLowerCase(),
+        };
       })
       // ensure ascending by eventNo just in case
       .sort((a, b) => (a.eventNo ?? 999) - (b.eventNo ?? 999));
 
     const now = Date.now();
 
-    // Choose next event (first event whose lockout is in the future)
-    // If all lockouts are past, fall back to the last event.
-    const next = parsed.find(e => e.lockout.getTime() > now) || parsed[parsed.length - 1];
+    const liveEvent = parsed.find(e => e.status === "live");
+    const upcomingEvent = parsed.find(e => e.status === "upcoming");
+
+    // Prefer the live event, then the next upcoming event, then fall back to date-based selection.
+    const next = liveEvent || upcomingEvent || parsed.find(e => e.lockout.getTime() > now) || parsed[parsed.length - 1];
 
     const venue = next.venue || next.name || `Event ${next.eventNo ?? "—"}`;
     nameEl.textContent = venue;
