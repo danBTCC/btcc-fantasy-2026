@@ -124,6 +124,8 @@
         ? standingsData.pointsTotal
         : (typeof standingsData.points === "number" ? standingsData.points : null);
       const driversSelected = typeof d.driversSelected === "number" ? d.driversSelected : null;
+      const teamName = d.teamName ?? "";
+      const teamId = d.teamId ?? "";
       let last = "—";
       if (d.lastSubmission && typeof d.lastSubmission.toDate === "function") {
         last = d.lastSubmission.toDate().toLocaleString("en-GB");
@@ -134,6 +136,7 @@
 
       box.innerHTML = `
         <div><strong>${name}</strong></div>
+        ${teamName ? `<div class="tiny muted" style="margin-top:4px;">Team ${escapeHtml(teamId.replace("team_", ""))} — ${escapeHtml(teamName)}</div>` : ""}
         <div class="tiny muted" style="margin-top:6px; line-height:1.55;">
           Active: ${active}<br>
           Last submission: ${last}<br>
