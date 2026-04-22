@@ -831,6 +831,36 @@ if (banner) {
 
             await batch.commit();
 
+            // --- SAFE driver totals (post-write, no TDZ issues) ---
+            const driverTotals = new Map();
+
+            entryDocs.forEach(({ data }) => {
+              const perDriver = data?.perDriver || {};
+
+              Object.entries(perDriver).forEach(([driverId, pts]) => {
+                const prev = Number(driverTotals.get(driverId) || 0);
+                driverTotals.set(driverId, prev + Number(pts || 0));
+              });
+            });
+
+            const driverBatch = window.btccDb.batch();
+            const driverBaseRef = window.btccDb.collection("event_scores").doc(eid);
+
+            driverTotals.forEach((pointsTotal, driverId) => {
+              driverBatch.set(
+                driverBaseRef.collection("drivers").doc(driverId),
+                {
+                  driverId,
+                  pointsTotal: Number(pointsTotal || 0),
+                  computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  engineVersion: "I2.4",
+                },
+                { merge: false }
+              );
+            });
+
+            await driverBatch.commit();
+
             console.log("✅ Engine I1 wrote event_scores (overwrite-safe):", eid, entryCount);
             setEngineMsg(`Wrote event_scores for ${entryCount} player(s). Re-run to confirm overwrite.`);
             await loadEventScoresPreview(root);
