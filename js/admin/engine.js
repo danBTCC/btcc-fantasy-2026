@@ -184,19 +184,15 @@
     });
 
     for (const ev of eventRows) {
-      const [scoresSnap, entriesSnap] = await Promise.all([
-        window.btccDb.collection("event_scores").doc(ev.id).collection("players").get(),
+      const [entriesSnap, scoresSnap] = await Promise.all([
         getEntryDocsForEvent(ev.id),
+        window.btccDb.collection("event_scores").doc(ev.id).collection("drivers").get(),
       ]);
 
       const gpMap = new Map();
       scoresSnap.forEach((doc) => {
         const data = doc.data() || {};
-        const perDriver = data.perDriver || {};
-        Object.entries(perDriver).forEach(([driverId, pts]) => {
-          const prev = Number(gpMap.get(String(driverId)) || 0);
-          gpMap.set(String(driverId), prev + Number(pts || 0));
-        });
+        gpMap.set(String(doc.id), Number(data.pointsTotal || 0));
       });
 
       const manufacturer = buildCategoryDriverPoints(activeDrivers, gpMap, "manufacturer");
@@ -275,7 +271,7 @@
 
     const [driversSnap, scoresSnap] = await Promise.all([
       window.btccDb.collection("drivers").get(),
-      window.btccDb.collection("event_scores").doc(eventId).collection("players").get(),
+      window.btccDb.collection("event_scores").doc(eventId).collection("drivers").get(),
     ]);
 
     const activeDrivers = driversSnap.docs
@@ -311,11 +307,7 @@
 
     scoresSnap.forEach((doc) => {
       const data = doc.data() || {};
-      const perDriver = data.perDriver || {};
-      Object.entries(perDriver).forEach(([driverId, pts]) => {
-        const prev = Number(gpMap.get(driverId) || 0);
-        gpMap.set(String(driverId), prev + Number(pts || 0));
-      });
+      gpMap.set(String(doc.id), Number(data.pointsTotal || 0));
     });
 
     const calcRows = activeDrivers.map((driver) => {

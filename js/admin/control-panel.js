@@ -668,6 +668,58 @@ if (banner) {
               ? resultsData.race3FastestLapDriverIds.filter(Boolean).map(String)
               : (resultsData.race3FastestLapDriverId ? [String(resultsData.race3FastestLapDriverId)] : []);
 
+            const driverNameById = new Map(
+              (Array.isArray(root.__drivers) ? root.__drivers : []).map((d) => [String(d.id), d.name || d.id])
+            );
+
+            const driverTotals = new Map(); // driverId -> { driverId, name, pointsTotal, breakdown }
+
+            const ensureDriverTotal = (driverId) => {
+              const key = String(driverId);
+              let rec = driverTotals.get(key);
+              if (!rec) {
+                rec = {
+                  driverId: key,
+                  name: driverNameById.get(key) || key,
+                  pointsTotal: 0,
+                  breakdown: { qualifying: 0, race1: 0, race2: 0, race3: 0 },
+                };
+                driverTotals.set(key, rec);
+              }
+              return rec;
+            };
+
+            const addOrderToDriverTotals = (orderArr, pointsForPosFn, bucket) => {
+              if (!Array.isArray(orderArr)) return;
+              orderArr.forEach((driverId, idx) => {
+                if (!driverId) return;
+                const rec = ensureDriverTotal(driverId);
+                const pts = Number(pointsForPosFn(idx + 1) || 0);
+                rec.breakdown[bucket] += pts;
+                rec.pointsTotal += pts;
+              });
+            };
+
+            const addAwardIdsToDriverTotals = (awardIds, bucket, pointsEach = 1) => {
+              if (!Array.isArray(awardIds)) return;
+              awardIds.forEach((driverId) => {
+                if (!driverId) return;
+                const rec = ensureDriverTotal(driverId);
+                rec.breakdown[bucket] += Number(pointsEach || 0);
+                rec.pointsTotal += Number(pointsEach || 0);
+              });
+            };
+
+            addOrderToDriverTotals(qualiOrder, qualiWeekendPointsForPos, "qualifying");
+            addOrderToDriverTotals(race1Order, racePointsForPos, "race1");
+            addOrderToDriverTotals(race2Order, racePointsForPos, "race2");
+            addOrderToDriverTotals(race3Order, racePointsForPos, "race3");
+
+            addAwardIdsToDriverTotals(race1FastestLapIds, "race1", 1);
+            addAwardIdsToDriverTotals(race2FastestLapIds, "race2", 1);
+            addAwardIdsToDriverTotals(race3FastestLapIds, "race3", 1);
+
+
             // --- I2.1 scoring helpers (2026 locked rules) ---
             // Race scoring: full-grid linear for the 24-car 2026 grid (1st=24 .. 24th=1, DNF/DNS=0)
             // Qualifying (weekend/championship): top 6 only (6..1), rest 0
@@ -806,7 +858,30 @@ if (banner) {
                   },
                   sourceResultsUpdatedAt: srcUpdatedAt,
                   computedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                  engineVersion: "I2.2",
+                  engineVersion: "I2.3",
+                },
+                { merge: false }
+              );
+            });
+
+            driverTotals.forEach((rec, driverId) => {
+              const driverRef = baseRef.collection("drivers").doc(driverId);
+
+              batch.set(
+                driverRef,
+                {
+                  driverId,
+                  name: rec.name,
+                  pointsTotal: Number(rec.pointsTotal || 0),
+                  breakdown: {
+                    qualifying: Number(rec.breakdown?.qualifying || 0),
+                    race1: Number(rec.breakdown?.race1 || 0),
+                    race2: Number(rec.breakdown?.race2 || 0),
+                    race3: Number(rec.breakdown?.race3 || 0),
+                  },
+                  sourceResultsUpdatedAt: srcUpdatedAt,
+                  computedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  engineVersion: "I2.3",
                 },
                 { merge: false }
               );
@@ -821,7 +896,7 @@ if (banner) {
                 entryCount,
                 sourceResultsUpdatedAt: srcUpdatedAt,
                 ranAt: firebase.firestore.FieldValue.serverTimestamp(),
-                engineVersion: "I2.2",
+                engineVersion: "I2.3",
               },
               { merge: true }
             );
