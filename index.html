@@ -13,6 +13,12 @@
 </head>
 
 <body>
+<script>
+  const password = prompt("Site under maintenance, Results and Standings for Donington Park will be available soon. Enter password:");
+  if (password !== "btcc2026") {
+    document.body.innerHTML = "<h1 style='color:white;text-align:center;margin-top:40px;'>Site offline</h1>";
+  }
+</script>
   <div class="raceBanner"></div>
 
   <nav class="tabs" aria-label="Primary navigation">
