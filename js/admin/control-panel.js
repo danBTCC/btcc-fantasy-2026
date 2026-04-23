@@ -676,9 +676,9 @@ if (banner) {
             // Source of truth: 2026 BTCC Fantasy League scoring update
 
             const racePointsForPos = (pos1) => {
-              // pos1 is 1-based
-              if (!pos1 || pos1 < 1 || pos1 > 24) return 0;
-              return 25 - pos1; // 1->24, 2->23, ..., 24->1
+              // pos1 is 1-based, 2026 live grid = 21 drivers
+              if (!pos1 || pos1 < 1 || pos1 > 21) return 0;
+              return 22 - pos1; // 1->21, 2->20, ..., 21->1
             };
 
             const qualiWeekendPointsForPos = (pos1) => {
