@@ -409,8 +409,8 @@ scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
     };
 
     const racePointsForPos = (pos1) => {
-      if (!pos1 || pos1 < 1 || pos1 > 24) return 0;
-      return 25 - pos1;
+      if (!pos1 || pos1 < 1 || pos1 > 21) return 0;
+      return 22 - pos1;
     };
 
     return allIds
