@@ -533,8 +533,8 @@
 
     const eventMeta = root.__eventMeta || {};
     const eventNo = Number(eventMeta.eventNo || 0);
-    if (eventNo <= 1) {
-      return { driverCount: 0, skipped: true, reason: "Event 1 has no tiers" };
+    if (eventNo <= 0) {
+      return { driverCount: 0, skipped: true, reason: "No completed event for tier generation" };
     }
 
     const standingsSnap = await window.btccDb
@@ -603,8 +603,8 @@
     batch.set(
       window.btccDb.collection("driver_tier_runs").doc(eventId),
       {
-        eventId,
-        eventNo,
+        sourceEventNo: eventNo,
+        appliesToEventNo: eventNo + 1,
         gridSize: rows.length,
         split,
         computedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -624,6 +624,15 @@
 
     const eventMeta = root.__eventMeta || {};
     const eventNo = Number(eventMeta.eventNo || 0);
+
+    const nextEventNo = eventNo + 1;
+
+    const eventsSnap = await window.btccDb.collection("events").get();
+    const nextEventDoc = eventsSnap.docs.find((doc) => {
+      const d = doc.data() || {};
+      return Number(d.eventNo || 0) === nextEventNo;
+    });
+    const nextEventId = nextEventDoc ? nextEventDoc.id : `event_${String(nextEventNo).padStart(2, "0")}`;
 
     const ladder = {
       1: 0.00,
@@ -646,7 +655,7 @@
       18: 0.20,
     };
 
-    const multiplier = eventNo <= 1 ? 0 : (eventNo === 2 ? 0.5 : 1);
+    const multiplier = nextEventNo <= 1 ? 0 : (nextEventNo === 2 ? 0.5 : 1);
 
     const standingsSnap = await window.btccDb
       .collection("standings_players")
@@ -709,7 +718,8 @@
       batch.set(
         runRef,
         {
-          eventId,
+          sourceEventId: eventId,
+          eventId: nextEventId,
           uid: row.uid,
           displayName: row.displayName,
           standingPos: effectivePos,
@@ -731,7 +741,7 @@
         {
           budgetBoost: appliedBoost,
           effectiveBudget,
-          budgetBoostEventId: eventId,
+          budgetBoostEventId: nextEventId,
           budgetBoostUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         },
         { merge: true }
@@ -743,8 +753,10 @@
     batch.set(
       window.btccDb.collection("budget_boost_runs").doc(eventId),
       {
-        eventId,
-        eventNo,
+        sourceEventId: eventId,
+        sourceEventNo: eventNo,
+        eventId: nextEventId,
+        appliesToEventNo: nextEventNo,
         playerCount,
         multiplier,
         ladder,
