@@ -831,36 +831,75 @@ if (banner) {
 
             await batch.commit();
 
-            // --- SAFE driver totals (post-write, sourced from scored player docs) ---
+            // --- TRUE driver totals (post-write, sourced directly from results arrays) ---
             const driverTotals = new Map();
+            const driverNameById = new Map(
+              (Array.isArray(root.__drivers) ? root.__drivers : []).map((d) => [String(d.id), d.name || d.id])
+            );
 
-            const playerScoresSnap = await window.btccDb
-              .collection("event_scores")
-              .doc(eid)
-              .collection("players")
-              .get();
+            const ensureDriverTotal = (driverId) => {
+              const key = String(driverId);
+              let rec = driverTotals.get(key);
+              if (!rec) {
+                rec = {
+                  driverId: key,
+                  name: driverNameById.get(key) || key,
+                  pointsTotal: 0,
+                  breakdown: { qualifying: 0, race1: 0, race2: 0, race3: 0 },
+                };
+                driverTotals.set(key, rec);
+              }
+              return rec;
+            };
 
-            playerScoresSnap.forEach((doc) => {
-              const data = doc.data() || {};
-              const perDriver = data.perDriver || {};
-
-              Object.entries(perDriver).forEach(([driverId, pts]) => {
-                const prev = Number(driverTotals.get(driverId) || 0);
-                driverTotals.set(driverId, prev + Number(pts || 0));
+            const addOrderToDriverTotals = (orderArr, pointsForPosFn, bucket) => {
+              if (!Array.isArray(orderArr)) return;
+              orderArr.forEach((driverId, idx) => {
+                if (!driverId) return;
+                const rec = ensureDriverTotal(driverId);
+                const pts = Number(pointsForPosFn(idx + 1) || 0);
+                rec.breakdown[bucket] += pts;
+                rec.pointsTotal += pts;
               });
-            });
+            };
+
+            const addAwardIdsToDriverTotals = (awardIds, bucket, pointsEach = 1) => {
+              if (!Array.isArray(awardIds)) return;
+              awardIds.forEach((driverId) => {
+                if (!driverId) return;
+                const rec = ensureDriverTotal(driverId);
+                rec.breakdown[bucket] += Number(pointsEach || 0);
+                rec.pointsTotal += Number(pointsEach || 0);
+              });
+            };
+
+            addOrderToDriverTotals(qualiOrder, qualiWeekendPointsForPos, "qualifying");
+            addOrderToDriverTotals(race1Order, racePointsForPos, "race1");
+            addOrderToDriverTotals(race2Order, racePointsForPos, "race2");
+            addOrderToDriverTotals(race3Order, racePointsForPos, "race3");
+
+            addAwardIdsToDriverTotals(race1FastestLapIds, "race1", 1);
+            addAwardIdsToDriverTotals(race2FastestLapIds, "race2", 1);
+            addAwardIdsToDriverTotals(race3FastestLapIds, "race3", 1);
 
             const driverBatch = window.btccDb.batch();
             const driverBaseRef = window.btccDb.collection("event_scores").doc(eid);
 
-            driverTotals.forEach((pointsTotal, driverId) => {
+            driverTotals.forEach((rec, driverId) => {
               driverBatch.set(
                 driverBaseRef.collection("drivers").doc(driverId),
                 {
                   driverId,
-                  pointsTotal: Number(pointsTotal || 0),
+                  name: rec.name,
+                  pointsTotal: Number(rec.pointsTotal || 0),
+                  breakdown: {
+                    qualifying: Number(rec.breakdown?.qualifying || 0),
+                    race1: Number(rec.breakdown?.race1 || 0),
+                    race2: Number(rec.breakdown?.race2 || 0),
+                    race3: Number(rec.breakdown?.race3 || 0),
+                  },
                   computedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                  engineVersion: "I2.4",
+                  engineVersion: "I2.5",
                 },
                 { merge: false }
               );
