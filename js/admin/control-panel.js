@@ -831,11 +831,18 @@ if (banner) {
 
             await batch.commit();
 
-            // --- SAFE driver totals (post-write, no TDZ issues) ---
+            // --- SAFE driver totals (post-write, sourced from scored player docs) ---
             const driverTotals = new Map();
 
-            entryDocs.forEach(({ data }) => {
-              const perDriver = data?.perDriver || {};
+            const playerScoresSnap = await window.btccDb
+              .collection("event_scores")
+              .doc(eid)
+              .collection("players")
+              .get();
+
+            playerScoresSnap.forEach((doc) => {
+              const data = doc.data() || {};
+              const perDriver = data.perDriver || {};
 
               Object.entries(perDriver).forEach(([driverId, pts]) => {
                 const prev = Number(driverTotals.get(driverId) || 0);
