@@ -1,4 +1,12 @@
+
 (function () {
+
+  const GRID_SIZE = 21;
+
+  const racePoints = (pos1) => {
+    if (!pos1 || pos1 < 1 || pos1 > GRID_SIZE) return 0;
+    return (GRID_SIZE + 1) - pos1;
+  };
 
   // --- H7.1: Admin Results Preview panel (read-only, no lock/unlock writes) ---
   // ============================================================
@@ -1403,10 +1411,7 @@ async function rebuildStandingsDriversI3_3(root) {
     return rec;
   };
 
-  const racePointsForPos = (pos1) => {
-    if (!pos1 || pos1 < 1 || pos1 > 24) return 0;
-    return 25 - pos1; // 1->24 ... 24->1
-  };
+  const racePointsForPos = racePoints;
 
   const qualiPointsForPos = (pos1) => {
     if (!pos1 || pos1 < 1 || pos1 > 6) return 0;
@@ -1649,7 +1654,7 @@ async function rebuildStandingsRace1(root) {
 
   const totals = new Map();
 
-  const racePoints = (pos) => (pos >= 1 && pos <= 24 ? 25 - pos : 0);
+  const racePointsLocal = (pos) => racePoints(pos);
 
   entriesSnap.forEach((doc) => {
     const uid = doc.id;
@@ -1659,7 +1664,7 @@ async function rebuildStandingsRace1(root) {
     let total = 0;
     team.forEach((driverId) => {
       const idx = race1Order.indexOf(String(driverId));
-      if (idx >= 0) total += racePoints(idx + 1);
+      if (idx >= 0) total += racePointsLocal(idx + 1);
     });
 
     totals.set(uid, {
@@ -1749,7 +1754,7 @@ async function rebuildStandingsRace2(root) {
   }
 
   const totals = new Map();
-  const racePoints = (pos) => (pos >= 1 && pos <= 24 ? 25 - pos : 0);
+  const racePointsLocal = (pos) => racePoints(pos);
 
   entriesSnap.forEach((doc) => {
     const uid = doc.id;
@@ -1759,7 +1764,7 @@ async function rebuildStandingsRace2(root) {
     let total = 0;
     team.forEach((driverId) => {
       const idx = race2Order.indexOf(String(driverId));
-      if (idx >= 0) total += racePoints(idx + 1);
+      if (idx >= 0) total += racePointsLocal(idx + 1);
     });
 
     totals.set(uid, {
@@ -1849,7 +1854,7 @@ async function rebuildStandingsRace3(root) {
   }
 
   const totals = new Map();
-  const racePoints = (pos) => (pos >= 1 && pos <= 24 ? 25 - pos : 0);
+  const racePointsLocal = (pos) => racePoints(pos);
 
   entriesSnap.forEach((doc) => {
     const uid = doc.id;
@@ -1859,7 +1864,7 @@ async function rebuildStandingsRace3(root) {
     let total = 0;
     team.forEach((driverId) => {
       const idx = race3Order.indexOf(String(driverId));
-      if (idx >= 0) total += racePoints(idx + 1);
+      if (idx >= 0) total += racePointsLocal(idx + 1);
     });
 
     totals.set(uid, {
@@ -1940,10 +1945,7 @@ async function rebuildStandingsWingfootI3_4(root) {
     return rec;
   };
 
-  const qualifyingTablePointsForPos = (pos1) => {
-    if (!pos1 || pos1 < 1 || pos1 > 24) return 0;
-    return 25 - pos1; // 1->24, 2->23, ..., 24->1
-  };
+  const qualifyingTablePointsForPos = (pos1) => racePoints(pos1);
 
   const normaliseDriverIdsFromEntry = (data) => {
     if (!data || typeof data !== "object") return [];
