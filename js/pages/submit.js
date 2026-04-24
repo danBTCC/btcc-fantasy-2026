@@ -645,10 +645,19 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         const selectionsInLastTwo = Number(consecutiveCounts.get(doc.id) || 0);
         const isSLD = !!currentSldDriverId && currentSldDriverId === doc.id;
         const blocked = selectionsInLastTwo >= 2 && !isSLD;
+        const currentValue = Number.isFinite(Number(d.value))
+          ? Number(d.value)
+          : Number(d.price ?? d.cost ?? 0);
+        const currentEp = Number.isFinite(Number(d.lastEp))
+          ? Number(d.lastEp)
+          : null;
+
         return {
           id: doc.id,
           name: d.name ?? "Unnamed",
-          price: Number(d.price ?? d.cost ?? d.value ?? 0),
+          price: currentValue,
+          basePrice: Number(d.price ?? d.cost ?? currentValue),
+          ep: currentEp,
           tier: d.tier ?? null,
           selectionsInLastTwo,
           blocked,
@@ -688,7 +697,11 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         if (safeValue <= 0 || safeTdv <= 0) return 0;
         return Math.round((PPV_2026 / safeTdv) * safeValue);
       };
-      const getDriverExpectedPoints = (driver) => calculateExpectedPoints(driver?.price || 0);
+      const getDriverExpectedPoints = (driver) => {
+        const storedEp = Number(driver?.ep);
+        if (Number.isFinite(storedEp) && storedEp > 0) return Math.round(storedEp);
+        return calculateExpectedPoints(driver?.price || 0);
+      };
             const getEffectiveDriverPrice = (driver) => {
         const base = Number(driver?.price || 0);
         if (base <= 0) return 0;
