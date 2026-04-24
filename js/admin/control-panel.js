@@ -1438,10 +1438,30 @@ async function rebuildStandingsDriversI3_3(root) {
     const race2 = Array.isArray(data.race2) ? data.race2 : [];
     const race3 = Array.isArray(data.race3) ? data.race3 : [];
 
+    const race1FastestLapIds = Array.isArray(data.race1FastestLapDriverIds)
+      ? data.race1FastestLapDriverIds.filter(Boolean).map(String)
+      : (data.race1FastestLapDriverId ? [String(data.race1FastestLapDriverId)] : []);
+    const race2FastestLapIds = Array.isArray(data.race2FastestLapDriverIds)
+      ? data.race2FastestLapDriverIds.filter(Boolean).map(String)
+      : (data.race2FastestLapDriverId ? [String(data.race2FastestLapDriverId)] : []);
+    const race3FastestLapIds = Array.isArray(data.race3FastestLapDriverIds)
+      ? data.race3FastestLapDriverIds.filter(Boolean).map(String)
+      : (data.race3FastestLapDriverId ? [String(data.race3FastestLapDriverId)] : []);
+
     scoreOrderIntoTotals(qualifying, qualiPointsForPos);
     scoreOrderIntoTotals(race1, racePointsForPos);
     scoreOrderIntoTotals(race2, racePointsForPos);
     scoreOrderIntoTotals(race3, racePointsForPos);
+
+    race1FastestLapIds.forEach((driverId) => {
+      ensureDriver(String(driverId)).pointsTotal += 1;
+    });
+    race2FastestLapIds.forEach((driverId) => {
+      ensureDriver(String(driverId)).pointsTotal += 1;
+    });
+    race3FastestLapIds.forEach((driverId) => {
+      ensureDriver(String(driverId)).pointsTotal += 1;
+    });
   }
 
   // Ensure every driver exists in standings even if on zero
@@ -1610,6 +1630,9 @@ async function rebuildStandingsRace1(root) {
 
   const results = resultsSnap.data() || {};
   const race1Order = Array.isArray(results.race1) ? results.race1 : [];
+  const race1FastestLapIds = Array.isArray(results.race1FastestLapDriverIds)
+    ? results.race1FastestLapDriverIds.filter(Boolean).map(String)
+    : (results.race1FastestLapDriverId ? [String(results.race1FastestLapDriverId)] : []);
 
   const playerSnap = await window.btccDb.collection("players").get();
   const playerMeta = new Map();
@@ -1663,8 +1686,10 @@ async function rebuildStandingsRace1(root) {
 
     let total = 0;
     team.forEach((driverId) => {
-      const idx = race1Order.indexOf(String(driverId));
+      const id = String(driverId);
+      const idx = race1Order.indexOf(id);
       if (idx >= 0) total += racePointsLocal(idx + 1);
+      if (race1FastestLapIds.includes(id)) total += 1;
     });
 
     totals.set(uid, {
@@ -1711,6 +1736,9 @@ async function rebuildStandingsRace2(root) {
 
   const results = resultsSnap.data() || {};
   const race2Order = Array.isArray(results.race2) ? results.race2 : [];
+  const race2FastestLapIds = Array.isArray(results.race2FastestLapDriverIds)
+    ? results.race2FastestLapDriverIds.filter(Boolean).map(String)
+    : (results.race2FastestLapDriverId ? [String(results.race2FastestLapDriverId)] : []);
 
   const playerSnap = await window.btccDb.collection("players").get();
   const playerMeta = new Map();
@@ -1763,8 +1791,10 @@ async function rebuildStandingsRace2(root) {
 
     let total = 0;
     team.forEach((driverId) => {
-      const idx = race2Order.indexOf(String(driverId));
+      const id = String(driverId);
+      const idx = race2Order.indexOf(id);
       if (idx >= 0) total += racePointsLocal(idx + 1);
+      if (race2FastestLapIds.includes(id)) total += 1;
     });
 
     totals.set(uid, {
@@ -1811,6 +1841,9 @@ async function rebuildStandingsRace3(root) {
 
   const results = resultsSnap.data() || {};
   const race3Order = Array.isArray(results.race3) ? results.race3 : [];
+  const race3FastestLapIds = Array.isArray(results.race3FastestLapDriverIds)
+    ? results.race3FastestLapDriverIds.filter(Boolean).map(String)
+    : (results.race3FastestLapDriverId ? [String(results.race3FastestLapDriverId)] : []);
 
   const playerSnap = await window.btccDb.collection("players").get();
   const playerMeta = new Map();
@@ -1863,8 +1896,10 @@ async function rebuildStandingsRace3(root) {
 
     let total = 0;
     team.forEach((driverId) => {
-      const idx = race3Order.indexOf(String(driverId));
+      const id = String(driverId);
+      const idx = race3Order.indexOf(id);
       if (idx >= 0) total += racePointsLocal(idx + 1);
+      if (race3FastestLapIds.includes(id)) total += 1;
     });
 
     totals.set(uid, {
