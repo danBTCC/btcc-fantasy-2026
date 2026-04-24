@@ -6,8 +6,8 @@
   function trendMeta(driver) {
     const change = Number(driver?.lastValueChange);
 
-    if (Number.isFinite(change) && change > 0) return { icon: `▲ £${change.toFixed(2)}`, cls: "up" };
-    if (Number.isFinite(change) && change < 0) return { icon: `▼ £${Math.abs(change).toFixed(2)}`, cls: "down" };
+    if (Number.isFinite(change) && change > 0) return { icon: "▲", cls: "up" };
+    if (Number.isFinite(change) && change < 0) return { icon: "▼", cls: "down" };
 
     const fallback = String(driver?.trend || "").toLowerCase();
     if (fallback === "up") return { icon: "▲", cls: "up" };
@@ -25,9 +25,7 @@
   }
 
   function formatTier(driver) {
-    const tier = String(driver?.tier || "TBD");
-    const standingPos = Number(driver?.tierStandingPos || 0);
-    return standingPos > 0 ? `${tier} (#${standingPos})` : tier;
+    return String(driver?.tier || "TBD");
   }
 
   function calculateExpectedPoints(value, tdv) {
