@@ -854,7 +854,11 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
         const tierCounts = { high: 0, middle: 0, lower: 0 };
         selectedDrivers.forEach((driver) => {
-          const tierKey = String(driver.tier || "").toLowerCase();
+          let tierKey = String(driver.tier || "").toLowerCase();
+
+          // normalise naming mismatch: "low" -> "lower"
+          if (tierKey === "low") tierKey = "lower";
+
           if (tierCounts[tierKey] !== undefined) tierCounts[tierKey] += 1;
         });
 
