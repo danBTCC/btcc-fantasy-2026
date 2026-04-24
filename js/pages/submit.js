@@ -698,9 +698,13 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         return Math.round((PPV_2026 / safeTdv) * safeValue);
       };
       const getDriverExpectedPoints = (driver) => {
+        const calculatedEp = calculateExpectedPoints(driver?.price || 0);
+        if (Number.isFinite(calculatedEp) && calculatedEp > 0) return calculatedEp;
+
         const storedEp = Number(driver?.ep);
         if (Number.isFinite(storedEp) && storedEp > 0) return Math.round(storedEp);
-        return calculateExpectedPoints(driver?.price || 0);
+
+        return 0;
       };
             const getEffectiveDriverPrice = (driver) => {
         const base = Number(driver?.price || 0);
