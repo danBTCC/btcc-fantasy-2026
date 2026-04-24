@@ -404,9 +404,15 @@ scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
       return [String(val)];
     };
 
-    const race1FL = normaliseFL(resultData?.race1FastestLapIds || resultData?.race1FastestLap);
-    const race2FL = normaliseFL(resultData?.race2FastestLapIds || resultData?.race2FastestLap);
-    const race3FL = normaliseFL(resultData?.race3FastestLapIds || resultData?.race3FastestLap);
+    const race1FL = normaliseFL(
+      resultData?.race1FastestLapDriverIds || resultData?.race1FastestLapIds || resultData?.race1FastestLap
+    );
+    const race2FL = normaliseFL(
+      resultData?.race2FastestLapDriverIds || resultData?.race2FastestLapIds || resultData?.race2FastestLap
+    );
+    const race3FL = normaliseFL(
+      resultData?.race3FastestLapDriverIds || resultData?.race3FastestLapIds || resultData?.race3FastestLap
+    );
 
     const allIds = Array.from(
       new Set([...qualifying, ...race1, ...race2, ...race3].filter(Boolean).map(String))
