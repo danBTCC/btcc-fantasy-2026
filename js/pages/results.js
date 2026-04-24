@@ -398,6 +398,9 @@ scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
     const race1 = Array.isArray(resultData?.race1) ? resultData.race1 : [];
     const race2 = Array.isArray(resultData?.race2) ? resultData.race2 : [];
     const race3 = Array.isArray(resultData?.race3) ? resultData.race3 : [];
+    const race1FL = Array.isArray(resultData?.race1FastestLapIds) ? resultData.race1FastestLapIds : [];
+    const race2FL = Array.isArray(resultData?.race2FastestLapIds) ? resultData.race2FastestLapIds : [];
+    const race3FL = Array.isArray(resultData?.race3FastestLapIds) ? resultData.race3FastestLapIds : [];
 
     const allIds = Array.from(
       new Set([...qualifying, ...race1, ...race2, ...race3].filter(Boolean).map(String))
@@ -421,9 +424,14 @@ scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
         const r3Pos = race3.indexOf(driverId) >= 0 ? race3.indexOf(driverId) + 1 : null;
 
         const q = qualifyingPointsForPos(qPos);
-        const r1 = racePointsForPos(r1Pos);
-        const r2 = racePointsForPos(r2Pos);
-        const r3 = racePointsForPos(r3Pos);
+
+        const fl1 = race1FL.includes(driverId) ? 1 : 0;
+        const fl2 = race2FL.includes(driverId) ? 1 : 0;
+        const fl3 = race3FL.includes(driverId) ? 1 : 0;
+
+        const r1 = racePointsForPos(r1Pos) + fl1;
+        const r2 = racePointsForPos(r2Pos) + fl2;
+        const r3 = racePointsForPos(r3Pos) + fl3;
 
         return {
           driverId,
