@@ -186,6 +186,57 @@
             });
         }
 
+        // Fallback: if no generated team standings exist, build them from player standings + player team fields.
+        if (!teamsDocs.length) {
+          const [playerStandingsSnap, playersSnap] = await Promise.all([
+            window.btccDb
+              .collection("standings_players")
+              .doc("season_2026")
+              .collection("players")
+              .get(),
+            window.btccDb.collection("players").get(),
+          ]);
+
+          const playerMeta = new Map();
+          playersSnap.forEach((doc) => {
+            const d = doc.data() || {};
+            playerMeta.set(doc.id, {
+              teamId: d.teamId || "",
+              teamName: d.teamName || "",
+            });
+          });
+
+          const teamTotals = new Map();
+          playerStandingsSnap.forEach((doc) => {
+            const d = doc.data() || {};
+            const meta = playerMeta.get(doc.id) || {};
+            const teamId = String(meta.teamId || d.teamId || "").trim();
+            if (!teamId) return;
+
+            const existing = teamTotals.get(teamId) || {
+              teamId,
+              teamName: meta.teamName || d.teamName || teamId,
+              pointsTotal: 0,
+              playerCount: 0,
+            };
+
+            existing.pointsTotal += Number(d.pointsTotal ?? d.points ?? 0);
+            existing.playerCount += 1;
+            if (!existing.teamName || existing.teamName === teamId) {
+              existing.teamName = meta.teamName || d.teamName || teamId;
+            }
+
+            teamTotals.set(teamId, existing);
+          });
+
+          teamsDocs = Array.from(teamTotals.values())
+            .sort((a, b) => Number(b.pointsTotal || 0) - Number(a.pointsTotal || 0))
+            .map((team) => ({
+              id: team.teamId,
+              data: () => team,
+            }));
+        }
+
         if (!teamsDocs.length) {
           teamsEl.textContent = "No data yet";
         } else {
