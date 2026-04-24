@@ -14,22 +14,7 @@
 
 
 <body>
-  <div id="maintenance-gate" style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; background:#071b3a; color:white; font-family:Arial, sans-serif;">
-    <div style="max-width:520px; width:100%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:16px; padding:22px; box-shadow:0 12px 30px rgba(0,0,0,0.25);">
-      <h1 style="margin:0 0 12px 0; font-size:24px;">BTCC Fantasy League</h1>
-      <p style="line-height:1.5; margin:0 0 14px 0;">
-        Although I have fixed the main engine run, there is currently a mismatch between event progression, budget boost allocation, and tier assignment.
-        I have identified the fix — I just need some time to add it properly, test everything, and make sure the site is fully aligned before reopening access.
-      </p>
-      <p style="line-height:1.5; margin:0 0 18px 0;">Thank you for your understanding.</p>
-      <label for="maintenance-password" style="display:block; font-size:13px; opacity:0.85; margin-bottom:6px;">Password</label>
-      <input id="maintenance-password" type="password" autocomplete="current-password" style="width:100%; box-sizing:border-box; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.12); color:white; font-size:16px; margin-bottom:10px;" />
-      <button id="maintenance-submit" type="button" style="width:100%; padding:12px; border:0; border-radius:10px; background:white; color:#071b3a; font-weight:700; font-size:16px;">Enter site</button>
-      <div id="maintenance-error" style="display:none; margin-top:10px; color:#ffd3d3; font-size:13px;">Incorrect password.</div>
-    </div>
-  </div>
-
-  <div id="app-shell" hidden>
+  <div id="app-shell">
 
   <div class="raceBanner"></div>
 
@@ -282,45 +267,6 @@
   <footer class="footer">
     <span class="muted">Dan's Family & Friends BTCC Fantasy League 2026</span>
   </footer>
-  </div>
-  <script>
-    (function () {
-      const MAINTENANCE_PASSWORD = "btcc2026";
-      const gate = document.getElementById("maintenance-gate");
-      const appShell = document.getElementById("app-shell");
-      const input = document.getElementById("maintenance-password");
-      const button = document.getElementById("maintenance-submit");
-      const error = document.getElementById("maintenance-error");
-
-      function unlock() {
-        if (!input || input.value !== MAINTENANCE_PASSWORD) {
-          if (error) error.style.display = "block";
-          return;
-        }
-        try {
-          sessionStorage.setItem("btcc-maintenance-ok", "yes");
-        } catch (err) {}
-        if (gate) gate.hidden = true;
-        if (appShell) appShell.hidden = false;
-      }
-
-      try {
-        if (sessionStorage.getItem("btcc-maintenance-ok") === "yes") {
-          if (gate) gate.hidden = true;
-          if (appShell) appShell.hidden = false;
-          return;
-        }
-      } catch (err) {}
-
-      if (button) button.addEventListener("click", unlock);
-      if (input) {
-        input.addEventListener("keydown", function (event) {
-          if (event.key === "Enter") unlock();
-        });
-        setTimeout(function () { input.focus(); }, 50);
-      }
-    })();
-  </script>
 
   <!-- Firebase SDKs (COMPAT versions) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
