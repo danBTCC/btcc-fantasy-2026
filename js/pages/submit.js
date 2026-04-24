@@ -16,8 +16,26 @@
       .replace(/'/g, "&#39;");
   }
 
+
   function roundMoney2(v) {
     return Math.round((Number(v || 0) + Number.EPSILON) * 100) / 100;
+  }
+
+  function getBudgetSnapshot(data) {
+    const budget = Number(data?.budget || 0);
+    const budgetBoost = Number(data?.budgetBoost || 0);
+    const deductibles = Number(data?.deductibles || 0);
+    const effectiveBudgetRaw = Number(data?.effectiveBudget);
+    const availableBudget = Number.isFinite(effectiveBudgetRaw)
+      ? effectiveBudgetRaw
+      : budget + budgetBoost - deductibles;
+
+    return {
+      budget: roundMoney2(budget),
+      budgetBoost: roundMoney2(budgetBoost),
+      deductibles: roundMoney2(deductibles),
+      availableBudget: roundMoney2(availableBudget),
+    };
   }
 
   async function handleLogin(e, root) {
@@ -111,14 +129,13 @@
       }
 
       const d = snap.data() || {};
-      const name = d.displayName ?? "Unnamed";
-      const budget = typeof d.budget === "number" ? d.budget : 0;
+      const budgetInfo = getBudgetSnapshot(d);
+      const budget = budgetInfo.budget;
       const penalties = typeof d.penalties === "number" ? d.penalties : 0;
-      const budgetBoost = typeof d.budgetBoost === "number" ? d.budgetBoost : 0;
-      const deductibles = typeof d.deductibles === "number" ? d.deductibles : 0;
-      const availableBudget = typeof d.effectiveBudget === "number"
-        ? d.effectiveBudget
-        : (budget + budgetBoost - deductibles);
+      const budgetBoost = budgetInfo.budgetBoost;
+      const deductibles = budgetInfo.deductibles;
+      const availableBudget = budgetInfo.availableBudget;
+      const name = d.displayName ?? "Unnamed";
       const standingsData = standingsSnap.exists ? (standingsSnap.data() || {}) : {};
       const pointsTotal = typeof standingsData.pointsTotal === "number"
         ? standingsData.pointsTotal
@@ -452,12 +469,8 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
     // Load picker using budget from player profile doc (read-only)
     window.btccDb.collection("players").doc(user.uid).get().then(s => {
       const data = s.exists ? (s.data() || {}) : {};
-      const baseBudget = typeof data.budget === "number" ? data.budget : 0;
-      const budgetBoost = typeof data.budgetBoost === "number" ? data.budgetBoost : 0;
-      const deductibles = typeof data.deductibles === "number" ? data.deductibles : 0;
-      const availableBudget = typeof data.effectiveBudget === "number"
-        ? data.effectiveBudget
-        : (baseBudget + budgetBoost - deductibles);
+      const budgetInfo = getBudgetSnapshot(data);
+      const availableBudget = budgetInfo.availableBudget;
       const name = data.displayName || (user.email || "Player");
       loadDriverPicker(root, availableBudget, user.uid, name);
     });
@@ -836,7 +849,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
         const total = selectedDrivers.reduce((sum, driver) => sum + Number(getEffectiveDriverPrice(driver) || 0), 0);
         const teamEp = selectedDrivers.reduce((sum, driver) => sum + Number(getDriverExpectedPoints(driver) || 0), 0);
-        const budgetNum = Number(playerBudget) || 0;
+        const budgetNum = roundMoney2(playerBudget);
         const remaining = budgetNum - total;
 
         const tierCounts = { high: 0, middle: 0, lower: 0 };
@@ -985,6 +998,8 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
           teamIds: driverIds,
           sldDriverId: currentSldDriverId || null,
           totalCost: Number(totalCost) || 0,
+          budgetAvailable: roundMoney2(playerBudget),
+          budgetRemaining: roundMoney2(Number(playerBudget || 0) - Number(totalCost || 0)),
           eventId,
           eventNo: getEventContext().eventNo ?? null,
           venue: getEventContext().venue ?? null,
