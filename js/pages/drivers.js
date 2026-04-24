@@ -3,9 +3,15 @@
 
 (function () {
   const PPV_2026 = 930;
-  function trendMeta(t) {
-    if (t === "up") return { icon: "▲", cls: "up" };
-    if (t === "down") return { icon: "▼", cls: "down" };
+  function trendMeta(driver) {
+    const change = Number(driver?.lastValueChange);
+
+    if (Number.isFinite(change) && change > 0) return { icon: `▲ £${change.toFixed(2)}`, cls: "up" };
+    if (Number.isFinite(change) && change < 0) return { icon: `▼ £${Math.abs(change).toFixed(2)}`, cls: "down" };
+
+    const fallback = String(driver?.trend || "").toLowerCase();
+    if (fallback === "up") return { icon: "▲", cls: "up" };
+    if (fallback === "down") return { icon: "▼", cls: "down" };
     return { icon: "—", cls: "same" };
   }
 
@@ -235,7 +241,7 @@
           const ep = calculateExpectedPoints(value, tdv);
           const points = getDriverPointsTotal(driver);
           const selections = Number(selectionCounts.get(driver.id) || 0);
-          const tr = trendMeta(driver.trend);
+          const tr = trendMeta(driver);
 
           return {
             name,
