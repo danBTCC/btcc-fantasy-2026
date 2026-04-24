@@ -156,6 +156,26 @@
     return totals;
   }
 
+  async function loadStoredDriverEventScores(db, events) {
+    const totals = new Map();
+
+    for (const eventDoc of events) {
+      const eventId = eventDoc.id;
+
+      try {
+        const snap = await db.collection("event_scores").doc(eventId).collection("drivers").get();
+        snap.forEach((doc) => {
+          const data = doc.data() || {};
+          totals.set(doc.id, Number(totals.get(doc.id) || 0) + Number(data.pointsTotal || data.points || 0));
+        });
+      } catch (err) {
+        console.warn(`event_scores/${eventId}/drivers read failed`, err);
+      }
+    }
+
+    return totals;
+  }
+
 
   function renderStatsTable(title, columns, rows, emptyMessage) {
     const head = columns.map((col) => `<th>${col}</th>`).join("");
@@ -210,18 +230,22 @@
       const tdv = drivers.reduce((sum, driver) => sum + Number(driver.value || driver.cost || driver.price || 0), 0);
       const events = eventsSnap.docs;
 
-      const [selectionCounts, storedDriverStandings, driverPoints] = await Promise.all([
+      const [selectionCounts, storedDriverEventScores, storedDriverStandings, driverPoints] = await Promise.all([
         loadSelectionCounts(db, events),
+        loadStoredDriverEventScores(db, events),
         loadStoredDriverStandings(db),
         loadDriverPoints(db, events),
       ]);
 
       const getDriverPointsTotal = (driver) => {
-        if (storedDriverStandings.has(driver.id)) {
-          return Number(storedDriverStandings.get(driver.id) || 0);
+        if (storedDriverEventScores.has(driver.id)) {
+          return Number(storedDriverEventScores.get(driver.id) || 0);
         }
         if (typeof driver.pointsTotal === "number") return Number(driver.pointsTotal || 0);
         if (typeof driver.points === "number") return Number(driver.points || 0);
+        if (storedDriverStandings.has(driver.id)) {
+          return Number(storedDriverStandings.get(driver.id) || 0);
+        }
         return Number(driverPoints.get(driver.id) || 0);
       };
 
