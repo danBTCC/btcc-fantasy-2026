@@ -348,6 +348,23 @@ const ADMIN_EMAILS = [
       </div>
 
       <div class="card" style="margin-top:12px;">
+        <button type="button" class="admin-collapse-toggle" data-target="admin-race-standings-rebuild-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Race Standings Rebuild</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-race-standings-rebuild-body" hidden style="margin-top:10px;">
+          <p class="tiny muted" style="margin:0;">Rebuild Race 1, Race 2 and Race 3 standings directly from the latest event score breakdown.</p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+            <button id="admin-rebuild-race1" class="tile tinyBtn" type="button">Rebuild Race 1</button>
+            <button id="admin-rebuild-race2" class="tile tinyBtn" type="button">Rebuild Race 2</button>
+            <button id="admin-rebuild-race3" class="tile tinyBtn" type="button">Rebuild Race 3</button>
+            <button id="admin-rebuild-races-all" class="tile tinyBtn" type="button">Rebuild All Races</button>
+          </div>
+          <div id="admin-race-standings-rebuild-msg" class="tiny muted" style="margin-top:10px;">Ready.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
         <button type="button" class="admin-collapse-toggle" data-target="admin-pitstop-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
           <h2 style="margin:0;">Pit Stop Pot</h2>
           <span class="tiny muted" data-chevron>▸</span>
@@ -424,6 +441,7 @@ const ADMIN_EMAILS = [
     setupAdminPlayerManager(root);
     setupAdminDriverManager(root);
     setupAdminPitStop(root);
+    setupAdminRaceStandingsRebuild(root);
     renderQualifyingForm(root);
     renderRaceForms(root);
     renderResultsPreview(root);
@@ -1045,6 +1063,72 @@ const ADMIN_EMAILS = [
       if (msg) msg.textContent = err?.message || "Failed to load submission tracker.";
       mount.innerHTML = `<div class="note warnNote">Failed to load submission tracker.</div>`;
     }
+  }
+
+  function setupAdminRaceStandingsRebuild(root) {
+    const btnRace1 = root.querySelector("#admin-rebuild-race1");
+    const btnRace2 = root.querySelector("#admin-rebuild-race2");
+    const btnRace3 = root.querySelector("#admin-rebuild-race3");
+    const btnAll = root.querySelector("#admin-rebuild-races-all");
+    const msg = root.querySelector("#admin-race-standings-rebuild-msg");
+
+    if (!btnRace1 || !btnRace2 || !btnRace3 || !btnAll) return;
+
+    const setMsg = (text) => {
+      if (msg) msg.textContent = text;
+    };
+
+    const setBusy = (busy) => {
+      [btnRace1, btnRace2, btnRace3, btnAll].forEach((btn) => {
+        btn.disabled = busy;
+      });
+    };
+
+    const runOne = async (label, fnName) => {
+      if (typeof window[fnName] !== "function") {
+        setMsg(`${label} rebuild function is not available. Refresh after deployment and try again.`);
+        return;
+      }
+
+      try {
+        setBusy(true);
+        setMsg(`Running ${label} rebuild…`);
+        await window[fnName](root);
+        setMsg(`${label} standings rebuilt.`);
+      } catch (err) {
+        console.error(`❌ ${label} rebuild failed:`, err);
+        setMsg(err?.message || `${label} rebuild failed.`);
+      } finally {
+        setBusy(false);
+      }
+    };
+
+    btnRace1.addEventListener("click", () => runOne("Race 1", "rebuildStandingsRace1"));
+    btnRace2.addEventListener("click", () => runOne("Race 2", "rebuildStandingsRace2"));
+    btnRace3.addEventListener("click", () => runOne("Race 3", "rebuildStandingsRace3"));
+
+    btnAll.addEventListener("click", async () => {
+      try {
+        setBusy(true);
+        const required = ["rebuildStandingsRace1", "rebuildStandingsRace2", "rebuildStandingsRace3"];
+        const missing = required.filter((fnName) => typeof window[fnName] !== "function");
+        if (missing.length) {
+          setMsg(`Missing rebuild function(s): ${missing.join(", ")}. Refresh after deployment and try again.`);
+          return;
+        }
+
+        setMsg("Running all race standings rebuilds…");
+        await window.rebuildStandingsRace1(root);
+        await window.rebuildStandingsRace2(root);
+        await window.rebuildStandingsRace3(root);
+        setMsg("Race 1, Race 2 and Race 3 standings rebuilt.");
+      } catch (err) {
+        console.error("❌ All race standings rebuild failed:", err);
+        setMsg(err?.message || "Race standings rebuild failed.");
+      } finally {
+        setBusy(false);
+      }
+    });
   }
 
 // --- Pit Stop Pot Admin Editor ---
