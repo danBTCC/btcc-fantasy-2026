@@ -1629,7 +1629,7 @@ async function rebuildStandingsRace1(root) {
   if (!resultsSnap.exists) throw new Error("No results found for event");
 
   const results = resultsSnap.data() || {};
-  const race1Order = Array.isArray(results.race1) ? results.race1 : [];
+  const race1Order = Array.isArray(results.race1) ? results.race1.filter(Boolean).map(String) : [];
   const race1FastestLapIds = Array.isArray(results.race1FastestLapDriverIds)
     ? results.race1FastestLapDriverIds.filter(Boolean).map(String)
     : (results.race1FastestLapDriverId ? [String(results.race1FastestLapDriverId)] : []);
@@ -1690,6 +1690,7 @@ async function rebuildStandingsRace1(root) {
       const idx = race1Order.indexOf(id);
       if (idx >= 0) total += racePointsLocal(idx + 1);
       if (race1FastestLapIds.includes(id)) total += 1;
+      // Fastest lap is awarded once per selected driver if listed in race1FastestLapDriverIds.
     });
 
     totals.set(uid, {
@@ -1735,7 +1736,7 @@ async function rebuildStandingsRace2(root) {
   if (!resultsSnap.exists) throw new Error("No results found for event");
 
   const results = resultsSnap.data() || {};
-  const race2Order = Array.isArray(results.race2) ? results.race2 : [];
+  const race2Order = Array.isArray(results.race2) ? results.race2.filter(Boolean).map(String) : [];
   const race2FastestLapIds = Array.isArray(results.race2FastestLapDriverIds)
     ? results.race2FastestLapDriverIds.filter(Boolean).map(String)
     : (results.race2FastestLapDriverId ? [String(results.race2FastestLapDriverId)] : []);
@@ -1795,6 +1796,7 @@ async function rebuildStandingsRace2(root) {
       const idx = race2Order.indexOf(id);
       if (idx >= 0) total += racePointsLocal(idx + 1);
       if (race2FastestLapIds.includes(id)) total += 1;
+      // Fastest lap is awarded once per selected driver if listed in race2FastestLapDriverIds.
     });
 
     totals.set(uid, {
@@ -1840,7 +1842,7 @@ async function rebuildStandingsRace3(root) {
   if (!resultsSnap.exists) throw new Error("No results found for event");
 
   const results = resultsSnap.data() || {};
-  const race3Order = Array.isArray(results.race3) ? results.race3 : [];
+  const race3Order = Array.isArray(results.race3) ? results.race3.filter(Boolean).map(String) : [];
   const race3FastestLapIds = Array.isArray(results.race3FastestLapDriverIds)
     ? results.race3FastestLapDriverIds.filter(Boolean).map(String)
     : (results.race3FastestLapDriverId ? [String(results.race3FastestLapDriverId)] : []);
@@ -1900,6 +1902,7 @@ async function rebuildStandingsRace3(root) {
       const idx = race3Order.indexOf(id);
       if (idx >= 0) total += racePointsLocal(idx + 1);
       if (race3FastestLapIds.includes(id)) total += 1;
+      // Fastest lap is awarded once per selected driver if listed in race3FastestLapDriverIds.
     });
 
     totals.set(uid, {
