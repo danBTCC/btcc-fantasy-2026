@@ -1643,60 +1643,23 @@ async function rebuildStandingsRace1(root) {
     });
   });
 
-  const normaliseDriverIdsFromEntry = (data) => {
-    if (!data || typeof data !== "object") return [];
-    const candidates = [
-      data.driverIds,
-      data.teamIds,
-      data.team,
-      data.drivers,
-      data.selectedDrivers,
-      data.picks,
-      data.selection,
-    ];
-    const arr = candidates.find((x) => Array.isArray(x)) || [];
-    return Array.from(
-      new Set(
-        arr
-          .map((item) => {
-            if (!item) return null;
-            if (typeof item === "string") return item;
-            if (typeof item === "object") return item.driverId || item.id || item.ref || null;
-            return null;
-          })
-          .filter(Boolean)
-          .map(String)
-      )
-    );
-  };
-
-  let entriesSnap = await window.btccDb.collection("entries").doc(eid).collection("entries").get();
-  if (entriesSnap.empty) {
-    entriesSnap = await window.btccDb.collection("submissions").doc(eid).collection("entries").get();
-  }
-
   const totals = new Map();
 
-  const racePointsLocal = (pos) => racePoints(pos);
+  const scoresSnap = await window.btccDb
+    .collection("event_scores")
+    .doc(eid)
+    .collection("players")
+    .get();
 
-  entriesSnap.forEach((doc) => {
-    const uid = doc.id;
+  scoresSnap.forEach((doc) => {
     const data = doc.data() || {};
-    const team = normaliseDriverIdsFromEntry(data);
-
-    let total = 0;
-    team.forEach((driverId) => {
-      const id = String(driverId);
-      const idx = race1Order.indexOf(id);
-      if (idx >= 0) total += racePointsLocal(idx + 1);
-      if (race1FastestLapIds.includes(id)) total += 1;
-      // Fastest lap is awarded once per selected driver if listed in race1FastestLapDriverIds.
-    });
+    const breakdown = data.breakdown || {};
+    const uid = doc.id;
 
     totals.set(uid, {
       uid,
-      displayName: playerMeta.get(uid)?.displayName || uid,
-      pointsTotal: total,
+      displayName: data.displayName || playerMeta.get(uid)?.displayName || uid,
+      pointsTotal: Number(breakdown.race1 || 0),
     });
   });
 
@@ -1750,59 +1713,23 @@ async function rebuildStandingsRace2(root) {
     });
   });
 
-  const normaliseDriverIdsFromEntry = (data) => {
-    if (!data || typeof data !== "object") return [];
-    const candidates = [
-      data.driverIds,
-      data.teamIds,
-      data.team,
-      data.drivers,
-      data.selectedDrivers,
-      data.picks,
-      data.selection,
-    ];
-    const arr = candidates.find((x) => Array.isArray(x)) || [];
-    return Array.from(
-      new Set(
-        arr
-          .map((item) => {
-            if (!item) return null;
-            if (typeof item === "string") return item;
-            if (typeof item === "object") return item.driverId || item.id || item.ref || null;
-            return null;
-          })
-          .filter(Boolean)
-          .map(String)
-      )
-    );
-  };
-
-  let entriesSnap = await window.btccDb.collection("entries").doc(eid).collection("entries").get();
-  if (entriesSnap.empty) {
-    entriesSnap = await window.btccDb.collection("submissions").doc(eid).collection("entries").get();
-  }
-
   const totals = new Map();
-  const racePointsLocal = (pos) => racePoints(pos);
 
-  entriesSnap.forEach((doc) => {
-    const uid = doc.id;
+  const scoresSnap = await window.btccDb
+    .collection("event_scores")
+    .doc(eid)
+    .collection("players")
+    .get();
+
+  scoresSnap.forEach((doc) => {
     const data = doc.data() || {};
-    const team = normaliseDriverIdsFromEntry(data);
-
-    let total = 0;
-    team.forEach((driverId) => {
-      const id = String(driverId);
-      const idx = race2Order.indexOf(id);
-      if (idx >= 0) total += racePointsLocal(idx + 1);
-      if (race2FastestLapIds.includes(id)) total += 1;
-      // Fastest lap is awarded once per selected driver if listed in race2FastestLapDriverIds.
-    });
+    const breakdown = data.breakdown || {};
+    const uid = doc.id;
 
     totals.set(uid, {
       uid,
-      displayName: playerMeta.get(uid)?.displayName || uid,
-      pointsTotal: total,
+      displayName: data.displayName || playerMeta.get(uid)?.displayName || uid,
+      pointsTotal: Number(breakdown.race2 || 0),
     });
   });
 
@@ -1856,59 +1783,23 @@ async function rebuildStandingsRace3(root) {
     });
   });
 
-  const normaliseDriverIdsFromEntry = (data) => {
-    if (!data || typeof data !== "object") return [];
-    const candidates = [
-      data.driverIds,
-      data.teamIds,
-      data.team,
-      data.drivers,
-      data.selectedDrivers,
-      data.picks,
-      data.selection,
-    ];
-    const arr = candidates.find((x) => Array.isArray(x)) || [];
-    return Array.from(
-      new Set(
-        arr
-          .map((item) => {
-            if (!item) return null;
-            if (typeof item === "string") return item;
-            if (typeof item === "object") return item.driverId || item.id || item.ref || null;
-            return null;
-          })
-          .filter(Boolean)
-          .map(String)
-      )
-    );
-  };
-
-  let entriesSnap = await window.btccDb.collection("entries").doc(eid).collection("entries").get();
-  if (entriesSnap.empty) {
-    entriesSnap = await window.btccDb.collection("submissions").doc(eid).collection("entries").get();
-  }
-
   const totals = new Map();
-  const racePointsLocal = (pos) => racePoints(pos);
 
-  entriesSnap.forEach((doc) => {
-    const uid = doc.id;
+  const scoresSnap = await window.btccDb
+    .collection("event_scores")
+    .doc(eid)
+    .collection("players")
+    .get();
+
+  scoresSnap.forEach((doc) => {
     const data = doc.data() || {};
-    const team = normaliseDriverIdsFromEntry(data);
-
-    let total = 0;
-    team.forEach((driverId) => {
-      const id = String(driverId);
-      const idx = race3Order.indexOf(id);
-      if (idx >= 0) total += racePointsLocal(idx + 1);
-      if (race3FastestLapIds.includes(id)) total += 1;
-      // Fastest lap is awarded once per selected driver if listed in race3FastestLapDriverIds.
-    });
+    const breakdown = data.breakdown || {};
+    const uid = doc.id;
 
     totals.set(uid, {
       uid,
-      displayName: playerMeta.get(uid)?.displayName || uid,
-      pointsTotal: total,
+      displayName: data.displayName || playerMeta.get(uid)?.displayName || uid,
+      pointsTotal: Number(breakdown.race3 || 0),
     });
   });
 
