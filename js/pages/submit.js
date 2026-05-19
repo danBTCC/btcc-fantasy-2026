@@ -168,10 +168,9 @@
     box.textContent = "Loading profile…";
 
     try {
-      const [snap, standingsSnap, driversSelectedTotal] = await Promise.all([
+      const [snap, standingsSnap] = await Promise.all([
         window.btccDb.collection("players").doc(uid).get(),
         window.btccDb.collection("standings_players").doc("season_2026").collection("players").doc(uid).get(),
-        countDriversSelectedAcrossEvents(uid),
       ]);
 
       if (!snap.exists) {
@@ -194,7 +193,7 @@
       const pointsTotal = typeof standingsData.pointsTotal === "number"
         ? standingsData.pointsTotal
         : (typeof standingsData.points === "number" ? standingsData.points : null);
-      const driversSelected = typeof driversSelectedTotal === "number" ? driversSelectedTotal : (typeof d.driversSelected === "number" ? d.driversSelected : null);
+      const driversSelected = typeof d.driversSelected === "number" ? d.driversSelected : null;
       const teamName = d.teamName ?? "";
       const teamId = d.teamId ?? "";
       let last = "—";
@@ -219,9 +218,15 @@
           <br>
           Penalties: ${penalties}
           ${pointsTotal !== null ? `<br>Championship Points: ${pointsTotal}` : ""}
-          ${driversSelected !== null ? `<br>Drivers Selected: ${driversSelected}` : ""}
+          <br>Drivers Selected: <span id="profile-drivers-selected">${driversSelected !== null ? driversSelected : "Loading…"}</span>
         </div>
       `;
+
+      countDriversSelectedAcrossEvents(uid).then((total) => {
+        const driversSelectedEl = box.querySelector("#profile-drivers-selected");
+        if (!driversSelectedEl || typeof total !== "number") return;
+        driversSelectedEl.textContent = String(total);
+      });
     } catch (err) {
       console.error("❌ loadPlayerProfile failed:", err);
       box.innerHTML = `
