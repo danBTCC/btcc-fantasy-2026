@@ -38,6 +38,58 @@
     };
   }
 
+  function normaliseSubmissionDriverIds(data) {
+    if (!data || typeof data !== "object") return [];
+    const candidates = [
+      data.driverIds,
+      data.teamIds,
+      data.team,
+      data.drivers,
+      data.selectedDrivers,
+      data.picks,
+      data.selection,
+    ];
+    const arr = candidates.find((x) => Array.isArray(x)) || [];
+    return Array.from(
+      new Set(
+        arr
+          .map((item) => {
+            if (!item) return null;
+            if (typeof item === "string") return item;
+            if (typeof item === "object") return item.driverId || item.id || item.ref || null;
+            return null;
+          })
+          .filter(Boolean)
+      )
+    );
+  }
+
+  async function countDriversSelectedAcrossEvents(uid) {
+    if (!window.btccDb || !uid) return null;
+
+    try {
+      const eventsSnap = await window.btccDb.collection("events").orderBy("eventNo").get();
+      let total = 0;
+
+      for (const eventDoc of eventsSnap.docs) {
+        const subSnap = await window.btccDb
+          .collection("submissions")
+          .doc(eventDoc.id)
+          .collection("entries")
+          .doc(uid)
+          .get();
+
+        if (!subSnap.exists) continue;
+        total += normaliseSubmissionDriverIds(subSnap.data()).length;
+      }
+
+      return total;
+    } catch (err) {
+      console.warn("⚠️ Could not count drivers selected across events:", err);
+      return null;
+    }
+  }
+
   async function handleLogin(e, root) {
     e.preventDefault();
 
@@ -115,9 +167,10 @@
     box.textContent = "Loading profile…";
 
     try {
-      const [snap, standingsSnap] = await Promise.all([
+      const [snap, standingsSnap, driversSelectedTotal] = await Promise.all([
         window.btccDb.collection("players").doc(uid).get(),
         window.btccDb.collection("standings_players").doc("season_2026").collection("players").doc(uid).get(),
+        countDriversSelectedAcrossEvents(uid),
       ]);
 
       if (!snap.exists) {
@@ -140,7 +193,7 @@
       const pointsTotal = typeof standingsData.pointsTotal === "number"
         ? standingsData.pointsTotal
         : (typeof standingsData.points === "number" ? standingsData.points : null);
-      const driversSelected = typeof d.driversSelected === "number" ? d.driversSelected : null;
+      const driversSelected = typeof driversSelectedTotal === "number" ? driversSelectedTotal : (typeof d.driversSelected === "number" ? d.driversSelected : null);
       const teamName = d.teamName ?? "";
       const teamId = d.teamId ?? "";
       let last = "—";
