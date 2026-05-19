@@ -68,43 +68,26 @@
     if (!window.btccDb || !uid) return null;
 
     try {
-      const entriesSnap = await window.btccDb
-        .collectionGroup("entries")
-        .where("uid", "==", uid)
-        .get();
-
+      const eventsSnap = await window.btccDb.collection("events").orderBy("eventNo").get();
       let total = 0;
-      entriesSnap.forEach((entryDoc) => {
-        total += normaliseSubmissionDriverIds(entryDoc.data()).length;
-      });
+
+      for (const eventDoc of eventsSnap.docs) {
+        const subSnap = await window.btccDb
+          .collection("submissions")
+          .doc(eventDoc.id)
+          .collection("entries")
+          .doc(uid)
+          .get();
+
+        if (!subSnap.exists) continue;
+        total += normaliseSubmissionDriverIds(subSnap.data()).length;
+      }
 
       console.log(`✅ Drivers selected across events for ${uid}:`, total);
       return total;
-    } catch (collectionGroupErr) {
-      console.warn("⚠️ Collection group driver count failed, falling back to event loop:", collectionGroupErr);
-
-      try {
-        const eventsSnap = await window.btccDb.collection("events").orderBy("eventNo").get();
-        let total = 0;
-
-        for (const eventDoc of eventsSnap.docs) {
-          const subSnap = await window.btccDb
-            .collection("submissions")
-            .doc(eventDoc.id)
-            .collection("entries")
-            .doc(uid)
-            .get();
-
-          if (!subSnap.exists) continue;
-          total += normaliseSubmissionDriverIds(subSnap.data()).length;
-        }
-
-        console.log(`✅ Drivers selected across events for ${uid} via fallback:`, total);
-        return total;
-      } catch (fallbackErr) {
-        console.warn("⚠️ Could not count drivers selected across events:", fallbackErr);
-        return null;
-      }
+    } catch (err) {
+      console.warn("⚠️ Could not count drivers selected across events:", err);
+      return null;
     }
   }
 
