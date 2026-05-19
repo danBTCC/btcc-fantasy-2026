@@ -724,6 +724,11 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         return base;
       };
 
+      const selected = new Set();
+      if (currentSldDriverId && driversById.has(currentSldDriverId)) {
+        selected.add(currentSldDriverId);
+      }
+
       // ---- SLD setup (Event 1 only) ----
       const sldSection = root.querySelector("#sld-section");
       const sldSelect = root.querySelector("#sld-select");
@@ -745,6 +750,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
               const selectedId = sldSelect.value;
 
               if (!selectedId) {
+                if (currentSldDriverId) selected.delete(currentSldDriverId);
                 currentSldDriverId = null;
                 drivers.forEach((d) => {
                   d.isSLD = false;
@@ -772,11 +778,12 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
                 return;
               }
 
-              currentSldDriverId = selectedId;
               drivers.forEach((d) => {
+                if (d.isSLD) selected.delete(d.id);
                 d.isSLD = d.id === selectedId;
-               });
-               selected.add(selectedId);
+              });
+              currentSldDriverId = selectedId;
+              selected.add(selectedId);
 
               if (sldMsg) {
                 sldMsg.innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (Current SLD price this event: ${fmtMoney(sldPrice)})`;
@@ -806,7 +813,6 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
           root.querySelector("#sld-selected-msg").innerHTML = `<strong>SLD selected:</strong> ${escapeHtml(driver.name)} (Current SLD price this event: ${fmtMoney(sldPrice)})`;
         }
       }
-      const selected = new Set();
 
       const updateRowState = (row) => {
         if (!row) return;
