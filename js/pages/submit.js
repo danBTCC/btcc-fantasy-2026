@@ -504,8 +504,8 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
   Validation message
 </div>
 
-<button id="team-save" class="tile" style="margin-top:10px;" disabled>
-  Save changes
+<button id="team-save" class="tile" style="margin-top:10px; background:linear-gradient(135deg,#0b3d91,#2563eb); border:1px solid rgba(255,255,255,.15); font-weight:700;" disabled>
+  Click here to Submit or save changes
 </button>
 
 <div id="driver-picker" class="list" style="margin-top:10px;">
@@ -622,7 +622,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
 
     if (saveBtn) {
-      saveBtn.textContent = isLockedNow() ? "Locked" : "Save changes";
+      saveBtn.textContent = isLockedNow() ? "Locked" : "Click here to Submit or save changes";
       if (isLockedNow()) saveBtn.disabled = true;
     }
 
@@ -1012,7 +1012,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
             saveBtn.textContent = "Locked";
           } else {
             saveBtn.disabled = !valid;
-            saveBtn.textContent = "Save changes";
+            saveBtn.textContent = "Click here to Submit or save changes";
           }
         }
       };
@@ -1043,7 +1043,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
 
           if (saveBtn && !isLockedNow()) {
-            saveBtn.textContent = "Save changes";
+            saveBtn.textContent = "Click here to Submit or save changes";
             saveBtn.disabled = false;
           }
 
@@ -1108,7 +1108,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
           if (validationEl) validationEl.hidden = true;
           if (saveBtn && !isLockedNow()) {
-            saveBtn.textContent = "Save changes";
+            saveBtn.textContent = "Click here to Submit or save changes";
             saveBtn.disabled = false;
           }
           loadPlayerProfile(root, uid);
