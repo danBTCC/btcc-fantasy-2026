@@ -76,6 +76,54 @@
           });
       };
 
+      const buildRaceRowsFromEventScores = async (raceKey) => {
+        const [eventsSnap, playersSnap] = await Promise.all([
+          window.btccDb.collection("events").orderBy("eventNo").get(),
+          window.btccDb.collection("players").get(),
+        ]);
+
+        const playerNames = new Map();
+        playersSnap.forEach((doc) => {
+          const d = doc.data() || {};
+          playerNames.set(doc.id, d.displayName || d.name || "Unnamed");
+        });
+
+        const totals = new Map();
+
+        for (const eventDoc of eventsSnap.docs) {
+          const eventScorePlayersSnap = await window.btccDb
+            .collection("event_scores")
+            .doc(eventDoc.id)
+            .collection("players")
+            .get();
+
+          eventScorePlayersSnap.forEach((playerDoc) => {
+            const d = playerDoc.data() || {};
+            const breakdown = d.breakdown || {};
+            const racePoints = Number(
+              breakdown[raceKey] ??
+              d[raceKey] ??
+              d?.raceBreakdown?.[raceKey] ??
+              0
+            );
+
+            const existing = totals.get(playerDoc.id) || {
+              id: playerDoc.id,
+              name: d.displayName || playerNames.get(playerDoc.id) || "Unnamed",
+              points: 0,
+            };
+
+            existing.points += Number.isFinite(racePoints) ? racePoints : 0;
+            if (!existing.name || existing.name === "Unnamed") {
+              existing.name = d.displayName || playerNames.get(playerDoc.id) || "Unnamed";
+            }
+            totals.set(playerDoc.id, existing);
+          });
+        }
+
+        return Array.from(totals.values()).sort((a, b) => b.points - a.points);
+      };
+
     try {
       if (!window.btccDb) {
         throw new Error("btccDb not available");
@@ -398,65 +446,23 @@
 
       // ---- Race 1 standings ----
       if (race1El) {
-        const docs = await readSortedPointsDocs(
-          window.btccDb
-            .collection("standings_race1")
-            .doc("season_2026")
-            .collection("players")
-        );
-
-        const rows = docs.map((doc) => {
-          const d = doc.data() || {};
-          return {
-            name: d.displayName || "Unnamed",
-            points: Number(d.pointsTotal ?? d.points ?? 0),
-          };
-        });
-
+        const rows = await buildRaceRowsFromEventScores("race1");
         renderSimplePointsTable(race1El, rows, "Player");
-        console.log("✅ Race 1 standings loaded:", rows.length);
+        console.log("✅ Race 1 standings loaded from event_scores:", rows.length);
       }
 
       // ---- Race 2 standings ----
       if (race2El) {
-        const docs = await readSortedPointsDocs(
-          window.btccDb
-            .collection("standings_race2")
-            .doc("season_2026")
-            .collection("players")
-        );
-
-        const rows = docs.map((doc) => {
-          const d = doc.data() || {};
-          return {
-            name: d.displayName || "Unnamed",
-            points: Number(d.pointsTotal ?? d.points ?? 0),
-          };
-        });
-
+        const rows = await buildRaceRowsFromEventScores("race2");
         renderSimplePointsTable(race2El, rows, "Player");
-        console.log("✅ Race 2 standings loaded:", rows.length);
+        console.log("✅ Race 2 standings loaded from event_scores:", rows.length);
       }
 
       // ---- Race 3 standings ----
       if (race3El) {
-        const docs = await readSortedPointsDocs(
-          window.btccDb
-            .collection("standings_race3")
-            .doc("season_2026")
-            .collection("players")
-        );
-
-        const rows = docs.map((doc) => {
-          const d = doc.data() || {};
-          return {
-            name: d.displayName || "Unnamed",
-            points: Number(d.pointsTotal ?? d.points ?? 0),
-          };
-        });
-
+        const rows = await buildRaceRowsFromEventScores("race3");
         renderSimplePointsTable(race3El, rows, "Player");
-        console.log("✅ Race 3 standings loaded:", rows.length);
+        console.log("✅ Race 3 standings loaded from event_scores:", rows.length);
       }
 
     } catch (err) {
