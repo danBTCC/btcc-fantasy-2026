@@ -273,8 +273,9 @@ const ADMIN_EMAILS = [
             <textarea id="admin-assisted-reason" rows="2" placeholder="Player messaged before lockout..."
               style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
 
-            <button id="admin-assisted-load" class="tile" type="button">Load Player Submission</button>
+            <button id="admin-assisted-load" class="tile" type="button">Load Player Details</button>
             <div id="admin-assisted-msg" class="tiny muted">Ready.</div>
+            <div id="admin-assisted-details" class="note" style="margin-top:2px;" hidden></div>
           </div>
         </div>
       </div>
@@ -1098,12 +1099,83 @@ const ADMIN_EMAILS = [
     const reasonEl = root.querySelector("#admin-assisted-reason");
     const loadBtn = root.querySelector("#admin-assisted-load");
     const msg = root.querySelector("#admin-assisted-msg");
+    const details = root.querySelector("#admin-assisted-details");
 
     if (!playerSelect || !loadBtn) return;
 
     const setMsg = (text) => {
       if (msg) msg.textContent = text;
     };
+
+    // --- Helper functions ---
+
+    const escapeLocal = (value) => String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+
+    const fmtMoneyLocal = (value) => `£${Number(value || 0).toFixed(2)}`;
+
+    const getBudgetSnapshotLocal = (data) => {
+      const budget = Number(data?.budget || 0);
+      const budgetBoost = Number(data?.budgetBoost || 0);
+      const deductibles = Number(data?.deductibles || 0);
+      const effectiveBudgetRaw = Number(data?.effectiveBudget);
+      const availableBudget = Number.isFinite(effectiveBudgetRaw)
+        ? effectiveBudgetRaw
+        : budget + budgetBoost - deductibles;
+
+      return { budget, budgetBoost, deductibles, availableBudget };
+    };
+
+    const getEventDateLocal = (eventData) => {
+      const raw = eventData?.lockoutAt || eventData?.startDate || eventData?.date || eventData?.dateFrom;
+      if (!raw) return null;
+      if (typeof raw.toDate === "function") return raw.toDate();
+      const parsed = new Date(raw);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const getAdminAssistedCurrentEvent = async () => {
+      const snap = await window.btccDb.collection("events").orderBy("eventNo").get();
+      const now = Date.now();
+      const events = snap.docs.map((doc) => {
+        const data = doc.data() || {};
+        const eventDate = getEventDateLocal(data);
+        const lockoutDate = data.lockoutAt && typeof data.lockoutAt.toDate === "function"
+          ? data.lockoutAt.toDate()
+          : (data.lockoutAt ? new Date(data.lockoutAt) : null);
+        const lockoutTime = lockoutDate && !Number.isNaN(lockoutDate.getTime()) ? lockoutDate.getTime() : null;
+        return {
+          id: doc.id,
+          data,
+          eventNo: Number(data.eventNo || 0),
+          venue: (data.venue || data.name || doc.id).toString(),
+          eventDate,
+          lockoutTime,
+        };
+      });
+
+      const liveEvent = events.find((ev) => ev.lockoutTime && now <= ev.lockoutTime);
+      const datedFuture = events.filter((ev) => ev.eventDate && ev.eventDate.getTime() >= now).sort((a, b) => a.eventDate - b.eventDate);
+      const fallback = events.slice().sort((a, b) => a.eventNo - b.eventNo).find((ev) => ev.eventNo) || events[0];
+      return liveEvent || datedFuture[0] || fallback || null;
+    };
+
+    const hasEngineRunForEvent = async (eventId) => {
+      if (!eventId) return false;
+      const snap = await window.btccDb
+        .collection("event_scores")
+        .doc(eventId)
+        .collection("players")
+        .limit(1)
+        .get();
+      return !snap.empty;
+    };
+
+    // --- End helpers ---
 
     if (!window.btccDb) {
       setMsg("Database not ready.");
@@ -1152,16 +1224,87 @@ const ADMIN_EMAILS = [
 
       if (!selectedUid) {
         setMsg("Select a player first.");
+        if (details) details.hidden = true;
         return;
       }
 
-      console.log("🟦 Authorised late submission selected:", {
-        selectedUid,
-        selectedName,
-        reason,
-      });
+      try {
+        loadBtn.disabled = true;
+        loadBtn.textContent = "Loading…";
+        setMsg("Loading player details…");
+        if (details) {
+          details.hidden = false;
+          details.innerHTML = `<div class="tiny muted">Loading…</div>`;
+        }
 
-      setMsg(`Selected ${selectedName}. Phase 1 only — no submission has been changed or saved.`);
+        const [playerSnap, currentEvent] = await Promise.all([
+          window.btccDb.collection("players").doc(selectedUid).get(),
+          getAdminAssistedCurrentEvent(),
+        ]);
+
+        if (!playerSnap.exists) {
+          setMsg("Player record not found.");
+          if (details) details.innerHTML = `<div class="tiny muted">Player record not found.</div>`;
+          return;
+        }
+
+        if (!currentEvent) {
+          setMsg("No event found.");
+          if (details) details.innerHTML = `<div class="tiny muted">No current event found.</div>`;
+          return;
+        }
+
+        const playerData = playerSnap.data() || {};
+        const budgetInfo = getBudgetSnapshotLocal(playerData);
+        const engineRun = await hasEngineRunForEvent(currentEvent.id);
+        const statusText = engineRun
+          ? "BLOCKED — engine has already run for this event."
+          : "Eligible — engine has not run for this event.";
+
+        if (details) {
+          details.hidden = false;
+          details.innerHTML = `
+            <div class="tiny muted" style="line-height:1.65;">
+              <strong style="color:var(--text);">Selected Player</strong><br>
+              Name: <strong style="color:var(--text);">${escapeLocal(playerData.displayName || selectedName || selectedUid)}</strong><br>
+              UID: <span style="color:var(--text);">${escapeLocal(selectedUid)}</span><br>
+              <br>
+              <strong style="color:var(--text);">Budget</strong><br>
+              Base Budget: ${fmtMoneyLocal(budgetInfo.budget)}<br>
+              Budget Boost: ${budgetInfo.budgetBoost >= 0 ? "+" : "-"}${fmtMoneyLocal(Math.abs(budgetInfo.budgetBoost))}<br>
+              Deductibles: -${fmtMoneyLocal(Math.abs(budgetInfo.deductibles))}<br>
+              Effective Budget: <strong style="color:var(--text);">${fmtMoneyLocal(budgetInfo.availableBudget)}</strong><br>
+              <br>
+              <strong style="color:var(--text);">Event</strong><br>
+              Event: <strong style="color:var(--text);">Event ${escapeLocal(currentEvent.eventNo || "?")} — ${escapeLocal(currentEvent.venue)}</strong><br>
+              Event ID: <span style="color:var(--text);">${escapeLocal(currentEvent.id)}</span><br>
+              Engine Status: <strong style="color:${engineRun ? "#f87171" : "#4ade80"};">${statusText}</strong><br>
+              <br>
+              Reason: ${reason ? escapeLocal(reason) : "—"}<br>
+              <br>
+              Phase 2 only — no submission has been changed or saved.
+            </div>
+          `;
+        }
+
+        console.log("🟦 Authorised late submission details loaded:", {
+          selectedUid,
+          selectedName,
+          reason,
+          currentEvent,
+          engineRun,
+          budgetInfo,
+        });
+
+        setMsg(engineRun ? "Blocked: engine already run." : "Player details loaded. Eligible for Phase 3 wiring.");
+      } catch (err) {
+        console.error("❌ load authorised late submission details failed:", err);
+        setMsg(err?.message || "Failed to load player details.");
+        if (details) details.innerHTML = `<div class="tiny muted">${escapeLocal(err?.message || "Failed to load player details.")}</div>`;
+      } finally {
+        loadBtn.disabled = false;
+        loadBtn.textContent = "Load Player Details";
+      }
     });
   }
 
