@@ -282,6 +282,8 @@ const ADMIN_EMAILS = [
             <button id="admin-assisted-load" class="tile" type="button">Load Player Details</button>
             <div id="admin-assisted-msg" class="tiny muted">Ready.</div>
             <div id="admin-assisted-details" class="note" style="margin-top:2px;" hidden></div>
+            <button id="admin-assisted-editor-load" class="tile" type="button" hidden>Load Read-Only Submission Editor</button>
+            <div id="admin-assisted-editor" class="note" style="margin-top:2px;" hidden></div>
           </div>
         </div>
       </div>
@@ -1105,8 +1107,12 @@ const ADMIN_EMAILS = [
     const playerSelect = root.querySelector("#admin-assisted-player");
     const reasonEl = root.querySelector("#admin-assisted-reason");
     const loadBtn = root.querySelector("#admin-assisted-load");
+    const editorLoadBtn = root.querySelector("#admin-assisted-editor-load");
     const msg = root.querySelector("#admin-assisted-msg");
     const details = root.querySelector("#admin-assisted-details");
+    const editor = root.querySelector("#admin-assisted-editor");
+
+    let lastAssistedContext = null;
 
     if (!playerSelect || !loadBtn) return;
 
@@ -1181,6 +1187,84 @@ const ADMIN_EMAILS = [
             .filter(Boolean)
         )
       );
+    };
+
+    const getDriverTierLabelLocal = (driverData) => {
+      return (driverData?.tier || driverData?.currentTier || driverData?.tierName || driverData?.tdaTier || "Unassigned").toString();
+    };
+
+    const getDriverValueLocal = (driverData) => {
+      const value = Number(driverData?.value ?? driverData?.price ?? driverData?.cost ?? 0);
+      return Number.isFinite(value) ? value : 0;
+    };
+
+    const renderReadOnlyAssistedEditor = () => {
+      if (!editor || !lastAssistedContext) return;
+
+      const {
+        currentEvent,
+        selectedUid,
+        playerData,
+        budgetInfo,
+        submissionData,
+        selectedDriverIds,
+        drivers,
+        reason,
+      } = lastAssistedContext;
+
+      const selectedSet = new Set(selectedDriverIds || []);
+      const sldDriverId = submissionData?.sldDriverId || playerData?.sldDriverId || "";
+
+      const rows = drivers
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((driver) => {
+          const checked = selectedSet.has(driver.id);
+          const isSld = sldDriverId && driver.id === sldDriverId;
+          const tier = getDriverTierLabelLocal(driver.data);
+          const value = getDriverValueLocal(driver.data);
+          return `
+            <label style="display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--border);">
+              <input type="checkbox" ${checked ? "checked" : ""} disabled style="margin-top:3px;" />
+              <span style="min-width:0; flex:1;">
+                <strong style="color:var(--text);">${escapeLocal(driver.name)}</strong>
+                ${isSld ? `<span class="pill" style="margin-left:6px;">SLD</span>` : ""}<br>
+                <span class="tiny muted">${escapeLocal(driver.id)} • ${escapeLocal(tier)} • ${fmtMoneyLocal(value)}</span>
+              </span>
+            </label>
+          `;
+        })
+        .join("");
+
+      const selectedCost = drivers.reduce((sum, driver) => {
+        if (!selectedSet.has(driver.id)) return sum;
+        return sum + getDriverValueLocal(driver.data);
+      }, 0);
+
+      editor.hidden = false;
+      editor.innerHTML = `
+        <div class="tiny muted" style="line-height:1.6;">
+          <strong style="color:var(--text);">Read-Only Submission Editor Check</strong><br>
+          This is a visual check only. No submission can be saved from this phase.<br>
+          <br>
+          Player: <strong style="color:var(--text);">${escapeLocal(playerData?.displayName || selectedUid)}</strong><br>
+          UID: <span style="color:var(--text);">${escapeLocal(selectedUid)}</span><br>
+          Event: <strong style="color:var(--text);">Event ${escapeLocal(currentEvent.eventNo || "?")} — ${escapeLocal(currentEvent.venue)}</strong><br>
+          Reason: ${reason ? escapeLocal(reason) : "—"}<br>
+          <br>
+          Effective Budget: <strong style="color:var(--text);">${fmtMoneyLocal(budgetInfo.availableBudget)}</strong><br>
+          Existing Submission Cost: <strong style="color:var(--text);">${fmtMoneyLocal(submissionData?.totalCost || selectedCost)}</strong><br>
+          Selected Drivers: <strong style="color:var(--text);">${selectedSet.size}</strong><br>
+          SLD Driver ID: <span style="color:var(--text);">${escapeLocal(sldDriverId || "—")}</span><br>
+          <br>
+          <strong style="color:var(--text);">Driver Checklist</strong>
+          <div style="margin-top:8px; max-height:420px; overflow:auto; border:1px solid var(--border); border-radius:12px; padding:4px 10px; background:rgba(255,255,255,.02);">
+            ${rows || `<div class="tiny muted">No drivers found.</div>`}
+          </div>
+          <br>
+          Phase 4 read-only — no submission has been changed or saved.
+        </div>
+      `;
     };
 
     // --- End helpers ---
@@ -1262,12 +1346,18 @@ const ADMIN_EMAILS = [
       if (!selectedEventId) {
         setMsg("Select an event first.");
         if (details) details.hidden = true;
+        if (editorLoadBtn) editorLoadBtn.hidden = true;
+        if (editor) editor.hidden = true;
+        lastAssistedContext = null;
         return;
       }
 
       if (!selectedUid) {
         setMsg("Select a player first.");
         if (details) details.hidden = true;
+        if (editorLoadBtn) editorLoadBtn.hidden = true;
+        if (editor) editor.hidden = true;
+        lastAssistedContext = null;
         return;
       }
 
@@ -1279,6 +1369,9 @@ const ADMIN_EMAILS = [
           details.hidden = false;
           details.innerHTML = `<div class="tiny muted">Loading…</div>`;
         }
+        if (editorLoadBtn) editorLoadBtn.hidden = true;
+        if (editor) editor.hidden = true;
+        lastAssistedContext = null;
 
         const [playerSnap, selectedEventSnap, submissionSnap, driversSnap] = await Promise.all([
           window.btccDb.collection("players").doc(selectedUid).get(),
@@ -1323,6 +1416,37 @@ const ADMIN_EMAILS = [
         const submissionUpdatedAt = submissionData?.updatedAt && typeof submissionData.updatedAt.toDate === "function"
           ? submissionData.updatedAt.toDate().toLocaleString("en-GB")
           : (submissionData?.updatedAt ? String(submissionData.updatedAt) : "—");
+
+        const drivers = driversSnap.docs
+          .map((doc) => {
+            const d = doc.data() || {};
+            return {
+              id: doc.id,
+              name: (d.name || doc.id).toString(),
+              active: d.active !== false,
+              data: d,
+            };
+          })
+          .filter((driver) => driver.active);
+
+        lastAssistedContext = {
+          selectedUid,
+          selectedName,
+          reason,
+          currentEvent,
+          playerData,
+          budgetInfo,
+          engineRun,
+          submissionData,
+          selectedDriverIds,
+          drivers,
+        };
+
+        if (editorLoadBtn) {
+          editorLoadBtn.hidden = engineRun;
+          editorLoadBtn.disabled = engineRun;
+          editorLoadBtn.textContent = "Load Read-Only Submission Editor";
+        }
 
         if (details) {
           details.hidden = false;
@@ -1387,6 +1511,22 @@ const ADMIN_EMAILS = [
         loadBtn.disabled = false;
         loadBtn.textContent = "Load Player Details";
       }
+    });
+
+    editorLoadBtn?.addEventListener("click", () => {
+      if (!lastAssistedContext) {
+        setMsg("Load player details first.");
+        return;
+      }
+
+      if (lastAssistedContext.engineRun) {
+        setMsg("Blocked: engine already run.");
+        if (editor) editor.hidden = true;
+        return;
+      }
+
+      renderReadOnlyAssistedEditor();
+      setMsg("Read-only submission editor loaded. No changes can be saved from this phase.");
     });
   }
 
