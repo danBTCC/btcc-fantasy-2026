@@ -253,6 +253,33 @@ const ADMIN_EMAILS = [
       </div>
 
       <div class="card" style="margin-top:12px;">
+        <button type="button" class="admin-collapse-toggle" data-target="admin-assisted-submit-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Authorised Late Submission</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-assisted-submit-body" hidden style="margin-top:10px;">
+          <div class="note warnNote">
+            Only use if the player contacted you before lockout. This tool must never be used after the engine has run.
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <label class="tiny muted">Player</label>
+            <select id="admin-assisted-player"
+              style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+              <option value="">Loading players…</option>
+            </select>
+
+            <label class="tiny muted">Reason</label>
+            <textarea id="admin-assisted-reason" rows="2" placeholder="Player messaged before lockout..."
+              style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
+
+            <button id="admin-assisted-load" class="tile" type="button">Load Player Submission</button>
+            <div id="admin-assisted-msg" class="tiny muted">Ready.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
         <button type="button" class="admin-collapse-toggle" data-target="admin-player-manager-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
           <h2 style="margin:0;">Player Manager</h2>
           <span class="tiny muted" data-chevron>▸</span>
@@ -438,6 +465,7 @@ const ADMIN_EMAILS = [
     loadAdminMathsSummary(root);
     setupAdminStarDrivers(root);
     loadAdminSubmissionTracker(root);
+    setupAdminAssistedSubmission(root);
     setupAdminPlayerManager(root);
     setupAdminDriverManager(root);
     setupAdminPitStop(root);
@@ -1063,6 +1091,78 @@ const ADMIN_EMAILS = [
       if (msg) msg.textContent = err?.message || "Failed to load submission tracker.";
       mount.innerHTML = `<div class="note warnNote">Failed to load submission tracker.</div>`;
     }
+  }
+
+  async function setupAdminAssistedSubmission(root) {
+    const playerSelect = root.querySelector("#admin-assisted-player");
+    const reasonEl = root.querySelector("#admin-assisted-reason");
+    const loadBtn = root.querySelector("#admin-assisted-load");
+    const msg = root.querySelector("#admin-assisted-msg");
+
+    if (!playerSelect || !loadBtn) return;
+
+    const setMsg = (text) => {
+      if (msg) msg.textContent = text;
+    };
+
+    if (!window.btccDb) {
+      setMsg("Database not ready.");
+      return;
+    }
+
+    try {
+      setMsg("Loading players…");
+      const playersSnap = await window.btccDb.collection("players").get();
+
+      const players = playersSnap.docs
+        .map((doc) => {
+          const d = doc.data() || {};
+          return {
+            uid: doc.id,
+            displayName: (d.displayName || d.name || doc.id).toString(),
+            active: d.active !== false,
+          };
+        })
+        .filter((player) => player.active)
+        .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+      if (!players.length) {
+        playerSelect.innerHTML = `<option value="">No active players found</option>`;
+        setMsg("No active players found.");
+        return;
+      }
+
+      playerSelect.innerHTML = [
+        `<option value="">Select player…</option>`,
+        ...players.map((player) => `<option value="${player.uid}">${player.displayName}</option>`),
+      ].join("");
+
+      setMsg("Ready.");
+    } catch (err) {
+      console.error("❌ setupAdminAssistedSubmission failed:", err);
+      playerSelect.innerHTML = `<option value="">Failed to load players</option>`;
+      setMsg(err?.message || "Failed to load players.");
+      return;
+    }
+
+    loadBtn.addEventListener("click", async () => {
+      const selectedUid = playerSelect.value;
+      const selectedName = playerSelect.options[playerSelect.selectedIndex]?.textContent || "";
+      const reason = (reasonEl?.value || "").trim();
+
+      if (!selectedUid) {
+        setMsg("Select a player first.");
+        return;
+      }
+
+      console.log("🟦 Authorised late submission selected:", {
+        selectedUid,
+        selectedName,
+        reason,
+      });
+
+      setMsg(`Selected ${selectedName}. Phase 1 only — no submission has been changed or saved.`);
+    });
   }
 
   function setupAdminRaceStandingsRebuild(root) {
