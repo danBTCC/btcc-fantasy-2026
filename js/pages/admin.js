@@ -1157,6 +1157,32 @@ const ADMIN_EMAILS = [
       return !snap.empty;
     };
 
+    const normaliseSubmissionDriverIdsLocal = (data) => {
+      if (!data || typeof data !== "object") return [];
+      const candidates = [
+        data.driverIds,
+        data.teamIds,
+        data.team,
+        data.drivers,
+        data.selectedDrivers,
+        data.picks,
+        data.selection,
+      ];
+      const arr = candidates.find((x) => Array.isArray(x)) || [];
+      return Array.from(
+        new Set(
+          arr
+            .map((item) => {
+              if (!item) return null;
+              if (typeof item === "string") return item;
+              if (typeof item === "object") return item.driverId || item.id || item.ref || null;
+              return null;
+            })
+            .filter(Boolean)
+        )
+      );
+    };
+
     // --- End helpers ---
 
     if (!window.btccDb) {
@@ -1254,9 +1280,11 @@ const ADMIN_EMAILS = [
           details.innerHTML = `<div class="tiny muted">Loading…</div>`;
         }
 
-        const [playerSnap, selectedEventSnap] = await Promise.all([
+        const [playerSnap, selectedEventSnap, submissionSnap, driversSnap] = await Promise.all([
           window.btccDb.collection("players").doc(selectedUid).get(),
           window.btccDb.collection("events").doc(selectedEventId).get(),
+          window.btccDb.collection("submissions").doc(selectedEventId).collection("entries").doc(selectedUid).get(),
+          window.btccDb.collection("drivers").get(),
         ]);
 
         const currentEvent = {
@@ -1271,13 +1299,30 @@ const ADMIN_EMAILS = [
           return;
         }
 
-
         const playerData = playerSnap.data() || {};
         const budgetInfo = getBudgetSnapshotLocal(playerData);
         const engineRun = await hasEngineRunForEvent(currentEvent.id);
         const statusText = engineRun
           ? "BLOCKED — engine has already run for this event."
           : "Eligible — engine has not run for this event.";
+
+        const submissionData = submissionSnap.exists ? (submissionSnap.data() || {}) : null;
+        const selectedDriverIds = normaliseSubmissionDriverIdsLocal(submissionData);
+        const driverNames = new Map();
+        driversSnap.forEach((doc) => {
+          const d = doc.data() || {};
+          driverNames.set(doc.id, d.name || doc.id);
+        });
+        const selectedDriverRows = selectedDriverIds.map((driverId) => {
+          const name = driverNames.get(driverId) || driverId;
+          return `<li><strong style="color:var(--text);">${escapeLocal(name)}</strong> <span class="tiny muted">(${escapeLocal(driverId)})</span></li>`;
+        }).join("");
+        const submissionCreatedAt = submissionData?.createdAt && typeof submissionData.createdAt.toDate === "function"
+          ? submissionData.createdAt.toDate().toLocaleString("en-GB")
+          : (submissionData?.createdAt ? String(submissionData.createdAt) : "—");
+        const submissionUpdatedAt = submissionData?.updatedAt && typeof submissionData.updatedAt.toDate === "function"
+          ? submissionData.updatedAt.toDate().toLocaleString("en-GB")
+          : (submissionData?.updatedAt ? String(submissionData.updatedAt) : "—");
 
         if (details) {
           details.hidden = false;
@@ -1300,7 +1345,24 @@ const ADMIN_EMAILS = [
               <br>
               Reason: ${reason ? escapeLocal(reason) : "—"}<br>
               <br>
-              Phase 2 only — no submission has been changed or saved.
+              <strong style="color:var(--text);">Existing Submission</strong><br>
+              Path: <span style="color:var(--text);">submissions/${escapeLocal(currentEvent.id)}/entries/${escapeLocal(selectedUid)}</span><br>
+              Status: <strong style="color:var(--text);">${submissionSnap.exists ? "Existing submission found" : "No submission found"}</strong><br>
+              ${submissionSnap.exists ? `
+                Driver Count: <strong style="color:var(--text);">${selectedDriverIds.length}</strong><br>
+                SLD Driver ID: <span style="color:var(--text);">${escapeLocal(submissionData?.sldDriverId || "—")}</span><br>
+                Total Cost: <strong style="color:var(--text);">${fmtMoneyLocal(submissionData?.totalCost || 0)}</strong><br>
+                Budget Available on Submission: <strong style="color:var(--text);">${fmtMoneyLocal(submissionData?.budgetAvailable || 0)}</strong><br>
+                Budget Remaining on Submission: <strong style="color:var(--text);">${fmtMoneyLocal(submissionData?.budgetRemaining || 0)}</strong><br>
+                Created: ${escapeLocal(submissionCreatedAt)}<br>
+                Updated: ${escapeLocal(submissionUpdatedAt)}<br>
+                Admin Submitted: <strong style="color:var(--text);">${submissionData?.submittedByAdmin === true ? "Yes" : "No"}</strong><br>
+                Authorised Late: <strong style="color:var(--text);">${submissionData?.authorisedLate === true ? "Yes" : "No"}</strong><br>
+                <div style="margin-top:6px;">Drivers:</div>
+                <ol style="margin:4px 0 0 18px; padding:0;">${selectedDriverRows || `<li>No driver IDs found</li>`}</ol>
+              ` : ""}
+              <br>
+              Phase 3 read-only — no submission has been changed or saved.
             </div>
           `;
         }
@@ -1311,10 +1373,12 @@ const ADMIN_EMAILS = [
           reason,
           currentEvent,
           engineRun,
+          submissionExists: submissionSnap.exists,
+          selectedDriverIds,
           budgetInfo,
         });
 
-        setMsg(engineRun ? "Blocked: engine already run." : "Player details loaded. Eligible for Phase 3 wiring.");
+        setMsg(engineRun ? "Blocked: engine already run." : "Player and submission details loaded. Read-only check complete.");
       } catch (err) {
         console.error("❌ load authorised late submission details failed:", err);
         setMsg(err?.message || "Failed to load player details.");
