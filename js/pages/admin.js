@@ -263,6 +263,12 @@ const ADMIN_EMAILS = [
           </div>
 
           <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <label class="tiny muted">Event</label>
+            <select id="admin-assisted-event"
+              style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+              <option value="">Loading events…</option>
+            </select>
+
             <label class="tiny muted">Player</label>
             <select id="admin-assisted-player"
               style="padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
@@ -1095,6 +1101,7 @@ const ADMIN_EMAILS = [
   }
 
   async function setupAdminAssistedSubmission(root) {
+    const eventSelect = root.querySelector("#admin-assisted-event");
     const playerSelect = root.querySelector("#admin-assisted-player");
     const reasonEl = root.querySelector("#admin-assisted-reason");
     const loadBtn = root.querySelector("#admin-assisted-load");
@@ -1138,31 +1145,6 @@ const ADMIN_EMAILS = [
       return Number.isNaN(parsed.getTime()) ? null : parsed;
     };
 
-    const getAdminAssistedCurrentEvent = async () => {
-      const snap = await window.btccDb.collection("events").orderBy("eventNo").get();
-      const now = Date.now();
-      const events = snap.docs.map((doc) => {
-        const data = doc.data() || {};
-        const eventDate = getEventDateLocal(data);
-        const lockoutDate = data.lockoutAt && typeof data.lockoutAt.toDate === "function"
-          ? data.lockoutAt.toDate()
-          : (data.lockoutAt ? new Date(data.lockoutAt) : null);
-        const lockoutTime = lockoutDate && !Number.isNaN(lockoutDate.getTime()) ? lockoutDate.getTime() : null;
-        return {
-          id: doc.id,
-          data,
-          eventNo: Number(data.eventNo || 0),
-          venue: (data.venue || data.name || doc.id).toString(),
-          eventDate,
-          lockoutTime,
-        };
-      });
-
-      const liveEvent = events.find((ev) => ev.lockoutTime && now <= ev.lockoutTime);
-      const datedFuture = events.filter((ev) => ev.eventDate && ev.eventDate.getTime() >= now).sort((a, b) => a.eventDate - b.eventDate);
-      const fallback = events.slice().sort((a, b) => a.eventNo - b.eventNo).find((ev) => ev.eventNo) || events[0];
-      return liveEvent || datedFuture[0] || fallback || null;
-    };
 
     const hasEngineRunForEvent = async (eventId) => {
       if (!eventId) return false;
@@ -1183,8 +1165,33 @@ const ADMIN_EMAILS = [
     }
 
     try {
-      setMsg("Loading players…");
-      const playersSnap = await window.btccDb.collection("players").get();
+      setMsg("Loading events and players…");
+      const [eventsSnap, playersSnap] = await Promise.all([
+        window.btccDb.collection("events").orderBy("eventNo").get(),
+        window.btccDb.collection("players").get(),
+      ]);
+
+      const events = eventsSnap.docs
+        .map((doc) => {
+          const d = doc.data() || {};
+          const eventNo = Number(d.eventNo || 0);
+          const venue = (d.venue || d.name || doc.id).toString();
+          return { id: doc.id, eventNo, venue, label: eventNo ? `Event ${eventNo} — ${venue}` : venue };
+        })
+        .filter((event) => event.eventNo >= 1 && event.eventNo <= 10)
+        .sort((a, b) => a.eventNo - b.eventNo);
+
+      if (eventSelect) {
+        if (!events.length) {
+          eventSelect.innerHTML = `<option value="">No events found</option>`;
+        } else {
+          const preferredEvent = events.find((event) => event.eventNo === 3) || events.find((event) => event.eventNo === 4) || events[0];
+          eventSelect.innerHTML = events.map((event) => {
+            const selected = event.id === preferredEvent.id ? " selected" : "";
+            return `<option value="${event.id}" data-event-no="${event.eventNo}" data-venue="${escapeLocal(event.venue)}"${selected}>${escapeLocal(event.label)}</option>`;
+          }).join("");
+        }
+      }
 
       const players = playersSnap.docs
         .map((doc) => {
@@ -1218,9 +1225,19 @@ const ADMIN_EMAILS = [
     }
 
     loadBtn.addEventListener("click", async () => {
+      const selectedEventId = eventSelect?.value || "";
+      const selectedEventOption = eventSelect?.options[eventSelect.selectedIndex];
+      const selectedEventNo = Number(selectedEventOption?.dataset?.eventNo || 0);
+      const selectedEventVenue = selectedEventOption?.dataset?.venue || selectedEventOption?.textContent || "";
       const selectedUid = playerSelect.value;
       const selectedName = playerSelect.options[playerSelect.selectedIndex]?.textContent || "";
       const reason = (reasonEl?.value || "").trim();
+
+      if (!selectedEventId) {
+        setMsg("Select an event first.");
+        if (details) details.hidden = true;
+        return;
+      }
 
       if (!selectedUid) {
         setMsg("Select a player first.");
@@ -1237,10 +1254,16 @@ const ADMIN_EMAILS = [
           details.innerHTML = `<div class="tiny muted">Loading…</div>`;
         }
 
-        const [playerSnap, currentEvent] = await Promise.all([
+        const [playerSnap, selectedEventSnap] = await Promise.all([
           window.btccDb.collection("players").doc(selectedUid).get(),
-          getAdminAssistedCurrentEvent(),
+          window.btccDb.collection("events").doc(selectedEventId).get(),
         ]);
+
+        const currentEvent = {
+          id: selectedEventId,
+          eventNo: selectedEventSnap.exists ? Number(selectedEventSnap.data()?.eventNo || selectedEventNo || 0) : selectedEventNo,
+          venue: selectedEventSnap.exists ? (selectedEventSnap.data()?.venue || selectedEventSnap.data()?.name || selectedEventVenue || selectedEventId).toString() : selectedEventVenue,
+        };
 
         if (!playerSnap.exists) {
           setMsg("Player record not found.");
@@ -1248,11 +1271,6 @@ const ADMIN_EMAILS = [
           return;
         }
 
-        if (!currentEvent) {
-          setMsg("No event found.");
-          if (details) details.innerHTML = `<div class="tiny muted">No current event found.</div>`;
-          return;
-        }
 
         const playerData = playerSnap.data() || {};
         const budgetInfo = getBudgetSnapshotLocal(playerData);
