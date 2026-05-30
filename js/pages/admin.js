@@ -1193,9 +1193,36 @@ const ADMIN_EMAILS = [
       return (driverData?.tier || driverData?.currentTier || driverData?.tierName || driverData?.tdaTier || "Unassigned").toString();
     };
 
+    const roundMoneyLocal = (value) => Math.round(Number(value || 0) * 100) / 100;
+
     const getDriverValueLocal = (driverData) => {
       const value = Number(driverData?.value ?? driverData?.price ?? driverData?.cost ?? 0);
       return Number.isFinite(value) ? value : 0;
+    };
+
+    const getAdjustedDriverValueLocal = (driverId, driverData, eventData) => {
+      const baseValue = getDriverValueLocal(driverData);
+      const underdogId = (eventData?.starDriverAId || eventData?.starDriverA || "").toString();
+      const formId = (eventData?.starDriverBId || eventData?.starDriverB || "").toString();
+
+      if (underdogId && driverId === underdogId) {
+        return roundMoneyLocal(baseValue * 0.8);
+      }
+
+      if (formId && driverId === formId) {
+        return roundMoneyLocal(baseValue * 1.05);
+      }
+
+      return roundMoneyLocal(baseValue);
+    };
+
+    const getStarPillLocal = (driverId, eventData) => {
+      const underdogId = (eventData?.starDriverAId || eventData?.starDriverA || "").toString();
+      const formId = (eventData?.starDriverBId || eventData?.starDriverB || "").toString();
+
+      if (underdogId && driverId === underdogId) return "Underdog -20%";
+      if (formId && driverId === formId) return "Form +5%";
+      return "";
     };
 
     const renderReadOnlyAssistedEditor = () => {
@@ -1214,6 +1241,7 @@ const ADMIN_EMAILS = [
 
       const selectedSet = new Set(selectedDriverIds || []);
       const sldDriverId = submissionData?.sldDriverId || playerData?.sldDriverId || "";
+      const eventData = currentEvent?.data || {};
 
       const rows = drivers
         .slice()
@@ -1222,14 +1250,16 @@ const ADMIN_EMAILS = [
           const checked = selectedSet.has(driver.id);
           const isSld = sldDriverId && driver.id === sldDriverId;
           const tier = getDriverTierLabelLocal(driver.data);
-          const value = getDriverValueLocal(driver.data);
+          const baseValue = getDriverValueLocal(driver.data);
+          const adjustedValue = getAdjustedDriverValueLocal(driver.id, driver.data, eventData);
+          const starPill = getStarPillLocal(driver.id, eventData);
           return `
             <label style="display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--border);">
               <input type="checkbox" ${checked ? "checked" : ""} disabled style="margin-top:3px;" />
               <span style="min-width:0; flex:1;">
                 <strong style="color:var(--text);">${escapeLocal(driver.name)}</strong>
-                ${isSld ? `<span class="pill" style="margin-left:6px;">SLD</span>` : ""}<br>
-                <span class="tiny muted">${escapeLocal(driver.id)} • ${escapeLocal(tier)} • ${fmtMoneyLocal(value)}</span>
+                ${isSld ? `<span class="pill" style="margin-left:6px;">SLD</span>` : ""}${starPill ? `<span class="pill" style="margin-left:6px;">${escapeLocal(starPill)}</span>` : ""}<br>
+                <span class="tiny muted">${escapeLocal(driver.id)} • ${escapeLocal(tier)} • Price ${fmtMoneyLocal(adjustedValue)}${adjustedValue !== baseValue ? ` (base ${fmtMoneyLocal(baseValue)})` : ""}</span>
               </span>
             </label>
           `;
@@ -1238,7 +1268,7 @@ const ADMIN_EMAILS = [
 
       const selectedCost = drivers.reduce((sum, driver) => {
         if (!selectedSet.has(driver.id)) return sum;
-        return sum + getDriverValueLocal(driver.data);
+        return sum + getAdjustedDriverValueLocal(driver.id, driver.data, eventData);
       }, 0);
 
       editor.hidden = false;
@@ -1380,10 +1410,12 @@ const ADMIN_EMAILS = [
           window.btccDb.collection("drivers").get(),
         ]);
 
+        const selectedEventData = selectedEventSnap.exists ? (selectedEventSnap.data() || {}) : {};
         const currentEvent = {
           id: selectedEventId,
-          eventNo: selectedEventSnap.exists ? Number(selectedEventSnap.data()?.eventNo || selectedEventNo || 0) : selectedEventNo,
-          venue: selectedEventSnap.exists ? (selectedEventSnap.data()?.venue || selectedEventSnap.data()?.name || selectedEventVenue || selectedEventId).toString() : selectedEventVenue,
+          data: selectedEventData,
+          eventNo: selectedEventSnap.exists ? Number(selectedEventData.eventNo || selectedEventNo || 0) : selectedEventNo,
+          venue: selectedEventSnap.exists ? (selectedEventData.venue || selectedEventData.name || selectedEventVenue || selectedEventId).toString() : selectedEventVenue,
         };
 
         if (!playerSnap.exists) {
