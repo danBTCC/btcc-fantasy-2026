@@ -275,8 +275,8 @@
                 <tr>
                   <th style="text-align:left; padding:6px;">Pos</th>
                   <th style="text-align:left; padding:6px;">Player</th>
-                  <th style="text-align:center; padding:6px;">Move</th>
                   <th style="text-align:right; padding:6px;">Points</th>
+                  <th style="text-align:center; padding:6px;">Move</th>
                 </tr>
               </thead>
               <tbody>
@@ -287,8 +287,8 @@
                       <tr>
                         <td style="padding:6px;">${idx + 1}</td>
                         <td style="padding:6px;">${d.displayName || "Unnamed"}</td>
-                        <td style="padding:6px; text-align:center;">${getMovementHtml(idx + 1, d.previousPosition)}</td>
                         <td style="padding:6px; text-align:right;"><span class="standings-points-pill">${d.pointsTotal ?? d.points ?? 0}</span></td>
+                        <td style="padding:6px; text-align:center;">${getMovementHtml(idx + 1, d.previousPosition)}</td>
                       </tr>
                     `;
                   })
