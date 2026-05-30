@@ -1289,12 +1289,14 @@ const ADMIN_EMAILS = [
       const sldDriverId = submissionData?.sldDriverId || playerData?.sldDriverId || "";
       const eventData = currentEvent?.data || {};
 
-      const activeDriverCount = drivers.length;
-      const ppv = typeof window.getPpvForActiveDriverCount === "function"
-        ? Number(window.getPpvForActiveDriverCount(activeDriverCount) || 0)
-        : 0;
+      const PPV_2026_ADMIN = 930;
       const tdv = drivers.reduce((sum, driver) => sum + getDriverValueLocal(driver.data), 0);
-      const vv = tdv > 0 ? ppv / tdv : 0;
+      const calculateExpectedPointsLocal = (baseValue) => {
+        const safeValue = Number(baseValue || 0);
+        const safeTdv = Number(tdv || 0);
+        if (safeValue <= 0 || safeTdv <= 0) return 0;
+        return Math.round((PPV_2026_ADMIN / safeTdv) * safeValue);
+      };
 
       const rows = drivers
         .slice()
@@ -1306,7 +1308,7 @@ const ADMIN_EMAILS = [
           const baseValue = getDriverValueLocal(driver.data);
           const adjustedValue = getAdjustedDriverValueLocal(driver.id, driver.data, eventData);
           const starPill = getStarPillLocal(driver.id, eventData);
-          const ep = vv > 0 ? Math.round(adjustedValue * vv) : getDriverEpLocal(driver.data);
+          const ep = calculateExpectedPointsLocal(baseValue) || getDriverEpLocal(driver.data);
           const usageCount = Number(usageMap?.get(driver.id) || 0);
           return `
             <label style="display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--border);">
