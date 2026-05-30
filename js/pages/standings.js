@@ -85,6 +85,20 @@
           box-shadow: inset 0 0 0 1px rgba(96,165,250,.28);
           text-align: center;
         }
+        .standings-move {
+          display:inline-block;
+          min-width:42px;
+          font-weight:800;
+        }
+        .standings-move.up {
+          color:#4ade80;
+        }
+        .standings-move.down {
+          color:#f87171;
+        }
+        .standings-move.same {
+          color:rgba(255,255,255,.55);
+        }
       `;
       document.head.appendChild(style);
     }
@@ -119,6 +133,25 @@
             </tbody>
           </table>
         `;
+      };
+
+      // Helper for movement arrows/cells in standings
+      const getMovementHtml = (currentPos, previousPos) => {
+        if (previousPos == null || previousPos === "") {
+          return '<span class="standings-move same">-</span>';
+        }
+      
+        const change = Number(previousPos) - Number(currentPos);
+      
+        if (change > 0) {
+          return `<span class="standings-move up">↑ ${change}</span>`;
+        }
+      
+        if (change < 0) {
+          return `<span class="standings-move down">↓ ${Math.abs(change)}</span>`;
+        }
+      
+        return '<span class="standings-move same">-</span>';
       };
 
       const readSortedPointsDocs = async (colRef) => {
@@ -242,6 +275,7 @@
                 <tr>
                   <th style="text-align:left; padding:6px;">Pos</th>
                   <th style="text-align:left; padding:6px;">Player</th>
+                  <th style="text-align:center; padding:6px;">Move</th>
                   <th style="text-align:right; padding:6px;">Points</th>
                 </tr>
               </thead>
@@ -253,6 +287,7 @@
                       <tr>
                         <td style="padding:6px;">${idx + 1}</td>
                         <td style="padding:6px;">${d.displayName || "Unnamed"}</td>
+                        <td style="padding:6px; text-align:center;">${getMovementHtml(idx + 1, d.previousPosition)}</td>
                         <td style="padding:6px; text-align:right;"><span class="standings-points-pill">${d.pointsTotal ?? d.points ?? 0}</span></td>
                       </tr>
                     `;
