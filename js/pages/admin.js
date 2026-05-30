@@ -1200,8 +1200,13 @@ const ADMIN_EMAILS = [
       return Number.isFinite(value) ? value : 0;
     };
 
-    const getAdjustedDriverValueLocal = (driverId, driverData, eventData) => {
+    const getAdjustedDriverValueLocal = (driverId, driverData, eventData, sldDriverId = "") => {
       const baseValue = getDriverValueLocal(driverData);
+
+      if (sldDriverId && driverId === sldDriverId) {
+        return roundMoneyLocal(baseValue * 1.10);
+      }
+
       const underdogId = (eventData?.starDriverAId || eventData?.starDriverA || "").toString();
       const formId = (eventData?.starDriverBId || eventData?.starDriverB || "").toString();
 
@@ -1306,7 +1311,7 @@ const ADMIN_EMAILS = [
           const isSld = sldDriverId && driver.id === sldDriverId;
           const tier = getDriverTierLabelLocal(driver.data);
           const baseValue = getDriverValueLocal(driver.data);
-          const adjustedValue = getAdjustedDriverValueLocal(driver.id, driver.data, eventData);
+          const adjustedValue = getAdjustedDriverValueLocal(driver.id, driver.data, eventData, sldDriverId);
           const starPill = getStarPillLocal(driver.id, eventData);
           const ep = calculateExpectedPointsLocal(baseValue) || getDriverEpLocal(driver.data);
           const usageCount = Number(usageMap?.get(driver.id) || 0);
@@ -1325,7 +1330,7 @@ const ADMIN_EMAILS = [
 
       const selectedCost = drivers.reduce((sum, driver) => {
         if (!selectedSet.has(driver.id)) return sum;
-        return sum + getAdjustedDriverValueLocal(driver.id, driver.data, eventData);
+        return sum + getAdjustedDriverValueLocal(driver.id, driver.data, eventData, sldDriverId);
       }, 0);
 
       editor.hidden = false;
