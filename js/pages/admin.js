@@ -1294,6 +1294,10 @@ const ADMIN_EMAILS = [
       const sldDriverId = submissionData?.sldDriverId || playerData?.sldDriverId || "";
       const eventData = currentEvent?.data || {};
 
+      if (sldDriverId) {
+        selectedSet.add(sldDriverId);
+      }
+
       const PPV_2026_ADMIN = 930;
       const tdv = drivers.reduce((sum, driver) => sum + getDriverValueLocal(driver.data), 0);
       const calculateExpectedPointsLocal = (baseValue) => {
@@ -1301,6 +1305,63 @@ const ADMIN_EMAILS = [
         const safeTdv = Number(tdv || 0);
         if (safeValue <= 0 || safeTdv <= 0) return 0;
         return Math.round((PPV_2026_ADMIN / safeTdv) * safeValue);
+      };
+
+      const getDriverById = (driverId) => drivers.find((driver) => driver.id === driverId) || null;
+
+      const calculateSelectedCost = () => {
+        return Array.from(selectedSet).reduce((sum, driverId) => {
+          const driver = getDriverById(driverId);
+          if (!driver) return sum;
+          return sum + getAdjustedDriverValueLocal(driver.id, driver.data, eventData, sldDriverId);
+        }, 0);
+      };
+
+      const getValidationMessages = () => {
+        const messages = [];
+        const count = selectedSet.size;
+        const totalCost = calculateSelectedCost();
+
+        if (count < 3) messages.push("Select at least 3 drivers.");
+        if (count > 6) messages.push("Maximum 6 drivers allowed.");
+        if (totalCost > Number(budgetInfo.availableBudget || 0)) {
+          messages.push(`Over budget by ${fmtMoneyLocal(totalCost - Number(budgetInfo.availableBudget || 0))}.`);
+        }
+
+        selectedSet.forEach((driverId) => {
+          const isSld = sldDriverId && driverId === sldDriverId;
+          const usageCount = Number(usageMap?.get(driverId) || 0);
+          const driver = getDriverById(driverId);
+          if (usageCount >= 2 && !isSld) {
+            messages.push(`${driver?.name || driverId} is blocked due to 2/2 usage.`);
+          }
+        });
+
+        return messages;
+      };
+
+      const renderSummary = () => {
+        const summary = editor.querySelector("#admin-assisted-editor-summary");
+        const validation = editor.querySelector("#admin-assisted-editor-validation");
+        if (!summary || !validation) return;
+
+        const totalCost = calculateSelectedCost();
+        const remaining = Number(budgetInfo.availableBudget || 0) - totalCost;
+        const messages = getValidationMessages();
+
+        summary.innerHTML = `
+          <div class="tiny muted" style="line-height:1.65;">
+            Effective Budget: <strong style="color:var(--text);">${fmtMoneyLocal(budgetInfo.availableBudget)}</strong><br>
+            Selected Cost: <strong style="color:var(--text);">${fmtMoneyLocal(totalCost)}</strong><br>
+            Remaining: <strong style="color:${remaining < 0 ? "#f87171" : "var(--text)"};">${fmtMoneyLocal(remaining)}</strong><br>
+            Selected Drivers: <strong style="color:var(--text);">${selectedSet.size}</strong><br>
+            SLD Driver ID: <span style="color:var(--text);">${escapeLocal(sldDriverId || "—")}</span>
+          </div>
+        `;
+
+        validation.innerHTML = messages.length
+          ? `<div class="note warnNote" style="margin-top:8px;">${messages.map((m) => `• ${escapeLocal(m)}`).join("<br>")}</div>`
+          : `<div class="note" style="margin-top:8px;">Validation OK. Phase 5A only — no submission can be saved yet.</div>`;
       };
 
       const rows = drivers
@@ -1315,12 +1376,14 @@ const ADMIN_EMAILS = [
           const starPill = getStarPillLocal(driver.id, eventData);
           const ep = calculateExpectedPointsLocal(baseValue) || getDriverEpLocal(driver.data);
           const usageCount = Number(usageMap?.get(driver.id) || 0);
+          const blockedByUsage = usageCount >= 2 && !isSld;
+          const disabled = isSld || (blockedByUsage && !checked);
           return `
-            <label style="display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--border);">
-              <input type="checkbox" ${checked ? "checked" : ""} disabled style="margin-top:3px;" />
+            <label style="display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--border); opacity:${disabled && !checked ? ".6" : "1"};">
+              <input class="admin-assisted-driver-check" type="checkbox" data-driver-id="${escapeLocal(driver.id)}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""} style="margin-top:3px;" />
               <span style="min-width:0; flex:1;">
                 <strong style="color:var(--text);">${escapeLocal(driver.name)}</strong>
-                ${isSld ? `<span class="pill" style="margin-left:6px;">SLD</span>` : ""}${starPill ? `<span class="pill" style="margin-left:6px;">${escapeLocal(starPill)}</span>` : ""}${usageCount >= 2 && !isSld ? `<span class="pill" style="margin-left:6px;">Blocked next event</span>` : ""}<br>
+                ${isSld ? `<span class="pill" style="margin-left:6px;">SLD locked</span>` : ""}${starPill ? `<span class="pill" style="margin-left:6px;">${escapeLocal(starPill)}</span>` : ""}${blockedByUsage ? `<span class="pill" style="margin-left:6px;">Blocked next event</span>` : ""}<br>
                 <span class="tiny muted">${escapeLocal(driver.id)} • ${escapeLocal(tier)} • Price ${fmtMoneyLocal(adjustedValue)}${adjustedValue !== baseValue ? ` (base ${fmtMoneyLocal(baseValue)})` : ""} • EP: ${ep} • Usage: ${usageCount}/2</span>
               </span>
             </label>
@@ -1328,35 +1391,40 @@ const ADMIN_EMAILS = [
         })
         .join("");
 
-      const selectedCost = drivers.reduce((sum, driver) => {
-        if (!selectedSet.has(driver.id)) return sum;
-        return sum + getAdjustedDriverValueLocal(driver.id, driver.data, eventData, sldDriverId);
-      }, 0);
-
       editor.hidden = false;
       editor.innerHTML = `
         <div class="tiny muted" style="line-height:1.6;">
-          <strong style="color:var(--text);">Read-Only Submission Editor Check</strong><br>
-          This is a visual check only. No submission can be saved from this phase.<br>
+          <strong style="color:var(--text);">Editable Submission Editor Check</strong><br>
+          You can tick/untick drivers to test validation. No submission can be saved from this phase.<br>
           <br>
           Player: <strong style="color:var(--text);">${escapeLocal(playerData?.displayName || selectedUid)}</strong><br>
           UID: <span style="color:var(--text);">${escapeLocal(selectedUid)}</span><br>
           Event: <strong style="color:var(--text);">Event ${escapeLocal(currentEvent.eventNo || "?")} — ${escapeLocal(currentEvent.venue)}</strong><br>
           Reason: ${reason ? escapeLocal(reason) : "—"}<br>
           <br>
-          Effective Budget: <strong style="color:var(--text);">${fmtMoneyLocal(budgetInfo.availableBudget)}</strong><br>
-          Existing Submission Cost: <strong style="color:var(--text);">${fmtMoneyLocal(submissionData?.totalCost || selectedCost)}</strong><br>
-          Selected Drivers: <strong style="color:var(--text);">${selectedSet.size}</strong><br>
-          SLD Driver ID: <span style="color:var(--text);">${escapeLocal(sldDriverId || "—")}</span><br>
+          <div id="admin-assisted-editor-summary"></div>
+          <div id="admin-assisted-editor-validation"></div>
           <br>
           <strong style="color:var(--text);">Driver Checklist</strong>
           <div style="margin-top:8px; max-height:420px; overflow:auto; border:1px solid var(--border); border-radius:12px; padding:4px 10px; background:rgba(255,255,255,.02);">
             ${rows || `<div class="tiny muted">No drivers found.</div>`}
           </div>
           <br>
-          Phase 4 read-only — no submission has been changed or saved.
+          Phase 5A editable test only — no submission has been changed or saved.
         </div>
       `;
+
+      editor.querySelectorAll(".admin-assisted-driver-check").forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+          const driverId = checkbox.getAttribute("data-driver-id");
+          if (!driverId) return;
+          if (checkbox.checked) selectedSet.add(driverId);
+          else selectedSet.delete(driverId);
+          renderSummary();
+        });
+      });
+
+      renderSummary();
     };
 
     // --- End helpers ---
@@ -1623,7 +1691,7 @@ const ADMIN_EMAILS = [
       }
 
       renderReadOnlyAssistedEditor();
-      setMsg("Read-only submission editor loaded. No changes can be saved from this phase.");
+      setMsg("Editable submission test loaded. No changes can be saved from this phase.");
     });
   }
 
