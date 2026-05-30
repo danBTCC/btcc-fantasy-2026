@@ -1193,6 +1193,14 @@ const ADMIN_EMAILS = [
       return (driverData?.tier || driverData?.currentTier || driverData?.tierName || driverData?.tdaTier || "Unassigned").toString();
     };
 
+    const normaliseTierLocal = (tier) => {
+      const value = String(tier || "").trim().toLowerCase();
+      if (value === "high" || value === "h") return "high";
+      if (value === "middle" || value === "medium" || value === "m") return "middle";
+      if (value === "low" || value === "l") return "low";
+      return "unknown";
+    };
+
     const roundMoneyLocal = (value) => Math.round(Number(value || 0) * 100) / 100;
 
     const getDriverValueLocal = (driverData) => {
@@ -1328,6 +1336,21 @@ const ADMIN_EMAILS = [
           messages.push(`Over budget by ${fmtMoneyLocal(totalCost - Number(budgetInfo.availableBudget || 0))}.`);
         }
 
+        const tierCounts = { high: 0, middle: 0, low: 0, unknown: 0 };
+        selectedSet.forEach((driverId) => {
+          const driver = getDriverById(driverId);
+          const tier = normaliseTierLocal(getDriverTierLabelLocal(driver?.data || {}));
+          tierCounts[tier] = (tierCounts[tier] || 0) + 1;
+        });
+
+        if (tierCounts.high < 1) messages.push("Select at least 1 High tier driver.");
+        if (tierCounts.middle < 1) messages.push("Select at least 1 Medium tier driver.");
+        if (tierCounts.low < 1) messages.push("Select at least 1 Low tier driver.");
+        if (tierCounts.high > 2) messages.push("Maximum 2 High tier drivers allowed.");
+        if (tierCounts.middle > 2) messages.push("Maximum 2 Medium tier drivers allowed.");
+        if (tierCounts.low > 2) messages.push("Maximum 2 Low tier drivers allowed.");
+        if (tierCounts.unknown > 0) messages.push("One or more selected drivers has an unknown tier.");
+
         selectedSet.forEach((driverId) => {
           const isSld = sldDriverId && driverId === sldDriverId;
           const usageCount = Number(usageMap?.get(driverId) || 0);
@@ -1349,12 +1372,20 @@ const ADMIN_EMAILS = [
         const remaining = Number(budgetInfo.availableBudget || 0) - totalCost;
         const messages = getValidationMessages();
 
+        const tierCounts = { high: 0, middle: 0, low: 0, unknown: 0 };
+        selectedSet.forEach((driverId) => {
+          const driver = getDriverById(driverId);
+          const tier = normaliseTierLocal(getDriverTierLabelLocal(driver?.data || {}));
+          tierCounts[tier] = (tierCounts[tier] || 0) + 1;
+        });
+
         summary.innerHTML = `
           <div class="tiny muted" style="line-height:1.65;">
             Effective Budget: <strong style="color:var(--text);">${fmtMoneyLocal(budgetInfo.availableBudget)}</strong><br>
             Selected Cost: <strong style="color:var(--text);">${fmtMoneyLocal(totalCost)}</strong><br>
             Remaining: <strong style="color:${remaining < 0 ? "#f87171" : "var(--text)"};">${fmtMoneyLocal(remaining)}</strong><br>
             Selected Drivers: <strong style="color:var(--text);">${selectedSet.size}</strong><br>
+            Tier Split: <strong style="color:var(--text);">H ${tierCounts.high} / M ${tierCounts.middle} / L ${tierCounts.low}</strong><br>
             SLD Driver ID: <span style="color:var(--text);">${escapeLocal(sldDriverId || "—")}</span>
           </div>
         `;
