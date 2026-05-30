@@ -27,6 +27,67 @@
     if (race3El) race3El.textContent = "Loading…";
     if (updatedEl) updatedEl.textContent = "—";
     if (updatedRowEl) updatedRowEl.hidden = true;
+
+    if (!document.getElementById("standings-table-style")) {
+      const style = document.createElement("style");
+      style.id = "standings-table-style";
+      style.textContent = `
+        .standings-table {
+          width: 100%;
+          border-collapse: separate !important;
+          border-spacing: 0 6px;
+        }
+        .standings-table thead th {
+          padding: 8px 10px !important;
+          color: rgba(255,255,255,.72);
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: .04em;
+          border-bottom: 1px solid rgba(255,255,255,.12);
+        }
+        .standings-table tbody tr {
+          background: rgba(255,255,255,.035);
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,.055);
+        }
+        .standings-table tbody tr:nth-child(odd) {
+          background: rgba(255,255,255,.055);
+        }
+        .standings-table tbody tr:nth-child(1) {
+          background: linear-gradient(90deg, rgba(255,215,0,.18), rgba(255,255,255,.04));
+        }
+        .standings-table tbody tr:nth-child(2) {
+          background: linear-gradient(90deg, rgba(192,192,192,.16), rgba(255,255,255,.04));
+        }
+        .standings-table tbody tr:nth-child(3) {
+          background: linear-gradient(90deg, rgba(205,127,50,.16), rgba(255,255,255,.04));
+        }
+        .standings-table tbody td {
+          padding: 9px 10px !important;
+          border: 0 !important;
+        }
+        .standings-table tbody td:first-child {
+          border-radius: 10px 0 0 10px;
+          color: rgba(255,255,255,.78);
+          font-weight: 800;
+          width: 44px;
+        }
+        .standings-table tbody td:last-child {
+          border-radius: 0 10px 10px 0;
+          font-weight: 900;
+          color: #fff;
+        }
+        .standings-points-pill {
+          display: inline-block;
+          min-width: 42px;
+          padding: 3px 8px;
+          border-radius: 999px;
+          background: rgba(37,99,235,.22);
+          box-shadow: inset 0 0 0 1px rgba(96,165,250,.28);
+          text-align: center;
+        }
+      `;
+      document.head.appendChild(style);
+    }
       // --- Helpers (shared by all tables) ---
       const renderSimplePointsTable = (mountEl, rows, labelName) => {
         if (!mountEl) return;
@@ -35,7 +96,7 @@
           return;
         }
         mountEl.innerHTML = `
-          <table class="table tiny" style="width:100%; border-collapse: collapse;">
+          <table class="table tiny standings-table">
             <thead>
               <tr>
                 <th style="text-align:left; padding:6px;">Pos</th>
@@ -50,7 +111,7 @@
                     <tr>
                       <td style="padding:6px;">${idx + 1}</td>
                       <td style="padding:6px;">${r.name || "Unnamed"}</td>
-                      <td style="padding:6px; text-align:right;">${r.points}</td>
+                      <td style="padding:6px; text-align:right;"><span class="standings-points-pill">${r.points}</span></td>
                     </tr>
                   `;
                 })
@@ -176,7 +237,7 @@
           playersEl.textContent = "No data yet";
         } else {
           playersEl.innerHTML = `
-            <table class="table tiny" style="width:100%; border-collapse: collapse;">
+            <table class="table tiny standings-table">
               <thead>
                 <tr>
                   <th style="text-align:left; padding:6px;">Pos</th>
@@ -192,7 +253,7 @@
                       <tr>
                         <td style="padding:6px;">${idx + 1}</td>
                         <td style="padding:6px;">${d.displayName || "Unnamed"}</td>
-                        <td style="padding:6px; text-align:right;">${d.pointsTotal ?? d.points ?? 0}</td>
+                        <td style="padding:6px; text-align:right;"><span class="standings-points-pill">${d.pointsTotal ?? d.points ?? 0}</span></td>
                       </tr>
                     `;
                   })
@@ -289,7 +350,7 @@
           teamsEl.textContent = "No data yet";
         } else {
           teamsEl.innerHTML = `
-            <table class="table tiny" style="width:100%; border-collapse: collapse;">
+            <table class="table tiny standings-table">
               <thead>
                 <tr>
                   <th style="text-align:left; padding:6px;">Pos</th>
@@ -305,7 +366,7 @@
                       <tr>
                         <td style="padding:6px;">${idx + 1}</td>
                         <td style="padding:6px;">${d.teamName || "Unnamed team"}</td>
-                        <td style="padding:6px; text-align:right;">${d.pointsTotal ?? d.points ?? 0}</td>
+                        <td style="padding:6px; text-align:right;"><span class="standings-points-pill">${d.pointsTotal ?? d.points ?? 0}</span></td>
                       </tr>
                     `;
                   })
@@ -352,7 +413,7 @@
           wingfootEl.textContent = "No data yet";
         } else {
           wingfootEl.innerHTML = `
-            <table class="table tiny" style="width:100%; border-collapse: collapse;">
+            <table class="table tiny standings-table">
               <thead>
                 <tr>
                   <th style="text-align:left; padding:6px;">Pos</th>
@@ -368,7 +429,7 @@
                       <tr>
                         <td style="padding:6px;">${idx + 1}</td>
                         <td style="padding:6px;">${d.displayName || "Unnamed"}</td>
-                        <td style="padding:6px; text-align:right;">${d.pointsTotal ?? d.points ?? 0}</td>
+                        <td style="padding:6px; text-align:right;"><span class="standings-points-pill">${d.pointsTotal ?? d.points ?? 0}</span></td>
                       </tr>
                     `;
                   })
