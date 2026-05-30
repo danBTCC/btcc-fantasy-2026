@@ -1225,6 +1225,51 @@ const ADMIN_EMAILS = [
       return "";
     };
 
+    const getDriverEpLocal = (driverData) => {
+      const ep = Number(driverData?.ep ?? driverData?.currentEp ?? driverData?.lastEp ?? driverData?.expectedPoints ?? 0);
+      return Number.isFinite(ep) ? ep : 0;
+    };
+
+    const buildUsageMapLocal = async (selectedUid, currentEventNo) => {
+      const usageMap = new Map();
+      if (!selectedUid || !currentEventNo) return usageMap;
+
+      const eventsSnap = await window.btccDb.collection("events").orderBy("eventNo").get();
+      const previousEvents = eventsSnap.docs
+        .map((doc) => ({ id: doc.id, eventNo: Number(doc.data()?.eventNo || 0) }))
+        .filter((event) => event.eventNo > 0 && event.eventNo < Number(currentEventNo))
+        .sort((a, b) => b.eventNo - a.eventNo);
+
+      const previousSubmissions = [];
+      for (const event of previousEvents) {
+        const subSnap = await window.btccDb
+          .collection("submissions")
+          .doc(event.id)
+          .collection("entries")
+          .doc(selectedUid)
+          .get();
+
+        previousSubmissions.push({
+          eventNo: event.eventNo,
+          driverIds: subSnap.exists ? normaliseSubmissionDriverIdsLocal(subSnap.data()) : [],
+        });
+      }
+
+      const allDriverIds = new Set();
+      previousSubmissions.forEach((sub) => sub.driverIds.forEach((driverId) => allDriverIds.add(driverId)));
+
+      allDriverIds.forEach((driverId) => {
+        let consecutive = 0;
+        for (const sub of previousSubmissions) {
+          if (sub.driverIds.includes(driverId)) consecutive += 1;
+          else break;
+        }
+        usageMap.set(driverId, consecutive);
+      });
+
+      return usageMap;
+    };
+
     const renderReadOnlyAssistedEditor = () => {
       if (!editor || !lastAssistedContext) return;
 
@@ -1237,6 +1282,7 @@ const ADMIN_EMAILS = [
         selectedDriverIds,
         drivers,
         reason,
+        usageMap,
       } = lastAssistedContext;
 
       const selectedSet = new Set(selectedDriverIds || []);
@@ -1253,13 +1299,15 @@ const ADMIN_EMAILS = [
           const baseValue = getDriverValueLocal(driver.data);
           const adjustedValue = getAdjustedDriverValueLocal(driver.id, driver.data, eventData);
           const starPill = getStarPillLocal(driver.id, eventData);
+          const ep = getDriverEpLocal(driver.data);
+          const usageCount = Number(usageMap?.get(driver.id) || 0);
           return `
             <label style="display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--border);">
               <input type="checkbox" ${checked ? "checked" : ""} disabled style="margin-top:3px;" />
               <span style="min-width:0; flex:1;">
                 <strong style="color:var(--text);">${escapeLocal(driver.name)}</strong>
-                ${isSld ? `<span class="pill" style="margin-left:6px;">SLD</span>` : ""}${starPill ? `<span class="pill" style="margin-left:6px;">${escapeLocal(starPill)}</span>` : ""}<br>
-                <span class="tiny muted">${escapeLocal(driver.id)} • ${escapeLocal(tier)} • Price ${fmtMoneyLocal(adjustedValue)}${adjustedValue !== baseValue ? ` (base ${fmtMoneyLocal(baseValue)})` : ""}</span>
+                ${isSld ? `<span class="pill" style="margin-left:6px;">SLD</span>` : ""}${starPill ? `<span class="pill" style="margin-left:6px;">${escapeLocal(starPill)}</span>` : ""}${usageCount >= 2 ? `<span class="pill" style="margin-left:6px;">Blocked next event</span>` : ""}<br>
+                <span class="tiny muted">${escapeLocal(driver.id)} • ${escapeLocal(tier)} • Price ${fmtMoneyLocal(adjustedValue)}${adjustedValue !== baseValue ? ` (base ${fmtMoneyLocal(baseValue)})` : ""} • EP: ${ep} • Usage: ${usageCount}/2</span>
               </span>
             </label>
           `;
@@ -1461,6 +1509,8 @@ const ADMIN_EMAILS = [
           })
           .filter((driver) => driver.active);
 
+        const usageMap = await buildUsageMapLocal(selectedUid, currentEvent.eventNo);
+
         lastAssistedContext = {
           selectedUid,
           selectedName,
@@ -1472,6 +1522,7 @@ const ADMIN_EMAILS = [
           submissionData,
           selectedDriverIds,
           drivers,
+          usageMap,
         };
 
         if (editorLoadBtn) {
