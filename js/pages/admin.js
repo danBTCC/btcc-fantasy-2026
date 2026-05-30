@@ -1366,6 +1366,7 @@ const ADMIN_EMAILS = [
       const renderSummary = () => {
         const summary = editor.querySelector("#admin-assisted-editor-summary");
         const validation = editor.querySelector("#admin-assisted-editor-validation");
+        const saveBtn = editor.querySelector("#admin-assisted-save");
         if (!summary || !validation) return;
 
         const totalCost = calculateSelectedCost();
@@ -1393,6 +1394,13 @@ const ADMIN_EMAILS = [
         validation.innerHTML = messages.length
           ? `<div class="note warnNote" style="margin-top:8px;">${messages.map((m) => `• ${escapeLocal(m)}`).join("<br>")}</div>`
           : `<div class="note" style="margin-top:8px;">Validation OK. Phase 5A only — no submission can be saved yet.</div>`;
+
+        if (saveBtn) {
+          saveBtn.disabled = messages.length > 0;
+          saveBtn.textContent = messages.length > 0
+            ? "Fix validation before saving"
+            : "Save Authorised Late Submission";
+        }
       };
 
       const rows = drivers
@@ -1441,7 +1449,12 @@ const ADMIN_EMAILS = [
             ${rows || `<div class="tiny muted">No drivers found.</div>`}
           </div>
           <br>
-          Phase 5A editable test only — no submission has been changed or saved.
+          <button id="admin-assisted-save" class="tile" type="button" disabled style="background:linear-gradient(135deg,#0b3d91,#2563eb); border:1px solid rgba(255,255,255,.15); font-weight:700;">
+            Fix validation before saving
+          </button>
+          <div class="tiny muted" style="margin-top:8px;">
+            Saving writes to the player's normal submission document and adds admin audit fields.
+          </div>
         </div>
       `;
 
@@ -1453,6 +1466,101 @@ const ADMIN_EMAILS = [
           else selectedSet.delete(driverId);
           renderSummary();
         });
+      });
+
+      const saveBtn = editor.querySelector("#admin-assisted-save");
+      saveBtn?.addEventListener("click", async () => {
+        const messages = getValidationMessages();
+        if (messages.length) {
+          setMsg("Fix validation before saving.");
+          renderSummary();
+          return;
+        }
+
+        if (!reason || reason.length < 5) {
+          setMsg("Enter a clear reason before saving.");
+          return;
+        }
+
+        const latestEngineRun = await hasEngineRunForEvent(currentEvent.id);
+        if (latestEngineRun) {
+          setMsg("Blocked: engine has already run for this event.");
+          saveBtn.disabled = true;
+          saveBtn.textContent = "Blocked — engine already run";
+          return;
+        }
+
+        const selectedIds = Array.from(selectedSet);
+        const totalCost = roundMoneyLocal(calculateSelectedCost());
+        const budgetAvailable = roundMoneyLocal(Number(budgetInfo.availableBudget || 0));
+        const budgetRemaining = roundMoneyLocal(budgetAvailable - totalCost);
+        const adminUser = firebase.auth().currentUser;
+        const playerName = playerData?.displayName || selectedName || selectedUid;
+
+        const confirmed = window.confirm(
+          `Save authorised late submission for ${playerName}?\n\nEvent: Event ${currentEvent.eventNo} — ${currentEvent.venue}\nDrivers: ${selectedIds.length}\nTotal Cost: ${fmtMoneyLocal(totalCost)}\nRemaining: ${fmtMoneyLocal(budgetRemaining)}\n\nThis will write to submissions/${currentEvent.id}/entries/${selectedUid}.`
+        );
+
+        if (!confirmed) return;
+
+        try {
+          saveBtn.disabled = true;
+          saveBtn.textContent = "Saving…";
+          setMsg("Saving authorised late submission…");
+
+          const now = firebase.firestore.FieldValue.serverTimestamp();
+          const submissionRef = window.btccDb
+            .collection("submissions")
+            .doc(currentEvent.id)
+            .collection("entries")
+            .doc(selectedUid);
+
+          const payload = {
+            uid: selectedUid,
+            playerUid: selectedUid,
+            displayName: playerName,
+            eventId: currentEvent.id,
+            eventNo: currentEvent.eventNo,
+            venue: currentEvent.venue,
+            driverIds: selectedIds,
+            teamIds: selectedIds,
+            sldDriverId: sldDriverId || null,
+            totalCost,
+            budgetAvailable,
+            budgetRemaining,
+            updatedAt: now,
+            submittedAt: now,
+            submittedByAdmin: true,
+            submittedByUid: adminUser?.uid || null,
+            submittedByEmail: adminUser?.email || null,
+            submittedByName: adminUser?.displayName || adminUser?.email || "Admin",
+            authorisedLate: true,
+            adminReason: reason,
+            adminSubmissionNote: "Authorised late submission entered via admin tool before engine run.",
+          };
+
+          if (!submissionData?.createdAt) {
+            payload.createdAt = now;
+          }
+
+          await submissionRef.set(payload, { merge: true });
+
+          lastAssistedContext.submissionData = {
+            ...(lastAssistedContext.submissionData || {}),
+            ...payload,
+            createdAt: submissionData?.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          lastAssistedContext.selectedDriverIds = selectedIds;
+
+          setMsg("Authorised late submission saved.");
+          saveBtn.textContent = "Saved";
+        } catch (err) {
+          console.error("❌ save authorised late submission failed:", err);
+          setMsg(err?.message || "Failed to save authorised late submission.");
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save Authorised Late Submission";
+        }
       });
 
       renderSummary();
@@ -1722,7 +1830,7 @@ const ADMIN_EMAILS = [
       }
 
       renderReadOnlyAssistedEditor();
-      setMsg("Editable submission test loaded. No changes can be saved from this phase.");
+      setMsg("Editable authorised submission editor loaded. Save is enabled only when validation passes.");
     });
   }
 
