@@ -216,27 +216,24 @@ async function loadNextEventCountdown() {
 
 async function runPageLoaders() {
   // Page modules expose these on window (see /js/pages/*.js)
-  if (window.loadDrivers) await window.loadDrivers();
-  if (window.loadStandings) await window.loadStandings();
-  if (window.loadResults) await window.loadResults();
-  if (window.loadAdmin) await window.loadAdmin();
-  if (window.loadSubmit) await window.loadSubmit();
-  if (window.loadPitStop) await window.loadPitStop();
-}
+  // Keep each loader isolated so one slow/broken page cannot stop navigation.
+  const loaders = [
+    ["drivers", window.loadDrivers],
+    ["standings", window.loadStandings],
+    ["results", window.loadResults],
+    ["admin", window.loadAdmin],
+    ["submit", window.loadSubmit],
+    ["pitstop", window.loadPitStop],
+  ].filter(([, fn]) => typeof fn === "function");
 
-let isRefreshing = false;
-
-document.addEventListener("touchmove", (e) => {
-  if (isRefreshing) return;
-
-  const currentY = e.touches[0].clientY;
-
-  if (window.scrollY === 0 && currentY > startY + 80) {
-    isRefreshing = true;
-    location.reload();
+  for (const [name, fn] of loaders) {
+    try {
+      await fn();
+    } catch (err) {
+      console.error(`❌ Page loader failed: ${name}`, err);
+    }
   }
-});
-
+}
 
 // ---------- App Boot ----------
 document.addEventListener("DOMContentLoaded", async () => {
@@ -244,14 +241,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const stampEl = document.getElementById("buildStamp");
   if (stampEl) stampEl.textContent = new Date().toLocaleString();
 
-  // Firebase + Firestore meta read
-  await checkFirebaseAndReadMeta();
-
-  await loadNextEventCountdown();
-  await loadHomeNewsSnippets();
-
-  // Page data (read-only at this stage)
-  await runPageLoaders();
+  // Routing first: tabs must work even if Firebase/page loaders are slow.
+  setActiveTab(getRouteFromHash());
+  window.addEventListener("hashchange", () =>
+    setActiveTab(getRouteFromHash())
+  );
 
   // Tile shortcuts
   document.querySelectorAll("[data-goto]").forEach(btn => {
@@ -261,9 +255,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Routing
-  setActiveTab(getRouteFromHash());
-  window.addEventListener("hashchange", () =>
-    setActiveTab(getRouteFromHash())
-  );
+  // Firebase + Firestore meta read
+  await checkFirebaseAndReadMeta();
+
+  await loadNextEventCountdown();
+  await loadHomeNewsSnippets();
+
+  // Page data. Do not let slow data loading block tab navigation.
+  runPageLoaders().catch(err => console.error("❌ runPageLoaders failed:", err));
 });
