@@ -15,6 +15,23 @@
     return `£${Number(value || 0).toFixed(2)}`;
   }
 
+  function renderPayoutBreakdown(round) {
+    const payouts = [
+      { label: "Selected", player: round.drawnPlayer, amount: round.selectedPlayerPrize },
+      { label: "1st", player: round.firstPlaceText, amount: round.firstPrize },
+      { label: "2nd", player: round.secondPlaceText, amount: round.secondPrize },
+      { label: "3rd", player: round.thirdPlaceText, amount: round.thirdPrize },
+    ].filter((payout) => payout.player && Number(payout.amount || 0) > 0);
+
+    if (!payouts.length) return "-";
+
+    return payouts
+      .map((payout) => {
+        return `<div><strong>${escapeHtml(payout.label)}:</strong> ${escapeHtml(payout.player)} — ${fmtMoney(payout.amount)}</div>`;
+      })
+      .join("");
+  }
+
   function render(root, data, rounds = []) {
     const currentPot = Number(data.currentPot || 0).toFixed(2);
     const rollover = Number(data.jackpot || 0).toFixed(2);
@@ -29,18 +46,12 @@
       ? rounds
           .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0))
           .map((r) => {
-            const paidOut =
-              Number(r.selectedPlayerPrize || 0) +
-              Number(r.firstPrize || 0) +
-              Number(r.secondPrize || 0) +
-              Number(r.thirdPrize || 0);
-
             return `
               <tr>
                 <td>${r.roundNo || "-"}</td>
                 <td>${escapeHtml(r.drawnPlayer || "-")}</td>
                 <td>${escapeHtml(r.firstPlaceText || "-")}</td>
-                <td>${fmtMoney(paidOut)}</td>
+                <td>${renderPayoutBreakdown(r)}</td>
                 <td>${fmtMoney(r.rolloverAdded || 0)}</td>
               </tr>
             `;
@@ -76,7 +87,7 @@
               <th>Round</th>
               <th>Drawn</th>
               <th>Winner</th>
-              <th>Paid Out</th>
+              <th>Payouts</th>
               <th>Rollover</th>
             </tr>
           </thead>
