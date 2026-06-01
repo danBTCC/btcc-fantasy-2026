@@ -11,7 +11,11 @@
       .replace(/'/g, "&#39;");
   }
 
-  function render(root, data) {
+  function fmtMoney(value) {
+    return `£${Number(value || 0).toFixed(2)}`;
+  }
+
+  function render(root, data, rounds = []) {
     const currentPot = Number(data.currentPot || 0).toFixed(2);
     const rollover = Number(data.jackpot || 0).toFixed(2);
     const lastWinner = escapeHtml(data.lastWinner || "—");
@@ -20,6 +24,33 @@
     const payments = escapeHtml(data.paymentsTable || "");
     const events = escapeHtml(data.eventsTable || "");
     const h2h = escapeHtml(data.headToHeadTable || "");
+
+    const roundRows = rounds.length
+      ? rounds
+          .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0))
+          .map((r) => {
+            const paidOut =
+              Number(r.selectedPlayerPrize || 0) +
+              Number(r.firstPrize || 0) +
+              Number(r.secondPrize || 0) +
+              Number(r.thirdPrize || 0);
+
+            return `
+              <tr>
+                <td>${r.roundNo || "-"}</td>
+                <td>${escapeHtml(r.drawnPlayer || "-")}</td>
+                <td>${escapeHtml(r.firstPlaceText || "-")}</td>
+                <td>${fmtMoney(paidOut)}</td>
+                <td>${fmtMoney(r.rolloverAdded || 0)}</td>
+              </tr>
+            `;
+          })
+          .join("")
+      : `
+          <tr>
+            <td colspan="5" class="muted">No rounds entered yet</td>
+          </tr>
+        `;
 
     root.innerHTML = `
       <div class="card">
@@ -35,6 +66,24 @@
           Next draw: <strong>${nextDraw}</strong><br>
           Current Rollover Amount: <strong>£${rollover}</strong>
         </div>
+      </div>
+
+      <div class="card" style="margin-top:10px;">
+        <h2>Round History</h2>
+        <table class="table tiny" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Round</th>
+              <th>Drawn</th>
+              <th>Winner</th>
+              <th>Paid Out</th>
+              <th>Rollover</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${roundRows}
+          </tbody>
+        </table>
       </div>
 
       <div class="card" style="margin-top:10px;">
@@ -67,12 +116,19 @@
 
     try {
       const snap = await window.btccDb.collection("pitstop").doc("tracker").get();
+      const roundsSnap = await window.btccDb.collection("pitstop_rounds").get();
+
       if (!snap.exists) {
         render(root, {});
         return;
       }
 
-      render(root, snap.data() || {});
+      const rounds = roundsSnap.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() || {}),
+      }));
+
+      render(root, snap.data() || {}, rounds);
     } catch (err) {
       console.error(err);
       root.innerHTML = "<div class='card'>Failed to load Pit Stop Pot</div>";
