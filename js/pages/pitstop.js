@@ -50,7 +50,6 @@
               <tr>
                 <td>${r.roundNo || "-"}</td>
                 <td>${escapeHtml(r.drawnPlayer || "-")}</td>
-                <td>${escapeHtml(r.firstPlaceText || "-")}</td>
                 <td>${renderPayoutBreakdown(r)}</td>
                 <td>${fmtMoney(r.rolloverAdded || 0)}</td>
               </tr>
@@ -86,7 +85,6 @@
             <tr>
               <th>Round</th>
               <th>Drawn</th>
-              <th>Winner</th>
               <th>Payouts</th>
               <th>Rollover</th>
             </tr>
