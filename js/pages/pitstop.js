@@ -32,6 +32,28 @@
       .join("");
   }
 
+  function buildPlayerWinnings(rounds) {
+    const totals = new Map();
+
+    const addPrize = (player, amount) => {
+      const name = String(player || "").trim();
+      const value = Number(amount || 0);
+      if (!name || value <= 0) return;
+      totals.set(name, Number(totals.get(name) || 0) + value);
+    };
+
+    rounds.forEach((round) => {
+      addPrize(round.drawnPlayer, round.selectedPlayerPrize);
+      addPrize(round.firstPlaceText, round.firstPrize);
+      addPrize(round.secondPlaceText, round.secondPrize);
+      addPrize(round.thirdPlaceText, round.thirdPrize);
+    });
+
+    return Array.from(totals.entries())
+      .map(([player, total]) => ({ player, total }))
+      .sort((a, b) => b.total - a.total || a.player.localeCompare(b.player));
+  }
+
   function render(root, data, rounds = []) {
     const currentPot = Number(data.currentPot || 0).toFixed(2);
     const rollover = Number(data.jackpot || 0).toFixed(2);
@@ -59,6 +81,25 @@
       : `
           <tr>
             <td colspan="5" class="muted">No rounds entered yet</td>
+          </tr>
+        `;
+
+    const playerWinnings = buildPlayerWinnings(rounds);
+
+    const playerWinningsRows = playerWinnings.length
+      ? playerWinnings
+          .map((row) => {
+            return `
+              <tr>
+                <td>${escapeHtml(row.player)}</td>
+                <td style="text-align:right; font-weight:800;">${fmtMoney(row.total)}</td>
+              </tr>
+            `;
+          })
+          .join("")
+      : `
+          <tr>
+            <td colspan="2" class="muted">No winnings recorded yet</td>
           </tr>
         `;
 
@@ -91,6 +132,21 @@
           </thead>
           <tbody>
             ${roundRows}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="margin-top:10px;">
+        <h2>Player Winnings</h2>
+        <table class="table tiny" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th style="text-align:right;">Total Won</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${playerWinningsRows}
           </tbody>
         </table>
       </div>
