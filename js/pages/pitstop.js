@@ -100,6 +100,11 @@
     };
 
     rounds.forEach((round) => {
+      if (round.drawnPlayerWon === true) {
+        addPrize(round.drawnPlayer, round.fullPotPrize || round.potValue);
+        return;
+      }
+
       addPrize(round.drawnPlayer, round.selectedPlayerPrize);
       addPrize(round.firstPlaceText, round.firstPrize);
       addPrize(round.secondPlaceText, round.secondPrize);
