@@ -15,7 +15,59 @@
     return `£${Number(value || 0).toFixed(2)}`;
   }
 
+  function isNormalRound(roundNo) {
+    const n = Number(roundNo || 0);
+    return n > 0 && ![10, 20, 30].includes(n);
+  }
+
+  function getRoundPaidOut(round) {
+    if (round.drawnPlayerWon === true) {
+      return Number(round.fullPotPrize || round.potValue || 0);
+    }
+
+    return (
+      Number(round.selectedPlayerPrize || 0) +
+      Number(round.firstPrize || 0) +
+      Number(round.secondPrize || 0) +
+      Number(round.thirdPrize || 0)
+    );
+  }
+
+  function calculatePitStopTotals(data, rounds) {
+    const totalPlayers = Number(data.totalPlayers || 19);
+    const entryPot = totalPlayers * 0.5;
+    const normalRounds = rounds
+      .filter((round) => isNormalRound(round.roundNo))
+      .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0));
+
+    let rollover = 0;
+    let lastCompletedRound = null;
+
+    normalRounds.forEach((round) => {
+      lastCompletedRound = round;
+
+      if (round.drawnPlayerWon === true) {
+        rollover = 0;
+        return;
+      }
+
+      rollover += Number(round.rolloverAdded ?? 4.5);
+    });
+
+    return {
+      totalPlayers,
+      entryPot,
+      calculatedRollover: rollover,
+      calculatedNextPot: entryPot + rollover,
+      lastCompletedRound,
+    };
+  }
+
   function renderPayoutBreakdown(round) {
+    if (round.drawnPlayerWon === true) {
+      return `<div><strong>Full Pot:</strong> ${escapeHtml(round.drawnPlayer || "Winner")} — ${fmtMoney(round.fullPotPrize || round.potValue || 0)}</div>`;
+    }
+
     const payouts = [
       { label: "Selected", player: round.drawnPlayer, amount: round.selectedPlayerPrize },
       { label: "1st", player: round.firstPlaceText, amount: round.firstPrize },
@@ -64,16 +116,18 @@
     const events = escapeHtml(data.eventsTable || "");
     const h2h = escapeHtml(data.headToHeadTable || "");
 
+    const pitstopTotals = calculatePitStopTotals(data, rounds);
+
     const roundRows = rounds.length
       ? rounds
           .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0))
           .map((r) => {
             return `
               <tr>
-                <td>${r.roundNo || "-"}</td>
+                <td>${r.roundNo || "-"}${isNormalRound(r.roundNo) ? "" : " *"}</td>
                 <td>${escapeHtml(r.drawnPlayer || "-")}</td>
                 <td>${renderPayoutBreakdown(r)}</td>
-                <td>${fmtMoney(r.rolloverAdded || 0)}</td>
+                <td>${r.drawnPlayerWon === true ? fmtMoney(0) : fmtMoney(r.rolloverAdded ?? 4.5)}</td>
               </tr>
             `;
           })
@@ -112,10 +166,14 @@
       <div class="card" style="margin-top:10px;">
         <h2>Summary</h2>
         <div class="tiny muted" style="line-height:1.7;">
-          Current pot: <strong>£${currentPot}</strong><br>
+          Manual current pot: <strong>£${currentPot}</strong><br>
+          Calculated next normal-round pot: <strong>${fmtMoney(pitstopTotals.calculatedNextPot)}</strong><br>
+          Calculated rollover: <strong>${fmtMoney(pitstopTotals.calculatedRollover)}</strong><br>
+          Entry pot per normal round: <strong>${fmtMoney(pitstopTotals.entryPot)}</strong><br>
           Last winner: <strong>${lastWinner}</strong><br>
           Next draw: <strong>${nextDraw}</strong><br>
-          Current Rollover Amount: <strong>£${rollover}</strong>
+          Manual rollover amount: <strong>£${rollover}</strong><br>
+          <span class="muted">* Rounds 10, 20 and 30 are special draws and are not included in this normal-round calculation yet.</span>
         </div>
       </div>
 
