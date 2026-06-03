@@ -206,6 +206,7 @@
   }
 
   function render(root, data, rounds = []) {
+    const pitstopInputStyle = "width:100%; box-sizing:border-box; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.16); background:rgba(15,23,42,.88); color:#f8fafc; outline:none;";
     const currentPot = Number(data.currentPot || 0).toFixed(2);
     const rollover = Number(data.jackpot || 0).toFixed(2);
     const lastWinner = escapeHtml(data.lastWinner || "—");
@@ -288,7 +289,7 @@
 
         <div id="pitstop-admin-unlock" style="display:grid; gap:8px;">
           <label class="tiny muted">Admin PIN</label>
-          <input id="pitstop-admin-pin" type="password" inputmode="numeric" placeholder="Enter PIN" />
+          <input id="pitstop-admin-pin" type="password" inputmode="numeric" placeholder="Enter PIN" style="\${pitstopInputStyle}" />
           <button id="pitstop-unlock-admin" class="tile" type="button">Unlock Round Entry</button>
           <div id="pitstop-unlock-msg" class="tiny muted">Locked.</div>
         </div>
@@ -298,46 +299,46 @@
           <p class="tiny muted">Rounds 10, 20 and 30 are special draws and are blocked here for now.</p>
 
           <label class="tiny muted">Round Number</label>
-          <input id="pitstop-round-no" type="number" min="1" max="30" placeholder="1" />
+          <input id="pitstop-round-no" type="number" min="1" max="30" placeholder="1" style="\${pitstopInputStyle}" />
 
           <label class="tiny muted">Drawn Player</label>
-          <input id="pitstop-drawn-player" type="text" placeholder="Jake" />
+          <input id="pitstop-drawn-player" type="text" placeholder="Jake" style="\${pitstopInputStyle}" />
 
           <label class="tiny muted">Drawn player won full pot?</label>
-          <select id="pitstop-full-pot-won">
+          <select id="pitstop-full-pot-won" style="\${pitstopInputStyle}">
             <option value="false">No — normal payout and rollover</option>
             <option value="true">Yes — drawn player wins full pot</option>
           </select>
 
           <label class="tiny muted">Full Pot Prize (only if full pot won)</label>
-          <input id="pitstop-full-pot-prize" type="number" step="0.01" placeholder="0.00" />
+          <input id="pitstop-full-pot-prize" type="number" step="0.01" placeholder="0.00" style="\${pitstopInputStyle}" />
 
           <label class="tiny muted">1st Place Player</label>
-          <input id="pitstop-first-player" type="text" placeholder="Maddie" />
+          <input id="pitstop-first-player" type="text" placeholder="Maddie" style="\${pitstopInputStyle}" />
 
           <label class="tiny muted">1st Prize</label>
-          <input id="pitstop-first-prize" type="number" step="0.01" value="1.70" />
+          <input id="pitstop-first-prize" type="number" step="0.01" value="1.70" style="\${pitstopInputStyle}" />
 
           <label class="tiny muted">2nd Place Player</label>
-          <input id="pitstop-second-player" type="text" placeholder="Ellie C" />
+          <input id="pitstop-second-player" type="text" placeholder="Ellie C" style="\${pitstopInputStyle}" />
 
           <label class="tiny muted">2nd Prize</label>
-          <input id="pitstop-second-prize" type="number" step="0.01" value="1.30" />
+          <input id="pitstop-second-prize" type="number" step="0.01" value="1.30" style="\${pitstopInputStyle}" />
 
           <label class="tiny muted">3rd Place Player</label>
-          <input id="pitstop-third-player" type="text" placeholder="Fliss" />
+          <input id="pitstop-third-player" type="text" placeholder="Fliss" style="\${pitstopInputStyle}" />
 
           <label class="tiny muted">3rd Prize</label>
-          <input id="pitstop-third-prize" type="number" step="0.01" value="1.00" />
+          <input id="pitstop-third-prize" type="number" step="0.01" value="1.00" style="\${pitstopInputStyle}" />
 
           <label class="tiny muted">Selected Player Prize</label>
-          <input id="pitstop-selected-prize" type="number" step="0.01" value="1.00" />
+          <input id="pitstop-selected-prize" type="number" step="0.01" value="1.00" style="\${pitstopInputStyle}" />
 
           <label class="tiny muted">Rollover Added</label>
-          <input id="pitstop-rollover-added" type="number" step="0.01" value="4.50" />
+          <input id="pitstop-rollover-added" type="number" step="0.01" value="4.50" style="\${pitstopInputStyle}" />
 
           <label class="tiny muted">Notes</label>
-          <textarea id="pitstop-notes" rows="2" placeholder="Optional tie/payment note"></textarea>
+          <textarea id="pitstop-notes" rows="2" placeholder="Optional tie/payment note" style="\${pitstopInputStyle}; min-height:70px;"></textarea>
 
           <button id="pitstop-save-round" class="tile" type="button">Save Pit Stop Round</button>
           <button id="pitstop-lock-admin" class="tile" type="button" style="background:rgba(255,255,255,.06);">Lock Round Entry</button>
