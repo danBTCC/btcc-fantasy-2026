@@ -211,9 +211,6 @@
     const lastWinner = escapeHtml(data.lastWinner || "—");
     const nextDraw = escapeHtml(data.nextDraw || "—");
 
-    const payments = escapeHtml(data.paymentsTable || "");
-    const events = escapeHtml(data.eventsTable || "");
-    const h2h = escapeHtml(data.headToHeadTable || "");
 
     const pitstopTotals = calculatePitStopTotals(data, rounds);
     const calculatedRounds = buildRoundCalculations(data, rounds);
@@ -431,20 +428,6 @@
         </table>
       </div>
 
-      <div class="card" style="margin-top:10px;">
-        <h2>Event Breakdown</h2>
-        <pre style="white-space:pre-wrap; font-size:13px;">${events || "No data yet"}</pre>
-      </div>
-
-      <div class="card" style="margin-top:10px;">
-        <h2>Head-to-Head</h2>
-        <pre style="white-space:pre-wrap; font-size:13px;">${h2h || "No data yet"}</pre>
-      </div>
-
-      <div class="card" style="margin-top:10px;">
-        <h2>Payment Tracker</h2>
-        <pre style="white-space:pre-wrap; font-size:13px;">${payments || "No data yet"}</pre>
-      </div>
     `;
 
     const unlockBtn = root.querySelector("#pitstop-unlock-admin");
