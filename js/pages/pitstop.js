@@ -355,6 +355,14 @@
         <h1>Pit Stop Pot</h1>
         <p class="muted"> All draws are screen recorded and shared in the WhatsApp group </p>
       </div>
+      <div class="card" style="margin-top:10px; background:linear-gradient(135deg, rgba(11,61,145,.95), rgba(37,99,235,.85)); border:1px solid rgba(147,197,253,.35); box-shadow:0 12px 30px rgba(0,0,0,.28);">
+        <div class="tiny" style="text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,.75); font-weight:800;">Current Rollover</div>
+        <div style="font-size:34px; line-height:1.05; font-weight:950; color:#fff; margin-top:4px;">${fmtMoney(pitstopTotals.calculatedRollover)}</div>
+        <div class="tiny" style="color:rgba(255,255,255,.8); margin-top:6px; line-height:1.5;">
+          Next normal-round pot: <strong style="color:#fff;">${fmtMoney(pitstopTotals.calculatedNextPot)}</strong><br>
+          Entry pot: ${fmtMoney(pitstopTotals.entryPot)} • Special rounds 10, 20 and 30 held separately
+        </div>
+      </div>
       ${adminFormHtml}
 
       <div class="card" style="margin-top:10px;">
