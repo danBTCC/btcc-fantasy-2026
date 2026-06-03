@@ -168,10 +168,20 @@
     const adminFormHtml = isPitStopAdmin
       ? `
       <div class="card" style="margin-top:10px;">
-        <h2>Add / Update Normal Round</h2>
-        <p class="tiny muted">Rounds 10, 20 and 30 are special draws and are blocked here for now.</p>
+        <h2>Pit Stop Admin</h2>
+        <p class="tiny muted">Unlock this only when adding or correcting a Pit Stop Pot round.</p>
 
-        <div style="display:grid; gap:8px;">
+        <div id="pitstop-admin-unlock" style="display:grid; gap:8px;">
+          <label class="tiny muted">Admin PIN</label>
+          <input id="pitstop-admin-pin" type="password" inputmode="numeric" placeholder="Enter PIN" />
+          <button id="pitstop-unlock-admin" class="tile" type="button">Unlock Round Entry</button>
+          <div id="pitstop-unlock-msg" class="tiny muted">Locked.</div>
+        </div>
+
+        <div id="pitstop-admin-form" style="display:none; gap:8px; margin-top:10px;">
+          <h2>Add / Update Normal Round</h2>
+          <p class="tiny muted">Rounds 10, 20 and 30 are special draws and are blocked here for now.</p>
+
           <label class="tiny muted">Round Number</label>
           <input id="pitstop-round-no" type="number" min="1" max="30" placeholder="1" />
 
@@ -215,6 +225,7 @@
           <textarea id="pitstop-notes" rows="2" placeholder="Optional tie/payment note"></textarea>
 
           <button id="pitstop-save-round" class="tile" type="button">Save Pit Stop Round</button>
+          <button id="pitstop-lock-admin" class="tile" type="button" style="background:rgba(255,255,255,.06);">Lock Round Entry</button>
           <div id="pitstop-admin-msg" class="tiny muted">Ready.</div>
         </div>
       </div>
@@ -289,6 +300,31 @@
         <pre style="white-space:pre-wrap; font-size:13px;">${payments || "No data yet"}</pre>
       </div>
     `;
+
+    const unlockBtn = root.querySelector("#pitstop-unlock-admin");
+    const lockBtn = root.querySelector("#pitstop-lock-admin");
+    const unlockPanel = root.querySelector("#pitstop-admin-unlock");
+    const adminForm = root.querySelector("#pitstop-admin-form");
+    const unlockMsg = root.querySelector("#pitstop-unlock-msg");
+
+    unlockBtn?.addEventListener("click", () => {
+      const pin = String(root.querySelector("#pitstop-admin-pin")?.value || "").trim();
+      if (pin !== "2026") {
+        if (unlockMsg) unlockMsg.textContent = "Incorrect PIN.";
+        return;
+      }
+
+      if (unlockPanel) unlockPanel.style.display = "none";
+      if (adminForm) adminForm.style.display = "grid";
+    });
+
+    lockBtn?.addEventListener("click", () => {
+      if (adminForm) adminForm.style.display = "none";
+      if (unlockPanel) unlockPanel.style.display = "grid";
+      const pinInput = root.querySelector("#pitstop-admin-pin");
+      if (pinInput) pinInput.value = "";
+      if (unlockMsg) unlockMsg.textContent = "Locked.";
+    });
 
     const saveRoundBtn = root.querySelector("#pitstop-save-round");
     saveRoundBtn?.addEventListener("click", async () => {
