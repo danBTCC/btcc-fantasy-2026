@@ -63,6 +63,11 @@
     };
   }
 
+  function getRoundDocId(roundNo) {
+    const n = Number(roundNo || 0);
+    return `round_${String(n).padStart(2, "0")}`;
+  }
+
   function renderPayoutBreakdown(round) {
     if (round.drawnPlayerWon === true) {
       return `<div><strong>Full Pot:</strong> ${escapeHtml(round.drawnPlayer || "Winner")} — ${fmtMoney(round.fullPotPrize || round.potValue || 0)}</div>`;
@@ -134,7 +139,7 @@
           .join("")
       : `
           <tr>
-            <td colspan="5" class="muted">No rounds entered yet</td>
+            <td colspan="4" class="muted">No rounds entered yet</td>
           </tr>
         `;
 
@@ -157,11 +162,71 @@
           </tr>
         `;
 
+    const currentUser = firebase.auth().currentUser;
+    const isPitStopAdmin = currentUser?.email === "dmillward85@icloud.com";
+
+    const adminFormHtml = isPitStopAdmin
+      ? `
+      <div class="card" style="margin-top:10px;">
+        <h2>Add / Update Normal Round</h2>
+        <p class="tiny muted">Rounds 10, 20 and 30 are special draws and are blocked here for now.</p>
+
+        <div style="display:grid; gap:8px;">
+          <label class="tiny muted">Round Number</label>
+          <input id="pitstop-round-no" type="number" min="1" max="30" placeholder="1" />
+
+          <label class="tiny muted">Drawn Player</label>
+          <input id="pitstop-drawn-player" type="text" placeholder="Jake" />
+
+          <label class="tiny muted">Drawn player won full pot?</label>
+          <select id="pitstop-full-pot-won">
+            <option value="false">No — normal payout and rollover</option>
+            <option value="true">Yes — drawn player wins full pot</option>
+          </select>
+
+          <label class="tiny muted">Full Pot Prize (only if full pot won)</label>
+          <input id="pitstop-full-pot-prize" type="number" step="0.01" placeholder="0.00" />
+
+          <label class="tiny muted">1st Place Player</label>
+          <input id="pitstop-first-player" type="text" placeholder="Maddie" />
+
+          <label class="tiny muted">1st Prize</label>
+          <input id="pitstop-first-prize" type="number" step="0.01" value="1.70" />
+
+          <label class="tiny muted">2nd Place Player</label>
+          <input id="pitstop-second-player" type="text" placeholder="Ellie C" />
+
+          <label class="tiny muted">2nd Prize</label>
+          <input id="pitstop-second-prize" type="number" step="0.01" value="1.30" />
+
+          <label class="tiny muted">3rd Place Player</label>
+          <input id="pitstop-third-player" type="text" placeholder="Fliss" />
+
+          <label class="tiny muted">3rd Prize</label>
+          <input id="pitstop-third-prize" type="number" step="0.01" value="1.00" />
+
+          <label class="tiny muted">Selected Player Prize</label>
+          <input id="pitstop-selected-prize" type="number" step="0.01" value="1.00" />
+
+          <label class="tiny muted">Rollover Added</label>
+          <input id="pitstop-rollover-added" type="number" step="0.01" value="4.50" />
+
+          <label class="tiny muted">Notes</label>
+          <textarea id="pitstop-notes" rows="2" placeholder="Optional tie/payment note"></textarea>
+
+          <button id="pitstop-save-round" class="tile" type="button">Save Pit Stop Round</button>
+          <div id="pitstop-admin-msg" class="tiny muted">Ready.</div>
+        </div>
+      </div>
+      `
+      : "";
+
     root.innerHTML = `
       <div class="card">
         <h1>Pit Stop Pot</h1>
         <p class="muted"> All draws are screen recorded and shared in the WhatsApp group </p>
       </div>
+      ${adminFormHtml}
 
       <div class="card" style="margin-top:10px;">
         <h2>Summary</h2>
@@ -224,6 +289,74 @@
         <pre style="white-space:pre-wrap; font-size:13px;">${payments || "No data yet"}</pre>
       </div>
     `;
+
+    const saveRoundBtn = root.querySelector("#pitstop-save-round");
+    saveRoundBtn?.addEventListener("click", async () => {
+      const msg = root.querySelector("#pitstop-admin-msg");
+      const setMsg = (text) => {
+        if (msg) msg.textContent = text;
+      };
+
+      const roundNo = Number(root.querySelector("#pitstop-round-no")?.value || 0);
+      if (!roundNo) {
+        setMsg("Enter a round number.");
+        return;
+      }
+
+      if (!isNormalRound(roundNo)) {
+        setMsg("Rounds 10, 20 and 30 are special draws and are blocked here for now.");
+        return;
+      }
+
+      const drawnPlayer = String(root.querySelector("#pitstop-drawn-player")?.value || "").trim();
+      if (!drawnPlayer) {
+        setMsg("Enter the drawn player.");
+        return;
+      }
+
+      const drawnPlayerWon = root.querySelector("#pitstop-full-pot-won")?.value === "true";
+      const docId = getRoundDocId(roundNo);
+
+      const payload = {
+        roundNo,
+        drawnPlayer,
+        drawnPlayerWon,
+        fullPotPrize: Number(root.querySelector("#pitstop-full-pot-prize")?.value || 0),
+        firstPlaceText: String(root.querySelector("#pitstop-first-player")?.value || "").trim(),
+        firstPrize: Number(root.querySelector("#pitstop-first-prize")?.value || 0),
+        secondPlaceText: String(root.querySelector("#pitstop-second-player")?.value || "").trim(),
+        secondPrize: Number(root.querySelector("#pitstop-second-prize")?.value || 0),
+        thirdPlaceText: String(root.querySelector("#pitstop-third-player")?.value || "").trim(),
+        thirdPrize: Number(root.querySelector("#pitstop-third-prize")?.value || 0),
+        selectedPlayerPrize: drawnPlayerWon ? 0 : Number(root.querySelector("#pitstop-selected-prize")?.value || 0),
+        rolloverAdded: drawnPlayerWon ? 0 : Number(root.querySelector("#pitstop-rollover-added")?.value || 0),
+        notes: String(root.querySelector("#pitstop-notes")?.value || "").trim(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+
+      if (!drawnPlayerWon) {
+        payload.fullPotPrize = 0;
+      }
+
+      const confirmed = window.confirm(`Save Pit Stop Pot round ${roundNo}?\n\nThis will write to pitstop_rounds/${docId}.`);
+      if (!confirmed) return;
+
+      try {
+        saveRoundBtn.disabled = true;
+        saveRoundBtn.textContent = "Saving…";
+        setMsg("Saving round…");
+
+        await window.btccDb.collection("pitstop_rounds").doc(docId).set(payload, { merge: true });
+
+        setMsg("Round saved. Refreshing…");
+        await loadPitStop();
+      } catch (err) {
+        console.error("❌ Failed to save Pit Stop round:", err);
+        setMsg(err?.message || "Failed to save round.");
+        saveRoundBtn.disabled = false;
+        saveRoundBtn.textContent = "Save Pit Stop Round";
+      }
+    });
   }
 
   async function loadPitStop() {
