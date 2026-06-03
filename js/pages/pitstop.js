@@ -63,6 +63,47 @@
     };
   }
 
+  function buildRoundCalculations(data, rounds) {
+    const totalPlayers = Number(data.totalPlayers || 19);
+    const entryPot = totalPlayers * 0.5;
+    const sortedRounds = rounds
+      .slice()
+      .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0));
+
+    let rolloverBefore = 0;
+
+    return sortedRounds.map((round) => {
+      const normal = isNormalRound(round.roundNo);
+      const startingPot = normal ? entryPot + rolloverBefore : Number(round.potValue || 0);
+      const paidOut = getRoundPaidOut(round);
+      let rolloverAfter = rolloverBefore;
+
+      if (normal) {
+        if (round.drawnPlayerWon === true) {
+          rolloverAfter = 0;
+        } else {
+          rolloverAfter = rolloverBefore + Number(round.rolloverAdded ?? 4.5);
+        }
+      }
+
+      const calculated = {
+        ...round,
+        normal,
+        entryPot,
+        rolloverBefore,
+        startingPot,
+        paidOut,
+        rolloverAfter,
+      };
+
+      if (normal) {
+        rolloverBefore = rolloverAfter;
+      }
+
+      return calculated;
+    });
+  }
+
   function getRoundDocId(roundNo) {
     const n = Number(roundNo || 0);
     return `round_${String(n).padStart(2, "0")}`;
@@ -127,24 +168,26 @@
     const h2h = escapeHtml(data.headToHeadTable || "");
 
     const pitstopTotals = calculatePitStopTotals(data, rounds);
+    const calculatedRounds = buildRoundCalculations(data, rounds);
 
-    const roundRows = rounds.length
-      ? rounds
-          .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0))
+    const roundRows = calculatedRounds.length
+      ? calculatedRounds
           .map((r) => {
             return `
               <tr>
-                <td>${r.roundNo || "-"}${isNormalRound(r.roundNo) ? "" : " *"}</td>
+                <td>${r.roundNo || "-"}${r.normal ? "" : " *"}</td>
                 <td>${escapeHtml(r.drawnPlayer || "-")}</td>
+                <td>${fmtMoney(r.startingPot)}</td>
                 <td>${renderPayoutBreakdown(r)}</td>
-                <td>${r.drawnPlayerWon === true ? fmtMoney(0) : fmtMoney(r.rolloverAdded ?? 4.5)}</td>
+                <td>${fmtMoney(r.paidOut)}</td>
+                <td>${fmtMoney(r.rolloverAfter)}</td>
               </tr>
             `;
           })
           .join("")
       : `
           <tr>
-            <td colspan="4" class="muted">No rounds entered yet</td>
+            <td colspan="6" class="muted">No rounds entered yet</td>
           </tr>
         `;
 
@@ -265,7 +308,9 @@
             <tr>
               <th>Round</th>
               <th>Drawn</th>
+              <th>Pot</th>
               <th>Payouts</th>
+              <th>Paid</th>
               <th>Rollover</th>
             </tr>
           </thead>
