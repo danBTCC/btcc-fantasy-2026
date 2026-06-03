@@ -130,26 +130,74 @@
       .join("");
   }
 
+  function splitPayoutNames(playerText) {
+    return String(playerText || "")
+      .split("/")
+      .map((name) => name.trim())
+      .filter(Boolean);
+  }
+
+  function getRoundPayoutEntries(round) {
+    const entries = [];
+
+    const addSplitPrize = (label, playerText, amount) => {
+      const names = splitPayoutNames(playerText);
+      const totalAmount = Number(amount || 0);
+      if (!names.length || totalAmount <= 0) return;
+      const eachAmount = totalAmount / names.length;
+      names.forEach((name) => {
+        entries.push({
+          roundNo: Number(round.roundNo || 0),
+          label,
+          player: name,
+          amount: eachAmount,
+        });
+      });
+    };
+
+    if (round.drawnPlayerWon === true) {
+      addSplitPrize("Full Pot", round.drawnPlayer, round.fullPotPrize || round.potValue);
+      return entries;
+    }
+
+    addSplitPrize("Selected", round.drawnPlayer, round.selectedPlayerPrize);
+    addSplitPrize("1st", round.firstPlaceText, round.firstPrize);
+    addSplitPrize("2nd", round.secondPlaceText, round.secondPrize);
+    addSplitPrize("3rd", round.thirdPlaceText, round.thirdPrize);
+
+    return entries;
+  }
+
+  function buildRollingPrizeLedger(rounds) {
+    const runningTotals = new Map();
+    const sortedRounds = rounds
+      .slice()
+      .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0));
+
+    const ledger = [];
+
+    sortedRounds.forEach((round) => {
+      getRoundPayoutEntries(round).forEach((entry) => {
+        const previousTotal = Number(runningTotals.get(entry.player) || 0);
+        const newTotal = previousTotal + Number(entry.amount || 0);
+        runningTotals.set(entry.player, newTotal);
+        ledger.push({
+          ...entry,
+          runningTotal: newTotal,
+        });
+      });
+    });
+
+    return ledger;
+  }
+
   function buildPlayerWinnings(rounds) {
     const totals = new Map();
 
-    const addPrize = (player, amount) => {
-      const name = String(player || "").trim();
-      const value = Number(amount || 0);
-      if (!name || value <= 0) return;
-      totals.set(name, Number(totals.get(name) || 0) + value);
-    };
-
     rounds.forEach((round) => {
-      if (round.drawnPlayerWon === true) {
-        addPrize(round.drawnPlayer, round.fullPotPrize || round.potValue);
-        return;
-      }
-
-      addPrize(round.drawnPlayer, round.selectedPlayerPrize);
-      addPrize(round.firstPlaceText, round.firstPrize);
-      addPrize(round.secondPlaceText, round.secondPrize);
-      addPrize(round.thirdPlaceText, round.thirdPrize);
+      getRoundPayoutEntries(round).forEach((entry) => {
+        totals.set(entry.player, Number(totals.get(entry.player) || 0) + Number(entry.amount || 0));
+      });
     });
 
     return Array.from(totals.entries())
@@ -207,6 +255,28 @@
       : `
           <tr>
             <td colspan="2" class="muted">No winnings recorded yet</td>
+          </tr>
+        `;
+
+    const rollingPrizeLedger = buildRollingPrizeLedger(rounds);
+
+    const rollingPrizeRows = rollingPrizeLedger.length
+      ? rollingPrizeLedger
+          .map((row) => {
+            return `
+              <tr>
+                <td>${row.roundNo || "-"}</td>
+                <td>${escapeHtml(row.player)}</td>
+                <td>${escapeHtml(row.label)}</td>
+                <td style="text-align:right;">${fmtMoney(row.amount)}</td>
+                <td style="text-align:right; font-weight:800;">${fmtMoney(row.runningTotal)}</td>
+              </tr>
+            `;
+          })
+          .join("")
+      : `
+          <tr>
+            <td colspan="5" class="muted">No prize ledger yet</td>
           </tr>
         `;
 
@@ -331,6 +401,24 @@
           </thead>
           <tbody>
             ${playerWinningsRows}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="margin-top:10px;">
+        <h2>Rolling Prize Ledger</h2>
+        <table class="table tiny" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Round</th>
+              <th>Player</th>
+              <th>Prize</th>
+              <th style="text-align:right;">Won</th>
+              <th style="text-align:right;">Running Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rollingPrizeRows}
           </tbody>
         </table>
       </div>
