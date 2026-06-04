@@ -1,5 +1,36 @@
 console.log("BTCC Fantasy League 2026 loaded");
 
+const loadedRoutes = new Set();
+
+async function loadRouteData(route) {
+  if (!route || loadedRoutes.has(route)) return;
+
+  const loaders = {
+    home: async () => {
+      await loadNextEventCountdown();
+      await loadHomeNewsSnippets();
+    },
+    submit: () => window.loadSubmit?.(),
+    drivers: () => window.loadDrivers?.(),
+    tables: () => window.loadStandings?.(),
+    results: () => window.loadResults?.(),
+    news: () => window.loadNews?.(),
+    pitstop: () => window.loadPitStop?.(),
+    admin: () => window.loadAdmin?.(),
+  };
+
+  const loader = loaders[route];
+  if (typeof loader !== "function") return;
+
+  try {
+    loadedRoutes.add(route);
+    await loader();
+  } catch (err) {
+    loadedRoutes.delete(route);
+    console.error(`❌ Route loader failed: ${route}`, err);
+  }
+}
+
 // ---------- Routing ----------
 function setActiveTab(route) {
   document.querySelectorAll(".tab").forEach(a => {
@@ -10,18 +41,7 @@ function setActiveTab(route) {
     v.hidden = v.dataset.view !== route;
   });
 
-  if (route === "home") {
-    loadHomeNewsSnippets();
-  }
-
-  if (route === "news") {
-    window.loadNews?.();
-  }
-
-  if (route === "pitstop") {
-    window.loadPitStop?.();
-}
-
+  loadRouteData(route);
 }
 
 function getRouteFromHash() {
@@ -214,27 +234,6 @@ async function loadNextEventCountdown() {
   }
 }
 
-async function runPageLoaders() {
-  // Page modules expose these on window (see /js/pages/*.js)
-  // Keep each loader isolated so one slow/broken page cannot stop navigation.
-  const loaders = [
-    ["drivers", window.loadDrivers],
-    ["standings", window.loadStandings],
-    ["results", window.loadResults],
-    ["admin", window.loadAdmin],
-    ["submit", window.loadSubmit],
-    ["pitstop", window.loadPitStop],
-  ].filter(([, fn]) => typeof fn === "function");
-
-  for (const [name, fn] of loaders) {
-    try {
-      await fn();
-    } catch (err) {
-      console.error(`❌ Page loader failed: ${name}`, err);
-    }
-  }
-}
-
 // ---------- App Boot ----------
 document.addEventListener("DOMContentLoaded", async () => {
   // Build stamp
@@ -255,12 +254,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Firebase + Firestore meta read
-  await checkFirebaseAndReadMeta();
-
-  await loadNextEventCountdown();
-  await loadHomeNewsSnippets();
-
-  // Page data. Do not let slow data loading block tab navigation.
-  runPageLoaders().catch(err => console.error("❌ runPageLoaders failed:", err));
+  // Firebase + Firestore meta read only. Page data now lazy-loads per tab.
+  checkFirebaseAndReadMeta();
 });
