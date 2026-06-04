@@ -324,27 +324,6 @@
           </tr>
         `;
 
-    const rollingPrizeLedger = buildRollingPrizeLedger(rounds);
-
-    const rollingPrizeRows = rollingPrizeLedger.length
-      ? rollingPrizeLedger
-          .map((row) => {
-            return `
-              <tr>
-                <td>${row.roundNo || "-"}</td>
-                <td>${escapeHtml(row.player)}</td>
-                <td>${escapeHtml(row.label)}</td>
-                <td style="text-align:right;">${fmtMoney(row.amount)}</td>
-                <td style="text-align:right; font-weight:800;">${fmtMoney(row.runningTotal)}</td>
-              </tr>
-            `;
-          })
-          .join("")
-      : `
-          <tr>
-            <td colspan="5" class="muted">No prize ledger yet</td>
-          </tr>
-        `;
 
     const currentUser = firebase.auth().currentUser;
     const round10PrizeTable = getRound10PrizeTable();
@@ -497,23 +476,6 @@
         </table>
       </div>
 
-      <div class="card" style="margin-top:10px;">
-        <h2>Rolling Prize Ledger</h2>
-        <table class="table tiny" style="width:100%;">
-          <thead>
-            <tr>
-              <th>Round</th>
-              <th>Player</th>
-              <th>Prize</th>
-              <th style="text-align:right;">Won</th>
-              <th style="text-align:right;">Running Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rollingPrizeRows}
-          </tbody>
-        </table>
-      </div>
 
     `;
 
