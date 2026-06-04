@@ -251,12 +251,44 @@
       .sort((a, b) => b.total - a.total || a.player.localeCompare(b.player));
   }
 
+  function buildEventRolloverSummary(calculatedRounds) {
+    const events = new Map();
+
+    calculatedRounds.forEach((round) => {
+      const roundNo = Number(round.roundNo || 0);
+      if (!roundNo) return;
+
+      const eventNo = Math.ceil(roundNo / 3);
+      const existing = events.get(eventNo) || {
+        eventNo,
+        rounds: [],
+        rolloverAdded: 0,
+        rolloverAfterEvent: 0,
+        hasSpecialReset: false,
+      };
+
+      existing.rounds.push(roundNo);
+
+      if (round.specialRound10) {
+        existing.hasSpecialReset = true;
+      } else if (round.normal && round.drawnPlayerWon !== true) {
+        existing.rolloverAdded += Number(round.rolloverAdded ?? 4.5);
+      }
+
+      existing.rolloverAfterEvent = Number(round.rolloverAfter || 0);
+      events.set(eventNo, existing);
+    });
+
+    return Array.from(events.values()).sort((a, b) => a.eventNo - b.eventNo);
+  }
+
   function render(root, data, rounds = []) {
     const pitstopInputStyle = "width:100%; box-sizing:border-box; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.16); background:rgba(15,23,42,.88); color:#f8fafc; outline:none;";
 
 
     const pitstopTotals = calculatePitStopTotals(data, rounds);
     const calculatedRounds = buildRoundCalculations(data, rounds);
+    const eventRolloverSummary = buildEventRolloverSummary(calculatedRounds);
 
     const roundRows = calculatedRounds.length
       ? calculatedRounds
@@ -276,6 +308,30 @@
       : `
           <tr>
             <td colspan="6" class="muted">No rounds entered yet</td>
+          </tr>
+        `;
+
+    const eventRolloverRows = eventRolloverSummary.length
+      ? eventRolloverSummary
+          .map((event) => {
+            const roundLabel = event.rounds.length
+              ? `Rounds ${Math.min(...event.rounds)}–${Math.max(...event.rounds)}`
+              : "—";
+
+            return `
+              <tr>
+                <td>${event.eventNo}</td>
+                <td>${roundLabel}</td>
+                <td style="text-align:right;">${fmtMoney(event.rolloverAdded)}</td>
+                <td style="text-align:right; font-weight:800;">${fmtMoney(event.rolloverAfterEvent)}</td>
+                <td>${event.hasSpecialReset ? "Round 10 reset" : "—"}</td>
+              </tr>
+            `;
+          })
+          .join("")
+      : `
+          <tr>
+            <td colspan="5" class="muted">No event rollover data yet</td>
           </tr>
         `;
 
@@ -399,6 +455,23 @@
           Next normal-round pot: <strong style="color:#fff;">${fmtMoney(pitstopTotals.calculatedNextPot)}</strong><br>
           Entry pot: ${fmtMoney(pitstopTotals.entryPot)} • Round 10 shared payout included when entered • Rounds 20 and 30 held separately
         </div>
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <h2>Event Rollover Summary</h2>
+        <table class="table tiny" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Rounds</th>
+              <th style="text-align:right;">Added</th>
+              <th style="text-align:right;">Rollover</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${eventRolloverRows}
+          </tbody>
+        </table>
       </div>
       ${adminFormHtml}
 
