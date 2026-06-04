@@ -236,28 +236,6 @@
     return entries;
   }
 
-  function buildRollingPrizeLedger(rounds) {
-    const runningTotals = new Map();
-    const sortedRounds = rounds
-      .slice()
-      .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0));
-
-    const ledger = [];
-
-    sortedRounds.forEach((round) => {
-      getRoundPayoutEntries(round).forEach((entry) => {
-        const previousTotal = Number(runningTotals.get(entry.player) || 0);
-        const newTotal = previousTotal + Number(entry.amount || 0);
-        runningTotals.set(entry.player, newTotal);
-        ledger.push({
-          ...entry,
-          runningTotal: newTotal,
-        });
-      });
-    });
-
-    return ledger;
-  }
 
   function buildPlayerWinnings(rounds) {
     const totals = new Map();
@@ -275,10 +253,6 @@
 
   function render(root, data, rounds = []) {
     const pitstopInputStyle = "width:100%; box-sizing:border-box; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.16); background:rgba(15,23,42,.88); color:#f8fafc; outline:none;";
-    const currentPot = Number(data.currentPot || 0).toFixed(2);
-    const rollover = Number(data.jackpot || 0).toFixed(2);
-    const lastWinner = escapeHtml(data.lastWinner || "—");
-    const nextDraw = escapeHtml(data.nextDraw || "—");
 
 
     const pitstopTotals = calculatePitStopTotals(data, rounds);
@@ -423,24 +397,11 @@
         <div style="font-size:34px; line-height:1.05; font-weight:950; color:#fff; margin-top:4px;">${fmtMoney(pitstopTotals.calculatedRollover)}</div>
         <div class="tiny" style="color:rgba(255,255,255,.8); margin-top:6px; line-height:1.5;">
           Next normal-round pot: <strong style="color:#fff;">${fmtMoney(pitstopTotals.calculatedNextPot)}</strong><br>
-          Entry pot: ${fmtMoney(pitstopTotals.entryPot)} • Special rounds 10, 20 and 30 held separately
+          Entry pot: ${fmtMoney(pitstopTotals.entryPot)} • Round 10 shared payout included when entered • Rounds 20 and 30 held separately
         </div>
       </div>
       ${adminFormHtml}
 
-      <div class="card" style="margin-top:10px;">
-        <h2>Summary</h2>
-        <div class="tiny muted" style="line-height:1.7;">
-          Manual current pot: <strong>£${currentPot}</strong><br>
-          Calculated next normal-round pot: <strong>${fmtMoney(pitstopTotals.calculatedNextPot)}</strong><br>
-          Calculated rollover: <strong>${fmtMoney(pitstopTotals.calculatedRollover)}</strong><br>
-          Entry pot per normal round: <strong>${fmtMoney(pitstopTotals.entryPot)}</strong><br>
-          Last winner: <strong>${lastWinner}</strong><br>
-          Next draw: <strong>${nextDraw}</strong><br>
-          Manual rollover amount: <strong>£${rollover}</strong><br>
-          <span class="muted">* Rounds 10, 20 and 30 are special draws and are not included in this normal-round calculation yet.</span>
-        </div>
-      </div>
 
       <div class="card" style="margin-top:10px;">
         <h2>Round History</h2>
