@@ -15,12 +15,47 @@
     return `£${Number(value || 0).toFixed(2)}`;
   }
 
+
   function isNormalRound(roundNo) {
     const n = Number(roundNo || 0);
     return n > 0 && ![10, 20, 30].includes(n);
   }
 
+  function isRound10Special(roundNo) {
+    return Number(roundNo || 0) === 10;
+  }
+
+  function getRound10PrizeTable() {
+    return [
+      10.00,
+      5.00,
+      4.00,
+      3.50,
+      3.00,
+      2.80,
+      2.60,
+      2.40,
+      2.20,
+      2.00,
+      1.80,
+      1.70,
+      1.60,
+      1.50,
+      1.40,
+      1.30,
+      1.20,
+      1.10,
+      0.90,
+    ];
+  }
+
   function getRoundPaidOut(round) {
+    if (round.type === "special_round_10") {
+      return (round.specialPayouts || []).reduce((sum, payout) => {
+        return sum + Number(payout.amount || 0);
+      }, 0);
+    }
+
     if (round.drawnPlayerWon === true) {
       return Number(round.fullPotPrize || round.potValue || 0);
     }
@@ -36,15 +71,23 @@
   function calculatePitStopTotals(data, rounds) {
     const totalPlayers = Number(data.totalPlayers || 19);
     const entryPot = totalPlayers * 0.5;
-    const normalRounds = rounds
-      .filter((round) => isNormalRound(round.roundNo))
+    const sortedRounds = rounds
+      .slice()
       .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0));
 
     let rollover = 0;
     let lastCompletedRound = null;
 
-    normalRounds.forEach((round) => {
+    sortedRounds.forEach((round) => {
+      const roundNo = Number(round.roundNo || 0);
+      if (!isNormalRound(roundNo) && !isRound10Special(roundNo)) return;
+
       lastCompletedRound = round;
+
+      if (isRound10Special(roundNo)) {
+        rollover = 0;
+        return;
+      }
 
       if (round.drawnPlayerWon === true) {
         rollover = 0;
@@ -74,11 +117,14 @@
 
     return sortedRounds.map((round) => {
       const normal = isNormalRound(round.roundNo);
-      const startingPot = normal ? entryPot + rolloverBefore : Number(round.potValue || 0);
+      const specialRound10 = isRound10Special(round.roundNo);
+      const startingPot = normal || specialRound10 ? entryPot + rolloverBefore : Number(round.potValue || 0);
       const paidOut = getRoundPaidOut(round);
       let rolloverAfter = rolloverBefore;
 
-      if (normal) {
+      if (specialRound10) {
+        rolloverAfter = 0;
+      } else if (normal) {
         if (round.drawnPlayerWon === true) {
           rolloverAfter = 0;
         } else {
@@ -89,6 +135,7 @@
       const calculated = {
         ...round,
         normal,
+        specialRound10,
         entryPot,
         rolloverBefore,
         startingPot,
@@ -96,7 +143,7 @@
         rolloverAfter,
       };
 
-      if (normal) {
+      if (normal || specialRound10) {
         rolloverBefore = rolloverAfter;
       }
 
@@ -110,6 +157,20 @@
   }
 
   function renderPayoutBreakdown(round) {
+    if (round.type === "special_round_10") {
+      const payouts = (round.specialPayouts || [])
+        .slice()
+        .sort((a, b) => Number(a.position || 0) - Number(b.position || 0));
+
+      if (!payouts.length) return "-";
+
+      return payouts
+        .map((payout) => {
+          return `<div><strong>${Number(payout.position || 0)}:</strong> ${escapeHtml(payout.player || "-")} — ${fmtMoney(payout.amount)}</div>`;
+        })
+        .join("");
+    }
+
     if (round.drawnPlayerWon === true) {
       return `<div><strong>Full Pot:</strong> ${escapeHtml(round.drawnPlayer || "Winner")} — ${fmtMoney(round.fullPotPrize || round.potValue || 0)}</div>`;
     }
@@ -154,6 +215,13 @@
         });
       });
     };
+
+    if (round.type === "special_round_10") {
+      (round.specialPayouts || []).forEach((payout) => {
+        addSplitPrize(`${Number(payout.position || 0)}${Number(payout.position || 0) === 1 ? "st" : Number(payout.position || 0) === 2 ? "nd" : Number(payout.position || 0) === 3 ? "rd" : "th"}`, payout.player, payout.amount);
+      });
+      return entries;
+    }
 
     if (round.drawnPlayerWon === true) {
       addSplitPrize("Full Pot", round.drawnPlayer, round.fullPotPrize || round.potValue);
@@ -222,7 +290,7 @@
             return `
               <tr>
                 <td>${r.roundNo || "-"}${r.normal ? "" : " *"}</td>
-                <td>${escapeHtml(r.drawnPlayer || "-")}</td>
+                <td>${r.specialRound10 ? "Round 10 Shared" : escapeHtml(r.drawnPlayer || "-")}</td>
                 <td>${fmtMoney(r.startingPot)}</td>
                 <td>${renderPayoutBreakdown(r)}</td>
                 <td>${fmtMoney(r.paidOut)}</td>
@@ -279,6 +347,17 @@
         `;
 
     const currentUser = firebase.auth().currentUser;
+    const round10PrizeTable = getRound10PrizeTable();
+    const round10PrizeTotal = round10PrizeTable.reduce((sum, value) => sum + value, 0);
+    const round10FieldsHtml = round10PrizeTable
+      .map((amount, index) => {
+        const position = index + 1;
+        return `
+          <label class="tiny muted">${position}${position === 1 ? "st" : position === 2 ? "nd" : position === 3 ? "rd" : "th"} Place — ${fmtMoney(amount)}</label>
+          <input class="pitstop-round10-player" data-position="${position}" data-amount="${amount}" type="text" placeholder="Player name" style="${pitstopInputStyle}" />
+        `;
+      })
+      .join("");
     const isPitStopAdmin = currentUser?.email === "dmillward85@icloud.com";
 
     const adminFormHtml = isPitStopAdmin
@@ -341,6 +420,13 @@
           <textarea id="pitstop-notes" rows="2" placeholder="Optional tie/payment note" style="${pitstopInputStyle}; min-height:70px;"></textarea>
 
           <button id="pitstop-save-round" class="tile" type="button">Save Pit Stop Round</button>
+          <hr style="border:0; border-top:1px solid rgba(255,255,255,.12); width:100%; margin:14px 0;" />
+          <h2>Round 10 Special Shared Draw</h2>
+          <p class="tiny muted">Round 10 pays all 19 players from the accumulated rollover plus the Round 10 entry pot. Prize table total: ${fmtMoney(round10PrizeTotal)}.</p>
+          <div id="pitstop-round10-fields" style="display:grid; gap:8px;">
+            ${round10FieldsHtml}
+          </div>
+          <button id="pitstop-save-round10" class="tile" type="button">Save Round 10 Special Draw</button>
           <button id="pitstop-lock-admin" class="tile" type="button" style="background:rgba(255,255,255,.06);">Lock Round Entry</button>
           <div id="pitstop-admin-msg" class="tiny muted">Ready.</div>
         </div>
@@ -521,6 +607,62 @@
         setMsg(err?.message || "Failed to save round.");
         saveRoundBtn.disabled = false;
         saveRoundBtn.textContent = "Save Pit Stop Round";
+      }
+    });
+
+    const saveRound10Btn = root.querySelector("#pitstop-save-round10");
+    saveRound10Btn?.addEventListener("click", async () => {
+      const msg = root.querySelector("#pitstop-admin-msg");
+      const setMsg = (text) => {
+        if (msg) msg.textContent = text;
+      };
+
+      const payoutInputs = Array.from(root.querySelectorAll(".pitstop-round10-player"));
+      const specialPayouts = payoutInputs.map((input) => ({
+        position: Number(input.getAttribute("data-position") || 0),
+        player: String(input.value || "").trim(),
+        amount: Number(input.getAttribute("data-amount") || 0),
+      }));
+
+      const missing = specialPayouts.filter((payout) => !payout.player);
+      if (missing.length) {
+        setMsg(`Enter all 19 Round 10 players before saving. Missing: ${missing.map((p) => p.position).join(", ")}`);
+        return;
+      }
+
+      const total = specialPayouts.reduce((sum, payout) => sum + Number(payout.amount || 0), 0);
+      if (Math.round(total * 100) !== 5000) {
+        setMsg(`Round 10 prize total must be £50.00. Current total: ${fmtMoney(total)}.`);
+        return;
+      }
+
+      const confirmed = window.confirm(`Save Round 10 special shared draw?\n\nThis will write to pitstop_rounds/round_10 and reset the calculated rollover after Round 10.`);
+      if (!confirmed) return;
+
+      try {
+        saveRound10Btn.disabled = true;
+        saveRound10Btn.textContent = "Saving…";
+        setMsg("Saving Round 10 special draw…");
+
+        await window.btccDb.collection("pitstop_rounds").doc("round_10").set({
+          roundNo: 10,
+          type: "special_round_10",
+          drawnPlayer: "Round 10 Shared Draw",
+          drawnPlayerWon: false,
+          potValue: 50,
+          specialPayouts,
+          rolloverAdded: 0,
+          notes: "Round 10 shared payout: 9 rollover rounds plus Round 10 entry pot.",
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        setMsg("Round 10 saved. Refreshing…");
+        await loadPitStop();
+      } catch (err) {
+        console.error("❌ Failed to save Round 10 special draw:", err);
+        setMsg(err?.message || "Failed to save Round 10 special draw.");
+        saveRound10Btn.disabled = false;
+        saveRound10Btn.textContent = "Save Round 10 Special Draw";
       }
     });
   }
