@@ -89,12 +89,23 @@
     return head + body + `</tbody></table></div>`;
   };
 
-  const renderPlayerScoresTable = (rows) => {
+  const renderPlayerScoresTable = (rows, sortKey = "totalDesc") => {
     if (!rows.length) {
       return `<div class="note">No event scores yet.</div>`;
     }
 
     const head = `
+      <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-bottom:8px;">
+        <label class="tiny muted" for="player-score-sort">Sort</label>
+        <select class="player-score-sort" style="padding:7px 9px; border-radius:9px; border:1px solid rgba(255,255,255,.16); background:rgba(15,23,42,.88); color:#f8fafc;">
+          <option value="totalDesc" ${sortKey === "totalDesc" ? "selected" : ""}>Total high → low</option>
+          <option value="nameAsc" ${sortKey === "nameAsc" ? "selected" : ""}>Player A → Z</option>
+          <option value="qDesc" ${sortKey === "qDesc" ? "selected" : ""}>Qualifying high → low</option>
+          <option value="r1Desc" ${sortKey === "r1Desc" ? "selected" : ""}>Race 1 high → low</option>
+          <option value="r2Desc" ${sortKey === "r2Desc" ? "selected" : ""}>Race 2 high → low</option>
+          <option value="r3Desc" ${sortKey === "r3Desc" ? "selected" : ""}>Race 3 high → low</option>
+        </select>
+      </div>
       <div style="overflow-x:auto;">
         <table class="table" style="width:100%; border-collapse: collapse; font-size:14px; table-layout:auto;">
           <thead>
@@ -110,7 +121,7 @@
           <tbody>
     `;
 
-    // Sort rows by Total (desc) so the table is always in standings order.
+    // Sort rows by selected key, with fallback to total desc then name asc.
     // We compute totals from breakdown if needed.
     const n = (v) => (typeof v === "number" ? v : 0);
 
@@ -134,6 +145,7 @@
 
         return {
           ...r,
+          __name: String(r.displayName || r.playerName || r.uid || "Player"),
           __q: n(q),
           __r1: n(r1),
           __r2: n(r2),
@@ -141,13 +153,20 @@
           __total: n(total),
         };
       })
-      .sort((a, b) => (b.__total || 0) - (a.__total || 0));
+      .sort((a, b) => {
+        if (sortKey === "nameAsc") return a.__name.localeCompare(b.__name);
+        if (sortKey === "qDesc") return (b.__q || 0) - (a.__q || 0) || a.__name.localeCompare(b.__name);
+        if (sortKey === "r1Desc") return (b.__r1 || 0) - (a.__r1 || 0) || a.__name.localeCompare(b.__name);
+        if (sortKey === "r2Desc") return (b.__r2 || 0) - (a.__r2 || 0) || a.__name.localeCompare(b.__name);
+        if (sortKey === "r3Desc") return (b.__r3 || 0) - (a.__r3 || 0) || a.__name.localeCompare(b.__name);
+        return (b.__total || 0) - (a.__total || 0) || a.__name.localeCompare(b.__name);
+      });
 
     const body = sorted
       .map((r) => {
         return `
           <tr>
-            <td style="padding:6px;">${escapeHtml(r.displayName || r.playerName || r.uid || "Player")}</td>
+            <td style="padding:6px;">${escapeHtml(r.__name)}</td>
             <td style="padding:6px; text-align:right;">${r.__q}</td>
             <td style="padding:6px; text-align:right;">${r.__r1}</td>
             <td style="padding:6px; text-align:right;">${r.__r2}</td>
@@ -365,7 +384,15 @@ scoreDocs = psnap.docs.map((d) => ({ uid: d.id, ...(d.data() || {}) }));
 scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
 
             if (playerScoresSlot) {
-              playerScoresSlot.innerHTML = renderPlayerScoresTable(scoreDocs);
+              const renderScores = (sortKey = "totalDesc") => {
+                playerScoresSlot.innerHTML = renderPlayerScoresTable(scoreDocs, sortKey);
+                const sortSelect = playerScoresSlot.querySelector(".player-score-sort");
+                sortSelect?.addEventListener("change", () => {
+                  renderScores(sortSelect.value || "totalDesc");
+                });
+              };
+
+              renderScores();
             }
           } catch (e) {
             console.warn("⚠️ Failed to read event_scores for", eventId, e);
