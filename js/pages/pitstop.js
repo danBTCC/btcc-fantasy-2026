@@ -473,7 +473,7 @@
           </tbody>
         </table>
       </div>
-      ${adminFormHtml}
+    
 
 
       <div class="card" style="margin-top:10px;">
@@ -509,7 +509,7 @@
           </tbody>
         </table>
       </div>
-
+    ${adminFormHtml}
 
     `;
 
