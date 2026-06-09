@@ -699,6 +699,26 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         });
       });
 
+      const getUsageDetailLabel = (driverId) => {
+        const usedEvents = previousSelections
+          .filter((entry) => entry.driverIds.includes(driverId))
+          .map((entry) => Number(entry.eventNo || 0))
+          .sort((a, b) => b - a);
+
+        if (!usedEvents.length) return "Usage: 0/2";
+
+        const lastEventNo = currentEventNo - 1;
+        const twoAgoEventNo = currentEventNo - 2;
+        const usedLast = usedEvents.includes(lastEventNo);
+        const usedTwoAgo = usedEvents.includes(twoAgoEventNo);
+
+        if (usedLast && usedTwoAgo) return "Usage: 2/2 — used last 2 events";
+        if (usedLast) return "Usage: 1/2 — used last event";
+        if (usedTwoAgo) return "Usage: 1/2 — used 2 events ago";
+
+        return `Usage: ${usedEvents.length}/2 — used recently`;
+      };
+
       const drivers = driversSnap.docs.map((doc) => {
         const d = doc.data() || {};
         const selectionsInLastTwo = Number(consecutiveCounts.get(doc.id) || 0);
@@ -719,6 +739,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
           ep: currentEp,
           tier: d.tier ?? null,
           selectionsInLastTwo,
+          usageDetailLabel: getUsageDetailLabel(doc.id),
           blocked,
           isSLD,
         };
@@ -1140,7 +1161,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
           ${drivers
             .map((driver) => {
               const tierLabel = isTierEvent() ? (driver.tier ? `${String(driver.tier).charAt(0).toUpperCase()}${String(driver.tier).slice(1)}` : "Tier TBD") : "Free choice";
-              const streakLabel = `Usage: ${driver.selectionsInLastTwo}/2`;
+              const streakLabel = driver.usageDetailLabel || `Usage: ${driver.selectionsInLastTwo}/2`;
               const sldLabel = driver.isSLD ? " • SLD" : "";
               const blockedLabel = driver.blocked ? " • Blocked next event" : "";
               return `
