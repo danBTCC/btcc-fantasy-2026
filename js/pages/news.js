@@ -135,12 +135,20 @@
             const createdAt = d.createdAt && typeof d.createdAt.toDate === "function"
               ? d.createdAt.toDate().toLocaleString("en-GB")
               : "—";
+            const newsBodyId = `news-body-${doc.id}`;
 
             return `
               <div class="note" style="margin-top:10px;">
-                <div style="font-weight:700; color:var(--text);">${escapeHtml(title)}</div>
-                <div class="tiny muted" style="margin-top:4px;">${escapeHtml(createdAt)} • ${escapeHtml(createdBy)}</div>
-                <div class="tiny muted" style="margin-top:8px; white-space:pre-line;">${escapeHtml(content)}</div>
+                <button class="collapseHeader" type="button" data-toggle="${newsBodyId}" style="width:100%; text-align:left; background:transparent; border:0; padding:0; color:var(--text);">
+                  <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+                    <div>
+                      <div style="font-weight:700; color:var(--text);">${escapeHtml(title)}</div>
+                      <div class="tiny muted" style="margin-top:4px;">${escapeHtml(createdAt)} • ${escapeHtml(createdBy)}</div>
+                    </div>
+                    <span class="tiny muted">▸</span>
+                  </div>
+                </button>
+                <div id="${newsBodyId}" hidden class="tiny muted" style="margin-top:8px; white-space:pre-line;">${escapeHtml(content)}</div>
               </div>
             `;
           }).join("");
