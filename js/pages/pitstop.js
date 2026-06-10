@@ -293,15 +293,27 @@
     const roundRows = calculatedRounds.length
       ? calculatedRounds
           .map((r) => {
+            const roundNo = Number(r.roundNo || 0);
+            const eventDivider = roundNo > 0 && roundNo % 3 === 0
+              ? `
+                <tr>
+                  <td colspan="6" class="tiny muted" style="padding:8px 6px; text-align:center; border-top:1px solid rgba(255,255,255,.12); border-bottom:1px solid rgba(255,255,255,.08);">
+                    End of Event ${Math.ceil(roundNo / 3)}
+                  </td>
+                </tr>
+              `
+              : "";
+
             return `
               <tr>
                 <td>${r.roundNo || "-"}${r.normal ? "" : " *"}</td>
                 <td>${r.specialRound10 ? "Round 10 Shared" : escapeHtml(r.drawnPlayer || "-")}</td>
                 <td>${fmtMoney(r.startingPot)}</td>
-                <td>${renderPayoutBreakdown(r)}</td>
+                <td style="font-weight:900; color:#dbeafe;">${fmtMoney(r.rolloverAfter)}</td>
                 <td>${fmtMoney(r.paidOut)}</td>
-                <td>${fmtMoney(r.rolloverAfter)}</td>
+                <td>${renderPayoutBreakdown(r)}</td>
               </tr>
+              ${eventDivider}
             `;
           })
           .join("")
@@ -484,9 +496,9 @@
               <th>Round</th>
               <th>Drawn</th>
               <th>Pot</th>
-              <th>Payouts</th>
-              <th>Paid</th>
               <th>Rollover</th>
+              <th>Paid</th>
+              <th>Payouts</th>
             </tr>
           </thead>
           <tbody>
