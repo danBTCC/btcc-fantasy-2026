@@ -170,6 +170,53 @@
           });
       };
 
+      // Helper to build previous overall position map (for movement arrows)
+      const buildPreviousOverallPositionMap = async () => {
+        const eventsSnap = await window.btccDb.collection("events").orderBy("eventNo").get();
+        const eventDocs = eventsSnap.docs
+          .map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+          .filter((event) => String(event.status || "").toLowerCase() === "completed" || String(event.status || "").toLowerCase() === "complete")
+          .sort((a, b) => Number(a.eventNo || 0) - Number(b.eventNo || 0));
+
+        if (eventDocs.length < 2) return new Map();
+
+        const latestEvent = eventDocs[eventDocs.length - 1];
+        const previousEvents = eventDocs.filter((event) => event.id !== latestEvent.id);
+        const totals = new Map();
+
+        for (const event of previousEvents) {
+          const eventScorePlayersSnap = await window.btccDb
+            .collection("event_scores")
+            .doc(event.id)
+            .collection("players")
+            .get();
+
+          eventScorePlayersSnap.forEach((playerDoc) => {
+            const d = playerDoc.data() || {};
+            const points = Number(
+              d.points ??
+              d.total ??
+              d.pointsTotal ??
+              d.breakdown?.total ??
+              0
+            );
+
+            totals.set(playerDoc.id, Number(totals.get(playerDoc.id) || 0) + (Number.isFinite(points) ? points : 0));
+          });
+        }
+
+        const sortedPrevious = Array.from(totals.entries())
+          .map(([uid, points]) => ({ uid, points }))
+          .sort((a, b) => Number(b.points || 0) - Number(a.points || 0) || a.uid.localeCompare(b.uid));
+
+        const previousPositions = new Map();
+        sortedPrevious.forEach((row, idx) => {
+          previousPositions.set(row.uid, idx + 1);
+        });
+
+        return previousPositions;
+      };
+
       const buildRaceRowsFromEventScores = async (raceKey) => {
         const [eventsSnap, playersSnap] = await Promise.all([
           window.btccDb.collection("events").orderBy("eventNo").get(),
@@ -266,6 +313,13 @@
             });
         }
 
+        let previousOverallPositions = new Map();
+        try {
+          previousOverallPositions = await buildPreviousOverallPositionMap();
+        } catch (movementErr) {
+          console.warn("⚠️ Could not calculate previous overall positions:", movementErr);
+        }
+
         if (!playersDocs.length) {
           playersEl.textContent = "No data yet";
         } else {
@@ -288,7 +342,7 @@
                         <td style="padding:6px;">${idx + 1}</td>
                         <td style="padding:6px;">${d.displayName || "Unnamed"}</td>
                         <td style="padding:6px; text-align:right;"><span class="standings-points-pill">${d.pointsTotal ?? d.points ?? 0}</span></td>
-                        <td style="padding:6px; text-align:center;">${getMovementHtml(idx + 1, d.previousPosition)}</td>
+                        <td style="padding:6px; text-align:center;">${getMovementHtml(idx + 1, d.previousPosition ?? previousOverallPositions.get(doc.id))}</td>
                       </tr>
                     `;
                   })
