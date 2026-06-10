@@ -468,25 +468,21 @@
           Entry pot: ${fmtMoney(pitstopTotals.entryPot)} • Round 10 shared payout included when entered • Rounds 20 and 30 held separately
         </div>
       </div>
+
       <div class="card" style="margin-top:10px;">
-        <h2>Event Rollover Summary</h2>
+        <h2>Player Winnings</h2>
         <table class="table tiny" style="width:100%;">
           <thead>
             <tr>
-              <th>Event</th>
-              <th>Rounds</th>
-              <th style="text-align:right;">Added</th>
-              <th style="text-align:right;">Rollover</th>
-              <th>Note</th>
+              <th>Player</th>
+              <th style="text-align:right;">Total Won</th>
             </tr>
           </thead>
           <tbody>
-            ${eventRolloverRows}
+            ${playerWinningsRows}
           </tbody>
         </table>
       </div>
-    
-
 
       <div class="card" style="margin-top:10px;">
         <h2>Round History</h2>
@@ -508,19 +504,23 @@
       </div>
 
       <div class="card" style="margin-top:10px;">
-        <h2>Player Winnings</h2>
+        <h2>Event Rollover Summary</h2>
         <table class="table tiny" style="width:100%;">
           <thead>
             <tr>
-              <th>Player</th>
-              <th style="text-align:right;">Total Won</th>
+              <th>Event</th>
+              <th>Rounds</th>
+              <th style="text-align:right;">Added</th>
+              <th style="text-align:right;">Rollover</th>
+              <th>Note</th>
             </tr>
           </thead>
           <tbody>
-            ${playerWinningsRows}
+            ${eventRolloverRows}
           </tbody>
         </table>
       </div>
+
     ${adminFormHtml}
 
     `;
