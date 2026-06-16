@@ -719,7 +719,12 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         return `Usage: ${usedEvents.length}/2 — used recently`;
       };
 
-      const drivers = driversSnap.docs.map((doc) => {
+      const drivers = driversSnap.docs
+        .filter((doc) => {
+          const d = doc.data() || {};
+          return d.active !== false;
+        })
+        .map((doc) => {
         const d = doc.data() || {};
         const selectionsInLastTwo = Number(consecutiveCounts.get(doc.id) || 0);
         const isSLD = !!currentSldDriverId && currentSldDriverId === doc.id;
