@@ -149,6 +149,7 @@ async function loadAdminEventPicker(root) {
           id: doc.id,
           name: d.name ?? "Unnamed",
           price: Number(d.price ?? d.cost ?? 0),
+          active: d.active !== false,
         };
       });
 
