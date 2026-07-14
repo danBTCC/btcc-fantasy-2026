@@ -7,7 +7,9 @@
     if (!mount) return;
 
     const eventId = root.__selectedEventId;
-    const drivers = Array.isArray(root.__drivers) ? root.__drivers : [];
+    const drivers = Array.isArray(root.__drivers)
+      ? root.__drivers.filter((driver) => driver.active !== false)
+      : [];
 
     if (!eventId) {
       mount.innerHTML = `
