@@ -1,11 +1,25 @@
 
 (function () {
 
-  const GRID_SIZE = 21;
+  const racePoints = (pos1, gridSize) => {
+    const totalDrivers = Number(gridSize || 0);
 
-  const racePoints = (pos1) => {
-    if (!pos1 || pos1 < 1 || pos1 > GRID_SIZE) return 0;
-    return (GRID_SIZE + 1) - pos1;
+    if (!pos1 || pos1 < 1 || !totalDrivers || pos1 > totalDrivers) {
+      return 0;
+    }
+
+    return totalDrivers - pos1 + 1;
+  };
+
+  const getActiveDriverCount = async () => {
+    if (!window.btccDb) throw new Error("Database not ready");
+
+    const driversSnap = await window.btccDb.collection("drivers").get();
+
+    return driversSnap.docs.filter((doc) => {
+      const data = doc.data() || {};
+      return data.active !== false;
+    }).length;
   };
 
   // --- H7.1: Admin Results Preview panel (read-only, no lock/unlock writes) ---
@@ -321,7 +335,7 @@ if (banner) {
             <div style="height:10px;"></div>
 
             <strong>Wingfoot standings rebuild (I3.4)</strong><br>
-            <span class="tiny muted">Builds qualifying-only player standings using full qualifying scoring (1st = 24 down to 24th = 1) from results and entries up to the selected event.</span>
+            <span class="tiny muted">Builds qualifying-only player standings using each event's full grid scale (1st = event grid size, last = 1) from results and entries up to the selected event.</span>
             <button type="button" id="admin-rebuild-wingfoot-i3" class="tile" style="margin-top:10px;">Rebuild WINGFOOT standings up to selected event</button>
             <div id="admin-wingfoot-msg" class="tiny muted" style="margin-top:8px;"></div>
             <button type="button" id="admin-refresh-wingfoot" class="tile tinyBtn" style="margin-top:10px;">Refresh Wingfoot preview</button>
@@ -679,15 +693,12 @@ if (banner) {
 
 
             // --- I2.1 scoring helpers (2026 locked rules) ---
-            // Race scoring: full-grid linear for the 24-car 2026 grid (1st=24 .. 24th=1, DNF/DNS=0)
-            // Qualifying (weekend/championship): top 6 only (6..1), rest 0
-            // Source of truth: 2026 BTCC Fantasy League scoring update
+            // Race scoring: full-grid linear using the current active-driver count.
+            // Qualifying weekend points remain top 6 only (6..1), rest 0.
+            const activeDriverCount = await getActiveDriverCount();
+            if (!activeDriverCount) throw new Error("No active drivers found for race scoring");
 
-            const racePointsForPos = (pos1) => {
-              // pos1 is 1-based, 2026 live grid = 21 drivers
-              if (!pos1 || pos1 < 1 || pos1 > 21) return 0;
-              return 22 - pos1; // 1->21, 2->20, ..., 21->1
-            };
+            const racePointsForPos = (pos1) => racePoints(pos1, activeDriverCount);
 
             const qualiWeekendPointsForPos = (pos1) => {
               if (!pos1 || pos1 < 1 || pos1 > 6) return 0;
@@ -816,7 +827,8 @@ if (banner) {
                   },
                   sourceResultsUpdatedAt: srcUpdatedAt,
                   computedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                  engineVersion: "I2.2",
+                  activeDriverCount,
+                  engineVersion: "I2.6",
                 },
                 { merge: false }
               );
@@ -832,7 +844,8 @@ if (banner) {
                 entryCount,
                 sourceResultsUpdatedAt: srcUpdatedAt,
                 ranAt: firebase.firestore.FieldValue.serverTimestamp(),
-                engineVersion: "I2.2",
+                activeDriverCount,
+                engineVersion: "I2.6",
               },
               { merge: true }
             );
@@ -907,7 +920,8 @@ if (banner) {
                     race3: Number(rec.breakdown?.race3 || 0),
                   },
                   computedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                  engineVersion: "I2.5",
+                  activeDriverCount,
+                  engineVersion: "I2.6",
                 },
                 { merge: false }
               );
@@ -1411,56 +1425,17 @@ async function rebuildStandingsDriversI3_3(root) {
     return rec;
   };
 
-  const racePointsForPos = racePoints;
-
-  const qualiPointsForPos = (pos1) => {
-    if (!pos1 || pos1 < 1 || pos1 > 6) return 0;
-    return 7 - pos1; // 1->6 ... 6->1
-  };
-
-  const scoreOrderIntoTotals = (orderArr, pointsForPosFn) => {
-    if (!Array.isArray(orderArr)) return;
-
-    orderArr.forEach((driverId, index) => {
-      if (!driverId) return;
-      const rec = ensureDriver(String(driverId));
-      rec.pointsTotal += Number(pointsForPosFn(index + 1) || 0);
-    });
-  };
-
   for (const ev of eventList) {
-    const resultsSnap = await window.btccDb.collection("results").doc(ev.id).get();
-    if (!resultsSnap.exists) continue;
+    const scoresSnap = await window.btccDb
+      .collection("event_scores")
+      .doc(ev.id)
+      .collection("drivers")
+      .get();
 
-    const data = resultsSnap.data() || {};
-    const qualifying = Array.isArray(data.qualifying) ? data.qualifying : [];
-    const race1 = Array.isArray(data.race1) ? data.race1 : [];
-    const race2 = Array.isArray(data.race2) ? data.race2 : [];
-    const race3 = Array.isArray(data.race3) ? data.race3 : [];
-
-    const race1FastestLapIds = Array.isArray(data.race1FastestLapDriverIds)
-      ? data.race1FastestLapDriverIds.filter(Boolean).map(String)
-      : (data.race1FastestLapDriverId ? [String(data.race1FastestLapDriverId)] : []);
-    const race2FastestLapIds = Array.isArray(data.race2FastestLapDriverIds)
-      ? data.race2FastestLapDriverIds.filter(Boolean).map(String)
-      : (data.race2FastestLapDriverId ? [String(data.race2FastestLapDriverId)] : []);
-    const race3FastestLapIds = Array.isArray(data.race3FastestLapDriverIds)
-      ? data.race3FastestLapDriverIds.filter(Boolean).map(String)
-      : (data.race3FastestLapDriverId ? [String(data.race3FastestLapDriverId)] : []);
-
-    scoreOrderIntoTotals(qualifying, qualiPointsForPos);
-    scoreOrderIntoTotals(race1, racePointsForPos);
-    scoreOrderIntoTotals(race2, racePointsForPos);
-    scoreOrderIntoTotals(race3, racePointsForPos);
-
-    race1FastestLapIds.forEach((driverId) => {
-      ensureDriver(String(driverId)).pointsTotal += 1;
-    });
-    race2FastestLapIds.forEach((driverId) => {
-      ensureDriver(String(driverId)).pointsTotal += 1;
-    });
-    race3FastestLapIds.forEach((driverId) => {
-      ensureDriver(String(driverId)).pointsTotal += 1;
+    scoresSnap.forEach((doc) => {
+      const data = doc.data() || {};
+      const rec = ensureDriver(String(data.driverId || doc.id));
+      rec.pointsTotal += Number(data.pointsTotal || 0);
     });
   }
 
@@ -1503,7 +1478,7 @@ async function rebuildStandingsDriversI3_3(root) {
       throughEventNo: selectedEventNo,
       driverCount: ranked.length,
       tierMode: selectedEventNo >= 2 ? "7-10-7" : "event1-free-choice",
-      source: "results",
+      source: "event_scores.drivers",
     },
     { merge: true }
   );
@@ -1874,8 +1849,6 @@ async function rebuildStandingsWingfootI3_4(root) {
     return rec;
   };
 
-  const qualifyingTablePointsForPos = (pos1) => racePoints(pos1);
-
   const normaliseDriverIdsFromEntry = (data) => {
     if (!data || typeof data !== "object") return [];
     const candidates = [
@@ -1903,12 +1876,12 @@ async function rebuildStandingsWingfootI3_4(root) {
     );
   };
 
-  const scoreQualifyingForTeam = (teamIds, qualifyingOrder) => {
+  const scoreQualifyingForTeam = (teamIds, qualifyingOrder, pointsForPosition) => {
     if (!Array.isArray(teamIds) || teamIds.length === 0) return 0;
     return teamIds.reduce((total, driverId) => {
       const idx = Array.isArray(qualifyingOrder) ? qualifyingOrder.indexOf(driverId) : -1;
       const pos1 = idx >= 0 ? idx + 1 : null;
-      return total + qualifyingTablePointsForPos(pos1);
+      return total + pointsForPosition(pos1);
     }, 0);
   };
 
@@ -1919,6 +1892,26 @@ async function rebuildStandingsWingfootI3_4(root) {
     if (!resultsSnap.exists) continue;
     const resultsData = resultsSnap.data() || {};
     const qualifyingOrder = Array.isArray(resultsData.qualifying) ? resultsData.qualifying : [];
+    const qualifyingStatus = resultsData.qualifyingStatus && typeof resultsData.qualifyingStatus === "object"
+      ? resultsData.qualifyingStatus
+      : {};
+
+    // Build set of all driver IDs in this event's qualifying session
+    const eventDriverIds = new Set(
+      [
+        ...qualifyingOrder,
+        ...(Array.isArray(qualifyingStatus.FIN) ? qualifyingStatus.FIN : []),
+        ...(Array.isArray(qualifyingStatus.DNF) ? qualifyingStatus.DNF : []),
+        ...(Array.isArray(qualifyingStatus.DNS) ? qualifyingStatus.DNS : []),
+        ...(Array.isArray(qualifyingStatus.DSQ) ? qualifyingStatus.DSQ : []),
+      ]
+        .filter(Boolean)
+        .map(String)
+    );
+
+    // Use event grid size for linear points
+    const eventGridSize = eventDriverIds.size || await getActiveDriverCount();
+    const qualifyingTablePointsForPos = (pos1) => racePoints(pos1, eventGridSize);
 
     let entriesSnap = await window.btccDb.collection("entries").doc(eventId).collection("entries").get();
     if (entriesSnap.empty) {
@@ -1929,7 +1922,9 @@ async function rebuildStandingsWingfootI3_4(root) {
       const uid = doc.id;
       const teamIds = normaliseDriverIdsFromEntry(doc.data() || {});
       const rec = ensurePlayer(uid);
-      rec.pointsTotal += Number(scoreQualifyingForTeam(teamIds, qualifyingOrder) || 0);
+      rec.pointsTotal += Number(
+        scoreQualifyingForTeam(teamIds, qualifyingOrder, qualifyingTablePointsForPos) || 0
+      );
     });
   }
 
@@ -1953,7 +1948,7 @@ async function rebuildStandingsWingfootI3_4(root) {
       throughEventId: eid,
       throughEventNo: selectedEventNo,
       playerCount: ranked.length,
-      source: "results.qualifying + entries (24-to-1)",
+      source: "results.qualifying + entries (event grid size-to-1)",
     },
     { merge: true }
   );
