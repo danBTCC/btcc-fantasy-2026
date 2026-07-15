@@ -93,6 +93,35 @@
     const previewBtn = mount.querySelector("#admin-quali-preview");
     const btn = previewBtn;
 
+    const updatePositionOptions = () => {
+      const positionSelects = Array.from(
+        mount.querySelectorAll("select[data-quali-pos]")
+      );
+
+      const selectedValues = positionSelects
+        .map((select) => select.value)
+        .filter(Boolean);
+
+      positionSelects.forEach((select) => {
+        const currentValue = select.value;
+        const unavailableValues = new Set(
+          selectedValues.filter((driverId) => driverId !== currentValue)
+        );
+
+        select.innerHTML = `
+          <option value="">—</option>
+          ${drivers
+            .filter((driver) => !unavailableValues.has(String(driver.id)))
+            .map((driver) => {
+              const driverId = String(driver.id);
+              const selected = driverId === currentValue ? " selected" : "";
+              return `<option value="${driverId}"${selected}>${driver.name}</option>`;
+            })
+            .join("")}
+        `;
+      });
+    };
+
     const validate = () => {
       const selects = Array.from(mount.querySelectorAll("select[data-quali-pos]"));
       const dnfSel = mount.querySelector("select[data-quali-dnf]");
@@ -145,11 +174,19 @@
       renderResultsPreview(root);
     };
 
-    mount.querySelectorAll("select[data-quali-pos], select[data-quali-dnf], select[data-quali-dns], select[data-quali-dsq]").forEach((sel) => {
-      sel.addEventListener("change", validate);
+    mount.querySelectorAll("select[data-quali-pos]").forEach((select) => {
+      select.addEventListener("change", () => {
+        updatePositionOptions();
+        validate();
+      });
+    });
+
+    mount.querySelectorAll("select[data-quali-dnf], select[data-quali-dns], select[data-quali-dsq]").forEach((select) => {
+      select.addEventListener("change", validate);
     });
 
     // Initial validation state
+    updatePositionOptions();
     validate();
 
     // H7.3 — disable qualifying inputs if locked
