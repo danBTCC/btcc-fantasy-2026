@@ -106,6 +106,34 @@
   const wireValidation = (raceKey) => {
     const validationEl = mount.querySelector(`#admin-${raceKey}-validation`);
     const saveBtn = mount.querySelector(`#admin-${raceKey}-save`);
+    const updatePositionOptions = () => {
+      const finishSelects = Array.from(
+        mount.querySelectorAll(`select[data-${raceKey}-pos]`)
+     );
+
+     const selectedValues = finishSelects
+       .map((select) => select.value)
+       .filter(Boolean);
+
+     finishSelects.forEach((select) => {
+    const currentValue = select.value;
+    const unavailableValues = new Set(
+      selectedValues.filter((driverId) => driverId !== currentValue)
+    );
+
+    select.innerHTML = `
+      <option value="">—</option>
+      ${drivers
+        .filter((driver) => !unavailableValues.has(String(driver.id)))
+        .map((driver) => {
+          const driverId = String(driver.id);
+          const selected = driverId === currentValue ? " selected" : "";
+          return `<option value="${driverId}"${selected}>${driver.name}</option>`;
+        })
+        .join("")}
+    `;
+  });
+};
 
     const validate = () => {
       const finishSelects = Array.from(mount.querySelectorAll(`select[data-${raceKey}-pos]`));
@@ -178,11 +206,19 @@
       renderResultsPreview(root);
     };
 
-    mount.querySelectorAll(`select[data-${raceKey}-pos], select[data-${raceKey}-dnf], select[data-${raceKey}-dns], select[data-${raceKey}-dsq], select[data-${raceKey}-fl1], select[data-${raceKey}-fl2], select[data-${raceKey}-fl3]`).forEach(sel => {
-      sel.addEventListener("change", validate);
-    });
-
+    mount.querySelectorAll(`select[data-${raceKey}-pos]`).forEach((select) => {
+  select.addEventListener("change", () => {
+    updatePositionOptions();
     validate();
+  });
+});
+
+mount.querySelectorAll(`select[data-${raceKey}-dnf], select[data-${raceKey}-dns], select[data-${raceKey}-dsq], select[data-${raceKey}-fl1], select[data-${raceKey}-fl2], select[data-${raceKey}-fl3]`).forEach((select) => {
+  select.addEventListener("change", validate);
+});
+
+updatePositionOptions();
+validate();
 
     // H6.2: Save Race 1 only (Race 2/3 remain UI-only)
     if (raceKey === "race1" && saveBtn) {
