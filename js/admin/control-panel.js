@@ -596,11 +596,48 @@ if (banner) {
     }
     if (engineBtn) {
       engineBtn.onclick = async () => {
+        if (engineBtn.dataset.engineRunning === "true") return;
+
+        engineBtn.dataset.engineRunning = "true";
+        engineBtn.disabled = true;
+        engineBtn.textContent = "Checking engine status…";
+
         try {
           if (!window.btccDb) throw new Error("Database not ready");
 
           const eid = root.__selectedEventId;
           if (!eid) throw new Error("No event selected");
+
+          // Primary rerun lock. Legacy event_scores are checked only when no
+          // engine_runs audit document exists for an older processed event.
+          const engineRunSnap = await window.btccDb.collection("engine_runs").doc(eid).get();
+
+          if (engineRunSnap.exists) {
+            throw new Error(
+              "Engine run blocked: processing has already started or completed for this event. Use the separate standings rebuild controls for derived-table corrections."
+            );
+          }
+
+          const [legacyPlayerScores, legacyDriverScores] = await Promise.all([
+            window.btccDb
+              .collection("event_scores")
+              .doc(eid)
+              .collection("players")
+              .limit(1)
+              .get(),
+            window.btccDb
+              .collection("event_scores")
+              .doc(eid)
+              .collection("drivers")
+              .limit(1)
+              .get(),
+          ]);
+
+          if (!legacyPlayerScores.empty || !legacyDriverScores.empty) {
+            throw new Error(
+              "Engine run blocked: legacy event scores already exist for this event. Use the separate standings rebuild controls for derived-table corrections."
+            );
+          }
 
           // Require locked results before engine can run (source of truth = Firestore)
           const eventSnapNow = await window.btccDb.collection("events").doc(eid).get();
@@ -612,7 +649,6 @@ if (banner) {
             throw new Error("Results must be LOCKED before running the engine");
           }
 
-          engineBtn.disabled = true;
           engineBtn.textContent = "Running dry run…";
           setEngineMsg("Checking inputs…");
 
@@ -964,6 +1000,7 @@ if (banner) {
           setEngineMsg(e?.message || String(e));
         } finally {
           if (engineBtn) {
+            delete engineBtn.dataset.engineRunning;
             engineBtn.disabled = false;
             engineBtn.textContent = "Run engine for selected event";
           }
