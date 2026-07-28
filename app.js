@@ -2,6 +2,43 @@ console.log("BTCC Fantasy League 2026 loaded");
 
 const loadedRoutes = new Set();
 
+function showThruxtonSpoilerWarning() {
+  const modal = document.createElement("div");
+  modal.className = "spoiler-warning";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "spoiler-warning-title");
+  modal.setAttribute("aria-describedby", "spoiler-warning-message");
+
+  modal.innerHTML = `
+    <div class="spoiler-warning__card">
+      <div class="spoiler-warning__flag" aria-hidden="true">⚠️</div>
+      <h1 id="spoiler-warning-title">Thruxton Results Warning</h1>
+      <p id="spoiler-warning-message">
+        Results have been added for Thruxton. If you have not watched all races, do not enter.
+      </p>
+      <button type="button" class="spoiler-warning__continue">
+        OK — Continue
+      </button>
+    </div>
+  `;
+
+  const continueButton = modal.querySelector(".spoiler-warning__continue");
+  const appShell = document.getElementById("app-shell");
+  const previousOverflow = document.body.style.overflow;
+
+  if (appShell) appShell.inert = true;
+  document.body.style.overflow = "hidden";
+  document.body.appendChild(modal);
+  continueButton.focus();
+
+  continueButton.addEventListener("click", () => {
+    if (appShell) appShell.inert = false;
+    document.body.style.overflow = previousOverflow;
+    modal.remove();
+  }, { once: true });
+}
+
 async function loadRouteData(route) {
   if (!route || loadedRoutes.has(route)) return;
 
@@ -236,6 +273,8 @@ async function loadNextEventCountdown() {
 
 // ---------- App Boot ----------
 document.addEventListener("DOMContentLoaded", async () => {
+  showThruxtonSpoilerWarning();
+
   // Build stamp
   const stampEl = document.getElementById("buildStamp");
   if (stampEl) stampEl.textContent = new Date().toLocaleString();
