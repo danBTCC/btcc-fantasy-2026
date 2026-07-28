@@ -1306,13 +1306,13 @@ const ADMIN_EMAILS = [
         selectedSet.add(sldDriverId);
       }
 
-      const PPV_2026_ADMIN = 930;
       const tdv = drivers.reduce((sum, driver) => sum + getDriverValueLocal(driver.data), 0);
+      const ppv = window.getPpvForActiveDriverCount(drivers.length);
       const calculateExpectedPointsLocal = (baseValue) => {
         const safeValue = Number(baseValue || 0);
         const safeTdv = Number(tdv || 0);
         if (safeValue <= 0 || safeTdv <= 0) return 0;
-        return Math.round((PPV_2026_ADMIN / safeTdv) * safeValue);
+        return Math.round((ppv / safeTdv) * safeValue);
       };
 
       const getDriverById = (driverId) => drivers.find((driver) => driver.id === driverId) || null;

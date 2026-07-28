@@ -537,26 +537,63 @@
       return { driverCount: 0, skipped: true, reason: "No completed event for tier generation" };
     }
 
-    const standingsSnap = await window.btccDb
-      .collection("standings_drivers")
-      .doc("season_2026")
-      .collection("drivers")
-      .orderBy("pointsTotal", "desc")
-      .get();
+    const [standingsSnap, driversSnap] = await Promise.all([
+      window.btccDb
+        .collection("standings_drivers")
+        .doc("season_2026")
+        .collection("drivers")
+        .orderBy("pointsTotal", "desc")
+        .get(),
+      window.btccDb.collection("drivers").get(),
+    ]);
 
-    if (standingsSnap.empty) {
-      throw new Error("No driver standings found for tier engine");
+    const activeDrivers = driversSnap.docs
+      .map((doc) => {
+        const d = doc.data() || {};
+        return {
+          driverId: doc.id,
+          name: (d.name || doc.id).toString(),
+          active: d.active !== false,
+        };
+      })
+      .filter((driver) => driver.active);
+
+    if (!activeDrivers.length) {
+      throw new Error("No active drivers found for tier engine");
     }
 
-    const rows = standingsSnap.docs.map((doc, idx) => {
-      const d = doc.data() || {};
-      return {
-        driverId: doc.id,
-        name: (d.name || doc.id).toString(),
-        pointsTotal: Number(d.pointsTotal || 0),
-        standingPos: idx + 1,
-      };
+    const activeDriverById = new Map(
+      activeDrivers.map((driver) => [driver.driverId, driver])
+    );
+
+    const rows = standingsSnap.docs
+      .filter((doc) => activeDriverById.has(doc.id))
+      .map((doc) => {
+        const d = doc.data() || {};
+        const activeDriver = activeDriverById.get(doc.id);
+        return {
+          driverId: doc.id,
+          name: (d.name || activeDriver?.name || doc.id).toString(),
+          pointsTotal: Number(d.pointsTotal || 0),
+        };
+      });
+
+    const rankedDriverIds = new Set(rows.map((row) => row.driverId));
+    activeDrivers
+      .filter((driver) => !rankedDriverIds.has(driver.driverId))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .forEach((driver) => {
+        rows.push({
+          driverId: driver.driverId,
+          name: driver.name,
+          pointsTotal: 0,
+        });
+      });
+
+    rows.forEach((row, idx) => {
+      row.standingPos = idx + 1;
     });
+
     const split = getTierSplitForActiveDriverCount(rows.length);
 
     const batch = window.btccDb.batch();

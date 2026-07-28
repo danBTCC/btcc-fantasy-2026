@@ -326,7 +326,7 @@ if (banner) {
             <div style="height:10px;"></div>
 
             <strong>Driver standings rebuild (I3.3)</strong><br>
-            <span class="tiny muted">Aggregates fantasy driver points from event_scores, ranks drivers, and assigns tiers using the 7 / 10 / 7 split for Event 2+.</span>
+            <span class="tiny muted">Aggregates fantasy driver points from event_scores, ranks drivers, and assigns current tiers using the dynamic active-grid allocation for Event 2+.</span>
             <button type="button" id="admin-rebuild-drivers-i3" class="tile" style="margin-top:10px;">Rebuild DRIVER standings up to selected event</button>
             <div id="admin-drivers-standings-msg" class="tiny muted" style="margin-top:8px;"></div>
             <button type="button" id="admin-refresh-drivers-standings" class="tile tinyBtn" style="margin-top:10px;">Refresh driver standings preview</button>
@@ -1487,22 +1487,39 @@ async function rebuildStandingsDriversI3_3(root) {
       if (pointsDiff !== 0) return pointsDiff;
       return String(a.name || "").localeCompare(String(b.name || ""));
     })
-    .map((row, index) => {
-      const position = index + 1;
-      let tier = null;
+    .map((row, index) => ({
+      ...row,
+      position: index + 1,
+    }));
 
-      if (selectedEventNo >= 2) {
-        if (position <= 7) tier = "high";
-        else if (position <= 17) tier = "middle";
-        else tier = "lower";
+  const activeRanked = ranked.filter((row) => row.active !== false);
+  const tierAssignments = new Map();
+  let tierSplit = null;
+
+  if (selectedEventNo >= 2) {
+    if (typeof window.getTierSplitForActiveDriverCount !== "function") {
+      throw new Error("Tier split lookup is not available");
+    }
+
+    tierSplit = window.getTierSplitForActiveDriverCount(activeRanked.length);
+
+    activeRanked.forEach((row, index) => {
+      const activePosition = index + 1;
+      let tier = "low";
+
+      if (activePosition <= tierSplit.high) {
+        tier = "high";
+      } else if (activePosition <= (tierSplit.high + tierSplit.middle)) {
+        tier = "middle";
       }
 
-      return {
-        ...row,
-        position,
-        tier,
-      };
+      tierAssignments.set(row.driverId, tier);
     });
+  } else {
+    activeRanked.forEach((row) => {
+      tierAssignments.set(row.driverId, null);
+    });
+  }
 
   const seasonRef = window.btccDb.collection("standings_drivers").doc("season_2026");
   const batch = window.btccDb.batch();
@@ -1514,35 +1531,44 @@ async function rebuildStandingsDriversI3_3(root) {
       throughEventId: eid,
       throughEventNo: selectedEventNo,
       driverCount: ranked.length,
-      tierMode: selectedEventNo >= 2 ? "7-10-7" : "event1-free-choice",
+      tierMode: selectedEventNo >= 2
+        ? `${tierSplit.high}-${tierSplit.middle}-${tierSplit.low}`
+        : "event1-free-choice",
       source: "event_scores.drivers",
     },
     { merge: true }
   );
 
   ranked.forEach((row) => {
+    const standingsData = {
+      driverId: row.driverId,
+      name: row.name,
+      active: row.active,
+      pointsTotal: Number(row.pointsTotal || 0),
+      position: row.position,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const driverData = {
+      pointsTotal: Number(row.pointsTotal || 0),
+      position: row.position,
+    };
+
+    if (tierAssignments.has(row.driverId)) {
+      standingsData.tier = tierAssignments.get(row.driverId);
+      driverData.tier = tierAssignments.get(row.driverId);
+      driverData.tierUpdatedAt = firebase.firestore.FieldValue.serverTimestamp();
+    }
+
     batch.set(
       seasonRef.collection("drivers").doc(row.driverId),
-      {
-        driverId: row.driverId,
-        name: row.name,
-        active: row.active,
-        pointsTotal: Number(row.pointsTotal || 0),
-        position: row.position,
-        tier: row.tier,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      },
+      standingsData,
       { merge: true }
     );
 
     batch.set(
       window.btccDb.collection("drivers").doc(row.driverId),
-      {
-        pointsTotal: Number(row.pointsTotal || 0),
-        position: row.position,
-        tier: row.tier,
-        tierUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      },
+      driverData,
       { merge: true }
     );
   });

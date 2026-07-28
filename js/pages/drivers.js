@@ -2,7 +2,6 @@
 // Exposes: window.loadDrivers()
 
 (function () {
-  const PPV_2026 = 930;
   function trendMeta(driver) {
     const change = Number(driver?.lastValueChange);
 
@@ -28,11 +27,11 @@
     return String(driver?.tier || "TBD");
   }
 
-  function calculateExpectedPoints(value, tdv) {
+  function calculateExpectedPoints(value, tdv, ppv) {
     const safeValue = Number(value || 0);
     const safeTdv = Number(tdv || 0);
     if (safeValue <= 0 || safeTdv <= 0) return 0;
-    const vv = PPV_2026 / safeTdv;
+    const vv = Number(ppv || 0) / safeTdv;
     return safeValue * vv;
   }
 
@@ -217,17 +216,24 @@
       const db = window.btccDb;
 
       const [driversSnap, eventsSnap] = await Promise.all([
-        db.collection("drivers").where("active", "==", true).orderBy("name").get(),
+        db.collection("drivers").orderBy("name").get(),
         db.collection("events").get(),
       ]);
 
-      if (driversSnap.empty) {
+      const drivers = driversSnap.docs
+        .filter((doc) => {
+          const data = doc.data() || {};
+          return data.active !== false;
+        })
+        .map((doc) => ({ id: doc.id, ...doc.data() }));
+
+      if (!drivers.length) {
         container.textContent = "No active drivers yet.";
         return;
       }
 
-      const drivers = driversSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       const tdv = drivers.reduce((sum, driver) => sum + Number(driver.value || driver.cost || driver.price || 0), 0);
+      const ppv = window.getPpvForActiveDriverCount(drivers.length);
       const events = eventsSnap.docs;
 
       const [selectionCounts, storedDriverEventScores, storedDriverStandings, driverPoints] = await Promise.all([
@@ -260,7 +266,7 @@
             : (driver.category || "");
           const value = Number(driver.value || driver.cost || driver.price || 0);
           const tier = formatTier(driver);
-          const ep = calculateExpectedPoints(value, tdv);
+          const ep = calculateExpectedPoints(value, tdv, ppv);
           const points = getDriverPointsTotal(driver);
           const selections = Number(selectionCounts.get(driver.id) || 0);
           const tr = trendMeta(driver);
@@ -339,7 +345,7 @@
 
 
       container.innerHTML = `
-        <div class="tiny muted" style="margin-bottom:10px;">Current PPV: ${PPV_2026} • Active Driver Total Value: £${tdv.toFixed(2)}</div>
+        <div class="tiny muted" style="margin-bottom:10px;">Current PPV: ${ppv} • Active Driver Total Value: £${tdv.toFixed(2)}</div>
         ${renderStatsTable(
           "Drivers Overview",
           [
@@ -398,7 +404,7 @@
         });
       });
 
-      console.log("✅ Drivers loaded:", driversSnap.size, "TDV:", tdv);
+      console.log("✅ Drivers loaded:", drivers.length, "TDV:", tdv);
       console.log("✅ Driver selection stats loaded:", selectionRows.length);
       console.log("✅ Driver points standings loaded:", pointsRows.length);
     } catch (err) {

@@ -2,7 +2,6 @@
 // Exposes: window.loadSubmit()
 
 (function () {
-  const PPV_2026 = 930;
   function render(el, html) {
     el.innerHTML = html;
   }
@@ -776,11 +775,12 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
       }
 
       const tdv = drivers.reduce((sum, driver) => sum + Number(driver.price || 0), 0);
+      const ppv = window.getPpvForActiveDriverCount(drivers.length);
       const calculateExpectedPoints = (value) => {
         const safeValue = Number(value || 0);
         const safeTdv = Number(tdv || 0);
         if (safeValue <= 0 || safeTdv <= 0) return 0;
-        return Math.round((PPV_2026 / safeTdv) * safeValue);
+        return Math.round((ppv / safeTdv) * safeValue);
       };
       const getDriverExpectedPoints = (driver) => {
         const calculatedEp = calculateExpectedPoints(driver?.price || 0);
