@@ -2,7 +2,7 @@ console.log("BTCC Fantasy League 2026 loaded");
 
 const loadedRoutes = new Set();
 
-function showThruxtonSpoilerWarning() {
+function showThruxtonEventUpdate() {
   const modal = document.createElement("div");
   modal.className = "spoiler-warning";
   modal.setAttribute("role", "dialog");
@@ -12,18 +12,23 @@ function showThruxtonSpoilerWarning() {
 
   modal.innerHTML = `
     <div class="spoiler-warning__card">
-      <div class="spoiler-warning__flag" aria-hidden="true">⚠️</div>
-      <h1 id="spoiler-warning-title">Thruxton Results Warning</h1>
-      <p id="spoiler-warning-message">
-        Results have been added for Thruxton. If you have not watched all races, do not enter.
-      </p>
+      <div class="spoiler-warning__flag" aria-hidden="true">🏁</div>
+      <h1 id="spoiler-warning-title">Event 5 — Thruxton Complete</h1>
+      <div id="spoiler-warning-message" class="spoiler-warning__message">
+        <div>✓ All budgets, boosts and driver values updated</div>
+        <div>✓ Submissions now open for Event 6 — Knockhill</div>
+      </div>
+      <a href="#news" class="spoiler-warning__news">
+        Read the Thruxton review on the News page
+      </a>
       <button type="button" class="spoiler-warning__continue">
-        OK — Continue
+        Continue to Home
       </button>
     </div>
   `;
 
   const continueButton = modal.querySelector(".spoiler-warning__continue");
+  const newsLink = modal.querySelector(".spoiler-warning__news");
   const appShell = document.getElementById("app-shell");
   const previousOverflow = document.body.style.overflow;
 
@@ -32,10 +37,20 @@ function showThruxtonSpoilerWarning() {
   document.body.appendChild(modal);
   continueButton.focus();
 
-  continueButton.addEventListener("click", () => {
+  const dismissAndNavigate = (route) => {
     if (appShell) appShell.inert = false;
     document.body.style.overflow = previousOverflow;
     modal.remove();
+    window.location.hash = `#${route}`;
+  };
+
+  continueButton.addEventListener("click", () => {
+    dismissAndNavigate("home");
+  }, { once: true });
+
+  newsLink.addEventListener("click", (event) => {
+    event.preventDefault();
+    dismissAndNavigate("news");
   }, { once: true });
 }
 
@@ -273,7 +288,7 @@ async function loadNextEventCountdown() {
 
 // ---------- App Boot ----------
 document.addEventListener("DOMContentLoaded", async () => {
-  showThruxtonSpoilerWarning();
+  showThruxtonEventUpdate();
 
   // Build stamp
   const stampEl = document.getElementById("buildStamp");
