@@ -345,6 +345,139 @@
     }
   }
 
+  async function loadPlayerDriverHistory(container, uid) {
+    container.innerHTML = '<div class="tiny muted" style="padding:10px 0;">Loading your drivers…</div>';
+
+    try {
+      const [eventsSnap, driversSnap] = await Promise.all([
+        window.btccDb.collection("events").orderBy("eventNo").get(),
+        window.btccDb.collection("drivers").get(),
+      ]);
+      const driverNames = new Map();
+      const driverHistory = new Map();
+      let eventsSubmitted = 0;
+      let totalSelections = 0;
+
+      driversSnap.forEach((driverDoc) => {
+        const driverData = driverDoc.data() || {};
+        driverNames.set(driverDoc.id, driverData.name || driverDoc.id);
+      });
+
+      for (const eventDoc of eventsSnap.docs) {
+        const eventData = eventDoc.data() || {};
+        const submissionSnap = await window.btccDb
+          .collection("submissions")
+          .doc(eventDoc.id)
+          .collection("entries")
+          .doc(uid)
+          .get();
+
+        if (!submissionSnap.exists) continue;
+
+        const submissionData = submissionSnap.data() || {};
+        const driverIds = normaliseSubmissionDriverIds(submissionData);
+        if (!driverIds.length) continue;
+
+        eventsSubmitted += 1;
+        totalSelections += driverIds.length;
+
+        driverIds.forEach((driverId) => {
+          const existing = driverHistory.get(driverId) || {
+            id: driverId,
+            name: driverNames.get(driverId) || driverId,
+            events: [],
+            sldEvents: [],
+          };
+          const eventNo = Number(eventData.eventNo || 0);
+
+          existing.events.push({
+            id: eventDoc.id,
+            eventNo: eventNo || existing.events.length + 1,
+            venue: eventData.venue || eventData.name || "",
+          });
+          if (String(submissionData.sldDriverId || "") === String(driverId)) {
+            existing.sldEvents.push(eventDoc.id);
+          }
+          driverHistory.set(driverId, existing);
+        });
+      }
+
+      const historyRows = Array.from(driverHistory.values())
+        .map((row) => ({ ...row, count: row.events.length }))
+        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+      if (!historyRows.length) {
+        container.innerHTML = '<div class="tiny muted" style="padding:10px 0;">Your driver history will appear after your first submission.</div>';
+        return;
+      }
+
+      const mostSelectedCount = historyRows[0].count;
+      const mostSelectedNames = historyRows
+        .filter((row) => row.count === mostSelectedCount)
+        .map((row) => row.name);
+      const mostSelectedLabel = mostSelectedNames.length === 1
+        ? `${mostSelectedNames[0]} (${mostSelectedCount})`
+        : `${mostSelectedNames.length} tied (${mostSelectedCount} each)`;
+      const stat = (label, value, small = false) => `
+        <div style="min-width:0; padding:10px; border:1px solid rgba(118,163,231,.2); border-radius:10px; background:rgba(5,21,45,.42);">
+          <div class="tiny muted">${label}</div>
+          <div style="font-size:${small ? "15px" : "19px"}; font-weight:800; color:#f4f8ff; margin-top:2px; overflow-wrap:anywhere;">${escapeHtml(value)}</div>
+        </div>
+      `;
+
+      container.innerHTML = `
+        <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin:10px 0 14px;">
+          ${stat("Total Selections", totalSelections)}
+          ${stat("Different Drivers", historyRows.length)}
+          ${stat("Events Submitted", eventsSubmitted)}
+          ${stat("Most Selected", mostSelectedLabel, true)}
+        </div>
+        <div style="font-weight:800; margin-bottom:8px;">Selection History</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          ${historyRows.map((row) => {
+            const hasBeenSld = row.sldEvents.length > 0;
+            return `
+              <div style="padding:10px; border:1px solid rgba(118,163,231,.2); border-radius:10px; background:rgba(5,21,45,.42);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                  <div style="min-width:0;">
+                    <div style="font-weight:800; color:#f4f8ff;">${escapeHtml(row.name)}</div>
+                    <div class="tiny muted" style="margin-top:2px;">
+                      Selected ${row.count} ${row.count === 1 ? "time" : "times"}
+                    </div>
+                  </div>
+                  ${hasBeenSld ? `
+                    <span class="tiny" style="flex:0 0 auto; padding:4px 7px; border-radius:999px; border:1px solid rgba(34,197,94,.35); background:rgba(34,197,94,.10); color:#bbf7d0; font-weight:800;">
+                      SLD
+                    </span>
+                  ` : ""}
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;">
+                  ${row.events.map((event) => `
+                    <span
+                      class="tiny"
+                      title="${escapeHtml(event.venue ? `Event ${event.eventNo} — ${event.venue}` : `Event ${event.eventNo}`)}"
+                      style="padding:4px 7px; border-radius:999px; background:rgba(55,108,190,.2); color:#dce8fb;"
+                    >E${event.eventNo}</span>
+                  `).join("")}
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+        <div class="tiny muted" style="margin-top:8px; line-height:1.45;">
+          Includes every saved event submission, including historical and inactive drivers.
+        </div>
+      `;
+    } catch (err) {
+      console.error("❌ loadPlayerDriverHistory failed:", err);
+      container.innerHTML = `
+        <div class="tiny" style="padding:10px 0; color:#ffd0d0;">
+          Your driver history could not be loaded. Please try again.
+        </div>
+      `;
+    }
+  }
+
   async function handleLogin(e, root) {
     e.preventDefault();
 
@@ -487,6 +620,19 @@
           </button>
           <div id="player-season-summary" hidden></div>
         </div>
+        <div style="padding-top:2px; border-top:1px solid rgba(118,163,231,.2);">
+          <button
+            type="button"
+            id="player-drivers-toggle"
+            aria-expanded="false"
+            aria-controls="player-drivers-history"
+            style="width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0 8px; border:0; background:transparent; color:var(--text); cursor:pointer; text-align:left;"
+          >
+            <span style="font-weight:800;">Your Drivers</span>
+            <span id="player-drivers-chevron" aria-hidden="true" style="font-size:18px;">▸</span>
+          </button>
+          <div id="player-drivers-history" hidden></div>
+        </div>
       `;
 
       countDriversSelectedAcrossEvents(uid).then((total) => {
@@ -515,6 +661,29 @@
           seasonLoaded = true;
         } finally {
           seasonLoading = false;
+        }
+      });
+
+      const driversToggle = box.querySelector("#player-drivers-toggle");
+      const driversHistory = box.querySelector("#player-drivers-history");
+      const driversChevron = box.querySelector("#player-drivers-chevron");
+      let driversHistoryLoaded = false;
+      let driversHistoryLoading = false;
+
+      driversToggle?.addEventListener("click", async () => {
+        const opening = driversHistory.hidden;
+        driversHistory.hidden = !opening;
+        driversToggle.setAttribute("aria-expanded", String(opening));
+        if (driversChevron) driversChevron.textContent = opening ? "▾" : "▸";
+
+        if (!opening || driversHistoryLoaded || driversHistoryLoading) return;
+
+        driversHistoryLoading = true;
+        try {
+          await loadPlayerDriverHistory(driversHistory, uid);
+          driversHistoryLoaded = true;
+        } finally {
+          driversHistoryLoading = false;
         }
       });
     } catch (err) {
