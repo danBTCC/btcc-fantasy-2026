@@ -695,30 +695,65 @@
           throw new Error(`Event ${context.eventNo} was not found.`);
         }
 
-        const scoresSnap = await window.btccDb
-          .collection("event_scores")
-          .doc(eventDoc.id)
-          .collection("players")
-          .get();
+        const [scoresSnap, playersSnap, submissionsSnap] = await Promise.all([
+          window.btccDb
+            .collection("event_scores")
+            .doc(eventDoc.id)
+            .collection("players")
+            .get(),
+          window.btccDb.collection("players").get(),
+          window.btccDb
+            .collection("submissions")
+            .doc(eventDoc.id)
+            .collection("entries")
+            .get(),
+        ]);
 
         if (scoresSnap.empty) {
           throw new Error(`No player event scores exist for ${eventDoc.id}. The event engine must run before the Pit Stop result can be calculated.`);
         }
 
-        const ranking = rankPitStopPlayers(
-          scoresSnap.docs.map((doc) => {
-            const score = doc.data() || {};
+        const activePlayers = playersSnap.docs
+          .map((doc) => {
+            const player = doc.data() || {};
             return {
               uid: doc.id,
-              displayName: score.displayName || doc.id,
+              displayName: player.displayName || player.name || doc.id,
+              active: player.active !== false,
+            };
+          })
+          .filter((player) => player.active);
+
+        if (activePlayers.length !== pitstopTotals.totalPlayers) {
+          throw new Error(`Expected ${pitstopTotals.totalPlayers} active players but found ${activePlayers.length}. Preview blocked until the Pit Stop roster is confirmed.`);
+        }
+
+        const scoreByUid = new Map(
+          scoresSnap.docs.map((doc) => [doc.id, doc.data() || {}])
+        );
+        const submittedUids = new Set(submissionsSnap.docs.map((doc) => doc.id));
+        const submittedWithoutScore = activePlayers.filter((player) => {
+          return submittedUids.has(player.uid) && !scoreByUid.has(player.uid);
+        });
+
+        if (submittedWithoutScore.length) {
+          throw new Error(`Engine score missing for submitted player${submittedWithoutScore.length === 1 ? "" : "s"}: ${submittedWithoutScore.map((player) => player.displayName).join(", ")}.`);
+        }
+
+        const nonSubmitters = activePlayers.filter((player) => {
+          return !submittedUids.has(player.uid) && !scoreByUid.has(player.uid);
+        });
+        const ranking = rankPitStopPlayers(
+          activePlayers.map((player) => {
+            const score = scoreByUid.get(player.uid) || {};
+            return {
+              uid: player.uid,
+              displayName: score.displayName || player.displayName,
               points: Number(score.breakdown?.[context.raceField] || 0),
+              didNotSubmit: !submittedUids.has(player.uid),
             };
           })
         );
-
-        if (ranking.length !== pitstopTotals.totalPlayers) {
-          throw new Error(`Expected ${pitstopTotals.totalPlayers} player scores but found ${ranking.length}. Preview blocked so an incomplete result cannot be used.`);
-        }
 
         const rolloverBefore = getRolloverBeforeRound(rounds, roundNo);
         const startingPot = pitstopTotals.entryPot + rolloverBefore;
@@ -750,6 +785,9 @@
             <div><strong>Rollover before round:</strong> ${fmtMoney(rolloverBefore)}</div>
             <div><strong>Available pot:</strong> ${fmtMoney(startingPot)}</div>
           </div>
+          ${nonSubmitters.length
+            ? `<div class="tiny" style="color:#fde68a; margin-top:8px;">No submission — scored as zero: ${escapeHtml(nonSubmitters.map((player) => player.displayName).join(", "))}</div>`
+            : ""}
           ${existingNote}
         `;
 
