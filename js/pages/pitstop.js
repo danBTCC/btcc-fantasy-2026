@@ -2,6 +2,25 @@
 // Simple Pit Stop Pot display (matches admin inputs exactly)
 
 (function () {
+  function waitForPitStopAuthReady() {
+    if (typeof firebase === "undefined" || typeof firebase.auth !== "function") {
+      return Promise.resolve();
+    }
+
+    const auth = firebase.auth();
+    if (auth.currentUser) return Promise.resolve();
+
+    return new Promise((resolve) => {
+      let unsubscribe = null;
+      const finish = () => {
+        if (typeof unsubscribe === "function") unsubscribe();
+        resolve();
+      };
+
+      unsubscribe = auth.onAuthStateChanged(finish, finish);
+    });
+  }
+
   function escapeHtml(value) {
     return String(value ?? "")
       .replace(/&/g, "&amp;")
@@ -993,6 +1012,8 @@
     if (!root) return;
 
     root.innerHTML = "<div class='card'>Loading…</div>";
+
+    await waitForPitStopAuthReady();
 
     if (!window.btccDb) {
       render(root, {});
