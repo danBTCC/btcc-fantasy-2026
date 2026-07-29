@@ -156,6 +156,75 @@
     return `round_${String(n).padStart(2, "0")}`;
   }
 
+  function getPitStopRoundContext(roundNo) {
+    const n = Number(roundNo || 0);
+    return {
+      roundNo: n,
+      eventNo: Math.ceil(n / 3),
+      raceNo: ((n - 1) % 3) + 1,
+      raceField: `race${((n - 1) % 3) + 1}`,
+      checkpoint: [10, 20, 30].includes(n),
+    };
+  }
+
+  function getRolloverBeforeRound(rounds, targetRoundNo) {
+    const previousRounds = rounds
+      .filter((round) => Number(round.roundNo || 0) < Number(targetRoundNo || 0))
+      .slice()
+      .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0));
+
+    let rollover = 0;
+
+    previousRounds.forEach((round) => {
+      const isSharedPayout =
+        round.type === "special_round_10" ||
+        round.type === "special_shared_payout";
+
+      if (isSharedPayout || round.drawnPlayerWon === true) {
+        rollover = 0;
+        return;
+      }
+
+      rollover += Number(round.rolloverAdded ?? 4.5);
+    });
+
+    return rollover;
+  }
+
+  function rankPitStopPlayers(rows) {
+    const sorted = rows
+      .slice()
+      .sort((a, b) => {
+        const pointsDiff = Number(b.points || 0) - Number(a.points || 0);
+        if (pointsDiff !== 0) return pointsDiff;
+        return String(a.displayName || "").localeCompare(String(b.displayName || ""));
+      });
+
+    let previousPoints = null;
+    let previousPosition = 0;
+
+    return sorted.map((row, index) => {
+      const points = Number(row.points || 0);
+      const position = previousPoints !== null && points === previousPoints
+        ? previousPosition
+        : index + 1;
+
+      previousPoints = points;
+      previousPosition = position;
+
+      return { ...row, points, position };
+    });
+  }
+
+  function ordinal(position) {
+    const n = Number(position || 0);
+    if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
+    if (n % 10 === 1) return `${n}st`;
+    if (n % 10 === 2) return `${n}nd`;
+    if (n % 10 === 3) return `${n}rd`;
+    return `${n}th`;
+  }
+
   function renderPayoutBreakdown(round) {
     if (round.type === "special_round_10") {
       const payouts = (round.specialPayouts || [])
@@ -395,7 +464,17 @@
         </div>
 
         <div id="pitstop-admin-form" style="display:none; gap:8px; margin-top:10px;">
-          <h2>Add / Update Normal Round</h2>
+          <h2>Guided Round Preview</h2>
+          <p class="tiny muted">Read-only test mode. This loads the stored fantasy result for one round and calculates the Pit Stop outcome without writing anything to Firebase.</p>
+
+          <label class="tiny muted">Round Number</label>
+          <input id="pitstop-wizard-round-no" type="number" min="1" max="30" placeholder="1" style="${pitstopInputStyle}" />
+          <button id="pitstop-wizard-load" class="tile" type="button">Load Round Results</button>
+          <div id="pitstop-wizard-msg" class="tiny muted">Choose a round to begin.</div>
+          <div id="pitstop-wizard-preview" class="note" hidden></div>
+
+          <hr style="border:0; border-top:1px solid rgba(255,255,255,.12); width:100%; margin:14px 0;" />
+          <h2>Legacy Manual Round Entry</h2>
           <p class="tiny muted">Rounds 10, 20 and 30 are special draws and are blocked here for now.</p>
 
           <label class="tiny muted">Round Number</label>
@@ -548,6 +627,240 @@
       const pinInput = root.querySelector("#pitstop-admin-pin");
       if (pinInput) pinInput.value = "";
       if (unlockMsg) unlockMsg.textContent = "Locked.";
+    });
+
+    const wizardLoadBtn = root.querySelector("#pitstop-wizard-load");
+    wizardLoadBtn?.addEventListener("click", async () => {
+      const msg = root.querySelector("#pitstop-wizard-msg");
+      const preview = root.querySelector("#pitstop-wizard-preview");
+      const setMsg = (text) => {
+        if (msg) msg.textContent = text;
+      };
+
+      const roundNo = Number(root.querySelector("#pitstop-wizard-round-no")?.value || 0);
+      if (!Number.isInteger(roundNo) || roundNo < 1 || roundNo > 30) {
+        setMsg("Enter a complete round number from 1 to 30.");
+        if (preview) preview.hidden = true;
+        return;
+      }
+
+      const context = getPitStopRoundContext(roundNo);
+      const recordedRoundNos = new Set(
+        rounds.map((round) => Number(round.roundNo || 0)).filter(Boolean)
+      );
+      const missingPreviousRounds = [];
+
+      for (let n = 1; n < roundNo; n += 1) {
+        if (!recordedRoundNos.has(n)) missingPreviousRounds.push(n);
+      }
+
+      if (missingPreviousRounds.length) {
+        setMsg(`Cannot calculate safely. Missing earlier round${missingPreviousRounds.length === 1 ? "" : "s"}: ${missingPreviousRounds.join(", ")}.`);
+        if (preview) preview.hidden = true;
+        return;
+      }
+
+      try {
+        wizardLoadBtn.disabled = true;
+        wizardLoadBtn.textContent = "Loading…";
+        setMsg(`Loading Event ${context.eventNo}, Race ${context.raceNo}…`);
+        if (preview) preview.hidden = true;
+
+        const eventsSnap = await window.btccDb.collection("events").get();
+        const eventDoc = eventsSnap.docs.find((doc) => {
+          const event = doc.data() || {};
+          return Number(event.eventNo || 0) === context.eventNo;
+        });
+
+        if (!eventDoc) {
+          throw new Error(`Event ${context.eventNo} was not found.`);
+        }
+
+        const scoresSnap = await window.btccDb
+          .collection("event_scores")
+          .doc(eventDoc.id)
+          .collection("players")
+          .get();
+
+        if (scoresSnap.empty) {
+          throw new Error(`No player event scores exist for ${eventDoc.id}. The event engine must run before the Pit Stop result can be calculated.`);
+        }
+
+        const ranking = rankPitStopPlayers(
+          scoresSnap.docs.map((doc) => {
+            const score = doc.data() || {};
+            return {
+              uid: doc.id,
+              displayName: score.displayName || doc.id,
+              points: Number(score.breakdown?.[context.raceField] || 0),
+            };
+          })
+        );
+
+        if (ranking.length !== pitstopTotals.totalPlayers) {
+          throw new Error(`Expected ${pitstopTotals.totalPlayers} player scores but found ${ranking.length}. Preview blocked so an incomplete result cannot be used.`);
+        }
+
+        const rolloverBefore = getRolloverBeforeRound(rounds, roundNo);
+        const startingPot = pitstopTotals.entryPot + rolloverBefore;
+        const sharedCheckpoint = context.checkpoint && rolloverBefore > 0;
+        const existingRound = rounds.find((round) => Number(round.roundNo || 0) === roundNo);
+
+        const rankingRows = ranking
+          .map((row) => {
+            return `
+              <tr>
+                <td>${ordinal(row.position)}</td>
+                <td>${escapeHtml(row.displayName)}</td>
+                <td style="text-align:right;">${Number(row.points || 0)}</td>
+              </tr>
+            `;
+          })
+          .join("");
+
+        const existingNote = existingRound
+          ? `<div class="tiny" style="color:#facc15; margin-top:8px;">Round ${roundNo} already has a saved Pit Stop record. This preview will not alter it.</div>`
+          : "";
+
+        const summaryHtml = `
+          <div style="display:grid; gap:4px;">
+            <div><strong>Round:</strong> ${roundNo}</div>
+            <div><strong>Fantasy result:</strong> Event ${context.eventNo}, Race ${context.raceNo}</div>
+            <div><strong>Player scores:</strong> ${ranking.length}</div>
+            <div><strong>Entry pot:</strong> ${fmtMoney(pitstopTotals.entryPot)}</div>
+            <div><strong>Rollover before round:</strong> ${fmtMoney(rolloverBefore)}</div>
+            <div><strong>Available pot:</strong> ${fmtMoney(startingPot)}</div>
+          </div>
+          ${existingNote}
+        `;
+
+        if (sharedCheckpoint) {
+          preview.innerHTML = `
+            ${summaryHtml}
+            <div style="margin-top:12px; padding:10px; border-radius:10px; background:rgba(37,99,235,.16);">
+              <strong>Shared checkpoint payout required</strong><br>
+              <span class="tiny">All 19 players must receive a prize totalling exactly ${fmtMoney(startingPot)}. The rollover resets to £0 after this payout.</span>
+            </div>
+            <details style="margin-top:10px;">
+              <summary style="cursor:pointer; font-weight:800;">View Round ${roundNo} finishing order</summary>
+              <table class="table tiny" style="width:100%; margin-top:8px;">
+                <thead>
+                  <tr><th>Pos</th><th>Player</th><th style="text-align:right;">Points</th></tr>
+                </thead>
+                <tbody>${rankingRows}</tbody>
+              </table>
+            </details>
+          `;
+          preview.hidden = false;
+          setMsg(`Round ${roundNo} is a shared payout round. Read-only preview complete.`);
+          return;
+        }
+
+        const playerOptions = ranking
+          .slice()
+          .sort((a, b) => String(a.displayName || "").localeCompare(String(b.displayName || "")))
+          .map((row) => {
+            const selected = existingRound?.drawnPlayer === row.displayName ? " selected" : "";
+            return `<option value="${escapeHtml(row.uid)}"${selected}>${escapeHtml(row.displayName)}</option>`;
+          })
+          .join("");
+
+        preview.innerHTML = `
+          ${summaryHtml}
+          <div style="display:grid; gap:8px; margin-top:12px;">
+            <label class="tiny muted">Who was the selected player?</label>
+            <select id="pitstop-wizard-selected-player" style="${pitstopInputStyle}">
+              <option value="">Select player…</option>
+              ${playerOptions}
+            </select>
+            <button id="pitstop-wizard-calculate" class="tile" type="button">Calculate Pit Stop Outcome</button>
+            <div id="pitstop-wizard-outcome" class="tiny muted">Select the externally drawn player.</div>
+          </div>
+          <details style="margin-top:10px;">
+            <summary style="cursor:pointer; font-weight:800;">View Round ${roundNo} finishing order</summary>
+            <table class="table tiny" style="width:100%; margin-top:8px;">
+              <thead>
+                <tr><th>Pos</th><th>Player</th><th style="text-align:right;">Points</th></tr>
+              </thead>
+              <tbody>${rankingRows}</tbody>
+            </table>
+          </details>
+        `;
+        preview.hidden = false;
+
+        const calculateBtn = preview.querySelector("#pitstop-wizard-calculate");
+        calculateBtn?.addEventListener("click", () => {
+          const selectedUid = preview.querySelector("#pitstop-wizard-selected-player")?.value || "";
+          const outcome = preview.querySelector("#pitstop-wizard-outcome");
+          const selectedPlayer = ranking.find((row) => row.uid === selectedUid);
+
+          if (!selectedPlayer) {
+            if (outcome) outcome.textContent = "Select the externally drawn player first.";
+            return;
+          }
+
+          const highestPoints = Number(ranking[0]?.points || 0);
+          const jackpotWon = Number(selectedPlayer.points || 0) === highestPoints;
+
+          if (jackpotWon) {
+            outcome.innerHTML = `
+              <div style="padding:10px; border-radius:10px; background:rgba(34,197,94,.14); color:#dcfce7;">
+                <strong>Jackpot won by ${escapeHtml(selectedPlayer.displayName)}</strong><br>
+                Finishing position: ${ordinal(selectedPlayer.position)}${selectedPlayer.position === 1 && ranking.filter((row) => row.position === 1).length > 1 ? " (tied)" : ""}<br>
+                Jackpot payout: ${fmtMoney(startingPot)}<br>
+                All other payouts: ${fmtMoney(0)}<br>
+                Rollover after round: ${fmtMoney(0)}
+              </div>
+            `;
+            return;
+          }
+
+          const prizeRows = ranking.filter((row) => row.position <= 3);
+          const prizePositionCounts = new Map();
+          prizeRows.forEach((row) => {
+            prizePositionCounts.set(row.position, Number(prizePositionCounts.get(row.position) || 0) + 1);
+          });
+          const splitRequired = Array.from(prizePositionCounts.values()).some((count) => count > 1);
+          const rolloverAfter = rolloverBefore + 4.5;
+          const nextRoundPot = pitstopTotals.entryPot + rolloverAfter;
+
+          const prizeSummary = splitRequired
+            ? `
+                <div style="color:#fde68a;">
+                  <strong>Manual split required:</strong> tied positions affect the £4.00 finishing-prize pool.
+                  The wizard has detected the tie and will require your allocation in the saving phase.
+                </div>
+              `
+            : `
+                <div>1st: ${escapeHtml(ranking.find((row) => row.position === 1)?.displayName || "—")} — ${fmtMoney(1.7)}</div>
+                <div>2nd: ${escapeHtml(ranking.find((row) => row.position === 2)?.displayName || "—")} — ${fmtMoney(1.3)}</div>
+                <div>3rd: ${escapeHtml(ranking.find((row) => row.position === 3)?.displayName || "—")} — ${fmtMoney(1)}</div>
+              `;
+
+          outcome.innerHTML = `
+            <div style="padding:10px; border-radius:10px; background:rgba(37,99,235,.14); color:#dbeafe;">
+              <strong>Normal payout — jackpot not won</strong><br>
+              ${escapeHtml(selectedPlayer.displayName)} finished ${ordinal(selectedPlayer.position)} and receives the ${fmtMoney(1)} selected-player prize.
+              <div style="margin-top:8px;">${prizeSummary}</div>
+              <div style="margin-top:8px;">
+                Position-prize pool: ${fmtMoney(4)}<br>
+                Rollover added: ${fmtMoney(4.5)}<br>
+                Rollover after round: ${fmtMoney(rolloverAfter)}<br>
+                Next normal-round pot: ${fmtMoney(nextRoundPot)}
+              </div>
+            </div>
+          `;
+        });
+
+        setMsg(`Round ${roundNo} results loaded. Choose the selected player to complete the preview.`);
+      } catch (err) {
+        console.error("❌ Pit Stop guided preview failed:", err);
+        setMsg(err?.message || "Failed to load the guided preview.");
+        if (preview) preview.hidden = true;
+      } finally {
+        wizardLoadBtn.disabled = false;
+        wizardLoadBtn.textContent = "Load Round Results";
+      }
     });
 
     const saveRoundBtn = root.querySelector("#pitstop-save-round");
