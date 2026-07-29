@@ -758,7 +758,7 @@
             ${summaryHtml}
             <div style="margin-top:12px; padding:10px; border-radius:10px; background:rgba(37,99,235,.16);">
               <strong>Shared checkpoint payout required</strong><br>
-              <span class="tiny">All 19 players must receive a prize totalling exactly ${fmtMoney(startingPot)}. The rollover resets to £0 after this payout.</span>
+              <span class="tiny">All 19 players must receive a prize totalling exactly ${fmtMoney(startingPot)}. The rollover resets to £0 after this payout. Shared-payout saving remains read-only until its allocation screen is completed.</span>
             </div>
             <details style="margin-top:10px;">
               <summary style="cursor:pointer; font-weight:800;">View Round ${roundNo} finishing order</summary>
@@ -807,6 +807,68 @@
         `;
         preview.hidden = false;
 
+        const guidedSaveBlockReason = existingRound
+          ? `Round ${roundNo} already exists. Guided mode will not overwrite it; use the legacy correction form if a deliberate correction is required.`
+          : context.checkpoint
+            ? `Round ${roundNo} is a checkpoint round. Saving remains blocked until the checkpoint payout workflow is completed.`
+            : "";
+
+        const showGuidedSaveReview = (outcome, reviewHtml, payload) => {
+          const saveControls = guidedSaveBlockReason
+            ? `
+                <div class="tiny" style="margin-top:10px; color:#facc15;">
+                  ${escapeHtml(guidedSaveBlockReason)}
+                </div>
+              `
+            : `
+                <button id="pitstop-wizard-confirm-save" class="tile" type="button" style="margin-top:10px;">
+                  Confirm and Save Guided Round
+                </button>
+                <div id="pitstop-wizard-save-msg" class="tiny muted" style="margin-top:8px;">
+                  Nothing has been saved yet.
+                </div>
+              `;
+
+          outcome.innerHTML = `
+            <div style="padding:10px; border-radius:10px; background:rgba(15,23,42,.72); color:#e2e8f0;">
+              <strong>Guided Save Review</strong>
+              <div style="margin-top:8px; line-height:1.55;">${reviewHtml}</div>
+              ${saveControls}
+            </div>
+          `;
+
+          if (guidedSaveBlockReason) return;
+
+          const confirmSaveBtn = outcome.querySelector("#pitstop-wizard-confirm-save");
+          confirmSaveBtn?.addEventListener("click", async () => {
+            const saveMsg = outcome.querySelector("#pitstop-wizard-save-msg");
+            const docId = getRoundDocId(roundNo);
+            const confirmed = window.confirm(
+              `Save guided Pit Stop round ${roundNo}?\n\nThis will create pitstop_rounds/${docId}.`
+            );
+            if (!confirmed) return;
+
+            try {
+              confirmSaveBtn.disabled = true;
+              confirmSaveBtn.textContent = "Saving…";
+              if (saveMsg) saveMsg.textContent = "Saving guided round…";
+
+              await window.btccDb.collection("pitstop_rounds").doc(docId).set({
+                ...payload,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              }, { merge: true });
+
+              if (saveMsg) saveMsg.textContent = "Round saved. Refreshing…";
+              await loadPitStop();
+            } catch (err) {
+              console.error("❌ Failed to save guided Pit Stop round:", err);
+              if (saveMsg) saveMsg.textContent = err?.message || "Failed to save guided round.";
+              confirmSaveBtn.disabled = false;
+              confirmSaveBtn.textContent = "Confirm and Save Guided Round";
+            }
+          });
+        };
+
         const calculateBtn = preview.querySelector("#pitstop-wizard-calculate");
         calculateBtn?.addEventListener("click", () => {
           const selectedUid = preview.querySelector("#pitstop-wizard-selected-player")?.value || "";
@@ -830,7 +892,37 @@
                 All other payouts: ${fmtMoney(0)}<br>
                 Rollover after round: ${fmtMoney(0)}
               </div>
+              <button id="pitstop-wizard-review-save" class="tile" type="button" style="margin-top:10px;">Review Guided Save</button>
             `;
+
+            outcome.querySelector("#pitstop-wizard-review-save")?.addEventListener("click", () => {
+              showGuidedSaveReview(
+                outcome,
+                `
+                  <div><strong>Round:</strong> ${roundNo}</div>
+                  <div><strong>Selected player:</strong> ${escapeHtml(selectedPlayer.displayName)}</div>
+                  <div><strong>Outcome:</strong> Jackpot won${selectedPlayer.position === 1 && ranking.filter((row) => row.position === 1).length > 1 ? " from tied first" : ""}</div>
+                  <div><strong>Full jackpot payout:</strong> ${fmtMoney(startingPot)}</div>
+                  <div><strong>Other payouts:</strong> ${fmtMoney(0)}</div>
+                  <div><strong>Rollover after round:</strong> ${fmtMoney(0)}</div>
+                `,
+                {
+                  roundNo,
+                  drawnPlayer: selectedPlayer.displayName,
+                  drawnPlayerWon: true,
+                  fullPotPrize: startingPot,
+                  firstPlaceText: "",
+                  firstPrize: 0,
+                  secondPlaceText: "",
+                  secondPrize: 0,
+                  thirdPlaceText: "",
+                  thirdPrize: 0,
+                  selectedPlayerPrize: 0,
+                  rolloverAdded: 0,
+                  notes: "Saved through guided Pit Stop entry.",
+                }
+              );
+            });
             return;
           }
 
@@ -843,32 +935,182 @@
           const rolloverAfter = rolloverBefore + 4.5;
           const nextRoundPot = pitstopTotals.entryPot + rolloverAfter;
 
-          const prizeSummary = splitRequired
-            ? `
-                <div style="color:#fde68a;">
-                  <strong>Manual split required:</strong> tied positions affect the £4.00 finishing-prize pool.
-                  The wizard has detected the tie and will require your allocation in the saving phase.
+          const firstRow = ranking.find((row) => row.position === 1);
+          const secondRow = ranking.find((row) => row.position === 2);
+          const thirdRow = ranking.find((row) => row.position === 3);
+
+          if (!splitRequired) {
+            outcome.innerHTML = `
+              <div style="padding:10px; border-radius:10px; background:rgba(37,99,235,.14); color:#dbeafe;">
+                <strong>Normal payout — jackpot not won</strong><br>
+                ${escapeHtml(selectedPlayer.displayName)} finished ${ordinal(selectedPlayer.position)} and receives the ${fmtMoney(1)} selected-player prize.
+                <div style="margin-top:8px;">
+                  <div>1st: ${escapeHtml(firstRow?.displayName || "—")} — ${fmtMoney(1.7)}</div>
+                  <div>2nd: ${escapeHtml(secondRow?.displayName || "—")} — ${fmtMoney(1.3)}</div>
+                  <div>3rd: ${escapeHtml(thirdRow?.displayName || "—")} — ${fmtMoney(1)}</div>
                 </div>
-              `
-            : `
-                <div>1st: ${escapeHtml(ranking.find((row) => row.position === 1)?.displayName || "—")} — ${fmtMoney(1.7)}</div>
-                <div>2nd: ${escapeHtml(ranking.find((row) => row.position === 2)?.displayName || "—")} — ${fmtMoney(1.3)}</div>
-                <div>3rd: ${escapeHtml(ranking.find((row) => row.position === 3)?.displayName || "—")} — ${fmtMoney(1)}</div>
+                <div style="margin-top:8px;">
+                  Position-prize pool: ${fmtMoney(4)}<br>
+                  Rollover added: ${fmtMoney(4.5)}<br>
+                  Rollover after round: ${fmtMoney(rolloverAfter)}<br>
+                  Next normal-round pot: ${fmtMoney(nextRoundPot)}
+                </div>
+              </div>
+              <button id="pitstop-wizard-review-save" class="tile" type="button" style="margin-top:10px;">Review Guided Save</button>
+            `;
+
+            outcome.querySelector("#pitstop-wizard-review-save")?.addEventListener("click", () => {
+              showGuidedSaveReview(
+                outcome,
+                `
+                  <div><strong>Round:</strong> ${roundNo}</div>
+                  <div><strong>Selected:</strong> ${escapeHtml(selectedPlayer.displayName)} — ${fmtMoney(1)}</div>
+                  <div><strong>1st:</strong> ${escapeHtml(firstRow?.displayName || "—")} — ${fmtMoney(1.7)}</div>
+                  <div><strong>2nd:</strong> ${escapeHtml(secondRow?.displayName || "—")} — ${fmtMoney(1.3)}</div>
+                  <div><strong>3rd:</strong> ${escapeHtml(thirdRow?.displayName || "—")} — ${fmtMoney(1)}</div>
+                  <div><strong>Rollover added:</strong> ${fmtMoney(4.5)}</div>
+                  <div><strong>Rollover after round:</strong> ${fmtMoney(rolloverAfter)}</div>
+                  <div><strong>Next normal-round pot:</strong> ${fmtMoney(nextRoundPot)}</div>
+                `,
+                {
+                  roundNo,
+                  drawnPlayer: selectedPlayer.displayName,
+                  drawnPlayerWon: false,
+                  fullPotPrize: 0,
+                  firstPlaceText: firstRow?.displayName || "",
+                  firstPrize: 1.7,
+                  secondPlaceText: secondRow?.displayName || "",
+                  secondPrize: 1.3,
+                  thirdPlaceText: thirdRow?.displayName || "",
+                  thirdPrize: 1,
+                  selectedPlayerPrize: 1,
+                  rolloverAdded: 4.5,
+                  notes: "Saved through guided Pit Stop entry.",
+                }
+              );
+            });
+            return;
+          }
+
+          const tiedPrizeGroups = Array.from(new Set(prizeRows.map((row) => row.position)))
+            .sort((a, b) => a - b)
+            .map((position) => {
+              const playersAtPosition = prizeRows.filter((row) => row.position === position);
+              return {
+                position,
+                playerText: playersAtPosition.map((row) => row.displayName).join(" / "),
+              };
+            });
+
+          const allocationRows = tiedPrizeGroups
+            .map((group) => {
+              return `
+                <label class="tiny muted">${ordinal(group.position)} — ${escapeHtml(group.playerText)}</label>
+                <input
+                  class="pitstop-wizard-tie-amount"
+                  data-position="${group.position}"
+                  data-player-text="${escapeHtml(group.playerText)}"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  style="${pitstopInputStyle}"
+                />
               `;
+            })
+            .join("");
 
           outcome.innerHTML = `
             <div style="padding:10px; border-radius:10px; background:rgba(37,99,235,.14); color:#dbeafe;">
               <strong>Normal payout — jackpot not won</strong><br>
               ${escapeHtml(selectedPlayer.displayName)} finished ${ordinal(selectedPlayer.position)} and receives the ${fmtMoney(1)} selected-player prize.
-              <div style="margin-top:8px;">${prizeSummary}</div>
+              <div style="margin-top:8px; color:#fde68a;">
+                <strong>Manual split required:</strong> allocate the £4.00 finishing-prize pool across the tied result groups below.
+              </div>
+              <div style="display:grid; gap:8px; margin-top:10px;">${allocationRows}</div>
+              <div id="pitstop-wizard-tie-total" class="tiny" style="margin-top:8px;">Allocated: £0.00 • Remaining: £4.00</div>
               <div style="margin-top:8px;">
-                Position-prize pool: ${fmtMoney(4)}<br>
+                Selected-player prize: ${fmtMoney(1)}<br>
                 Rollover added: ${fmtMoney(4.5)}<br>
                 Rollover after round: ${fmtMoney(rolloverAfter)}<br>
                 Next normal-round pot: ${fmtMoney(nextRoundPot)}
               </div>
             </div>
+            <button id="pitstop-wizard-review-tie-save" class="tile" type="button" style="margin-top:10px;">Review Manual Allocation</button>
+            <div id="pitstop-wizard-tie-msg" class="tiny muted" style="margin-top:8px;">The finishing-prize amounts must total exactly £4.00.</div>
           `;
+
+          const tieInputs = Array.from(outcome.querySelectorAll(".pitstop-wizard-tie-amount"));
+          const tieTotal = outcome.querySelector("#pitstop-wizard-tie-total");
+          const tieMsg = outcome.querySelector("#pitstop-wizard-tie-msg");
+          const updateTieTotal = () => {
+            const total = tieInputs.reduce((sum, input) => sum + Number(input.value || 0), 0);
+            const remaining = 4 - total;
+            if (tieTotal) {
+              tieTotal.textContent = `Allocated: ${fmtMoney(total)} • Remaining: ${fmtMoney(remaining)}`;
+              tieTotal.style.color = Math.round(remaining * 100) === 0 ? "#bbf7d0" : "#fde68a";
+            }
+          };
+
+          tieInputs.forEach((input) => input.addEventListener("input", updateTieTotal));
+          updateTieTotal();
+
+          outcome.querySelector("#pitstop-wizard-review-tie-save")?.addEventListener("click", () => {
+            const allocations = tieInputs.map((input) => ({
+              position: Number(input.getAttribute("data-position") || 0),
+              playerText: String(input.getAttribute("data-player-text") || ""),
+              amount: Number(input.value || 0),
+            }));
+            const total = allocations.reduce((sum, allocation) => sum + allocation.amount, 0);
+
+            if (allocations.some((allocation) => allocation.amount <= 0)) {
+              if (tieMsg) tieMsg.textContent = "Enter a positive prize amount for every displayed result group.";
+              return;
+            }
+
+            if (Math.round(total * 100) !== 400) {
+              if (tieMsg) tieMsg.textContent = `Finishing prizes must total £4.00. Current total: ${fmtMoney(total)}.`;
+              return;
+            }
+
+            const allocationFor = (position) => allocations.find((allocation) => allocation.position === position);
+            const firstAllocation = allocationFor(1);
+            const secondAllocation = allocationFor(2);
+            const thirdAllocation = allocationFor(3);
+            const allocationSummary = allocations
+              .map((allocation) => {
+                return `<div><strong>${ordinal(allocation.position)}:</strong> ${escapeHtml(allocation.playerText)} — ${fmtMoney(allocation.amount)}</div>`;
+              })
+              .join("");
+
+            showGuidedSaveReview(
+              outcome,
+              `
+                <div><strong>Round:</strong> ${roundNo}</div>
+                <div><strong>Selected:</strong> ${escapeHtml(selectedPlayer.displayName)} — ${fmtMoney(1)}</div>
+                ${allocationSummary}
+                <div><strong>Position-prize total:</strong> ${fmtMoney(total)}</div>
+                <div><strong>Rollover added:</strong> ${fmtMoney(4.5)}</div>
+                <div><strong>Rollover after round:</strong> ${fmtMoney(rolloverAfter)}</div>
+                <div><strong>Next normal-round pot:</strong> ${fmtMoney(nextRoundPot)}</div>
+              `,
+              {
+                roundNo,
+                drawnPlayer: selectedPlayer.displayName,
+                drawnPlayerWon: false,
+                fullPotPrize: 0,
+                firstPlaceText: firstAllocation?.playerText || "",
+                firstPrize: Number(firstAllocation?.amount || 0),
+                secondPlaceText: secondAllocation?.playerText || "",
+                secondPrize: Number(secondAllocation?.amount || 0),
+                thirdPlaceText: thirdAllocation?.playerText || "",
+                thirdPrize: Number(thirdAllocation?.amount || 0),
+                selectedPlayerPrize: 1,
+                rolloverAdded: 4.5,
+                notes: "Saved through guided Pit Stop entry with manual tied-result allocation.",
+              }
+            );
+          });
         });
 
         setMsg(`Round ${roundNo} results loaded. Choose the selected player to complete the preview.`);
