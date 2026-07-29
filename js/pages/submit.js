@@ -90,6 +90,261 @@
     }
   }
 
+  function getSharedScorePosition(rows, uid, scoreKey) {
+    const target = rows.find((row) => row.uid === uid);
+    if (!target) return null;
+
+    const targetScore = Number(target[scoreKey] || 0);
+    return rows.filter((row) => Number(row[scoreKey] || 0) > targetScore).length + 1;
+  }
+
+  function formatOrdinal(position) {
+    const value = Number(position);
+    const mod100 = value % 100;
+    const suffix = mod100 >= 11 && mod100 <= 13
+      ? "th"
+      : value % 10 === 1
+        ? "st"
+        : value % 10 === 2
+          ? "nd"
+          : value % 10 === 3
+            ? "rd"
+            : "th";
+    return `${value}${suffix}`;
+  }
+
+  function renderChampionshipJourney(points) {
+    if (!points.length) {
+      return '<div class="tiny muted">No championship journey is available yet.</div>';
+    }
+
+    const width = 320;
+    const height = 178;
+    const left = 34;
+    const right = 12;
+    const top = 18;
+    const bottom = 30;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const maxPosition = Math.max(1, ...points.map((point) => point.fieldSize || point.position));
+    const xFor = (index) => points.length === 1
+      ? left + plotWidth / 2
+      : left + (index / (points.length - 1)) * plotWidth;
+    const yFor = (position) => top + ((position - 1) / Math.max(1, maxPosition - 1)) * plotHeight;
+    const linePoints = points
+      .map((point, index) => `${xFor(index).toFixed(1)},${yFor(point.position).toFixed(1)}`)
+      .join(" ");
+    const gridPositions = Array.from(new Set([1, Math.ceil(maxPosition / 2), maxPosition]))
+      .sort((a, b) => a - b);
+
+    return `
+      <div style="overflow:hidden; border:1px solid rgba(118,163,231,.22); border-radius:12px; background:rgba(5,21,45,.48); padding:8px 6px 2px;">
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Championship position after each completed event" style="display:block; width:100%; height:auto;">
+          ${gridPositions.map((position) => `
+            <line
+              x1="${left}"
+              y1="${yFor(position).toFixed(1)}"
+              x2="${width - right}"
+              y2="${yFor(position).toFixed(1)}"
+              stroke="rgba(176,198,235,.18)"
+              stroke-width="1"
+            />
+            <text
+              x="${left - 8}"
+              y="${(yFor(position) + 4).toFixed(1)}"
+              fill="#aebfdd"
+              font-size="10"
+              text-anchor="end"
+            >${position}</text>
+          `).join("")}
+          <polyline
+            points="${linePoints}"
+            fill="none"
+            stroke="#64a7ff"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          ${points.map((point, index) => `
+            <g>
+              <title>Event ${point.eventNo}: ${formatOrdinal(point.position)} place</title>
+              <circle
+                cx="${xFor(index).toFixed(1)}"
+                cy="${yFor(point.position).toFixed(1)}"
+                r="4.5"
+                fill="#f4f8ff"
+                stroke="#2466cf"
+                stroke-width="2"
+              />
+              <text
+                x="${xFor(index).toFixed(1)}"
+                y="${height - 9}"
+                fill="#aebfdd"
+                font-size="9"
+                text-anchor="middle"
+              >E${point.eventNo}</text>
+            </g>
+          `).join("")}
+        </svg>
+      </div>
+      <div style="display:flex; gap:6px; overflow-x:auto; padding:8px 1px 2px;">
+        ${points.map((point, index) => {
+          const previous = index > 0 ? points[index - 1].position : null;
+          const movement = previous === null
+            ? ""
+            : previous > point.position
+              ? ` ↑${previous - point.position}`
+              : previous < point.position
+                ? ` ↓${point.position - previous}`
+                : " —";
+          return `
+            <span class="tiny" style="flex:0 0 auto; padding:5px 8px; border-radius:999px; background:rgba(55,108,190,.2); color:#dce8fb;">
+              E${point.eventNo}: ${point.position}${movement}
+            </span>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  async function loadPlayerSeasonSummary(container, uid) {
+    container.innerHTML = '<div class="tiny muted" style="padding:10px 0;">Loading your season…</div>';
+
+    try {
+      const eventsSnap = await window.btccDb.collection("events").orderBy("eventNo").get();
+      const cumulativeTotals = new Map();
+      const cumulativeNames = new Map();
+      const journey = [];
+      let eventScoresRecorded = 0;
+      let eventWins = 0;
+      let eventPodiums = 0;
+      let raceWins = 0;
+      let racePodiums = 0;
+      let bestEventFinish = null;
+      let totalEventPoints = 0;
+      let eventsEntered = 0;
+
+      for (const eventDoc of eventsSnap.docs) {
+        const eventData = eventDoc.data() || {};
+        const eventNo = Number(eventData.eventNo || 0);
+        const [scoresSnap, submissionSnap] = await Promise.all([
+          window.btccDb
+            .collection("event_scores")
+            .doc(eventDoc.id)
+            .collection("players")
+            .get(),
+          window.btccDb
+            .collection("submissions")
+            .doc(eventDoc.id)
+            .collection("entries")
+            .doc(uid)
+            .get(),
+        ]);
+
+        if (submissionSnap.exists) eventsEntered += 1;
+        if (scoresSnap.empty) continue;
+
+        const eventRows = scoresSnap.docs.map((scoreDoc) => {
+          const scoreData = scoreDoc.data() || {};
+          const breakdown = scoreData.breakdown || {};
+          return {
+            uid: scoreDoc.id,
+            displayName: scoreData.displayName || scoreDoc.id,
+            pointsTotal: Number(scoreData.pointsTotal ?? scoreData.points ?? 0),
+            race1: Number(breakdown.race1 ?? 0),
+            race2: Number(breakdown.race2 ?? 0),
+            race3: Number(breakdown.race3 ?? 0),
+          };
+        });
+
+        eventRows.forEach((row) => {
+          cumulativeTotals.set(row.uid, Number(cumulativeTotals.get(row.uid) || 0) + row.pointsTotal);
+          cumulativeNames.set(row.uid, row.displayName);
+        });
+
+        const rankedCumulative = Array.from(cumulativeTotals.entries())
+          .map(([playerUid, pointsTotal]) => ({
+            uid: playerUid,
+            pointsTotal,
+            displayName: cumulativeNames.get(playerUid) || playerUid,
+          }))
+          .sort((a, b) =>
+            b.pointsTotal - a.pointsTotal ||
+            a.uid.localeCompare(b.uid)
+          );
+        const championshipIndex = rankedCumulative.findIndex((row) => row.uid === uid);
+
+        if (championshipIndex >= 0) {
+          journey.push({
+            eventNo: eventNo || journey.length + 1,
+            position: championshipIndex + 1,
+            fieldSize: rankedCumulative.length,
+          });
+        }
+
+        const playerEventRow = eventRows.find((row) => row.uid === uid);
+        if (!playerEventRow) continue;
+
+        eventScoresRecorded += 1;
+        totalEventPoints += playerEventRow.pointsTotal;
+
+        const eventPosition = getSharedScorePosition(eventRows, uid, "pointsTotal");
+        if (eventPosition !== null) {
+          bestEventFinish = bestEventFinish === null
+            ? eventPosition
+            : Math.min(bestEventFinish, eventPosition);
+          if (eventPosition === 1) eventWins += 1;
+          if (eventPosition <= 3) eventPodiums += 1;
+        }
+
+        ["race1", "race2", "race3"].forEach((raceKey) => {
+          const racePosition = getSharedScorePosition(eventRows, uid, raceKey);
+          if (racePosition === 1) raceWins += 1;
+          if (racePosition !== null && racePosition <= 3) racePodiums += 1;
+        });
+      }
+
+      if (!journey.length) {
+        container.innerHTML = '<div class="tiny muted" style="padding:10px 0;">Your season stats will appear after the first completed event.</div>';
+        return;
+      }
+
+      const currentPosition = journey[journey.length - 1].position;
+      const averageEventPoints = eventScoresRecorded
+        ? Math.round((totalEventPoints / eventScoresRecorded) * 10) / 10
+        : 0;
+      const stat = (label, value) => `
+        <div style="min-width:0; padding:10px; border:1px solid rgba(118,163,231,.2); border-radius:10px; background:rgba(5,21,45,.42);">
+          <div class="tiny muted">${label}</div>
+          <div style="font-size:19px; font-weight:800; color:#f4f8ff; margin-top:2px;">${value}</div>
+        </div>
+      `;
+
+      container.innerHTML = `
+        <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin:10px 0 14px;">
+          ${stat("Championship Position", currentPosition)}
+          ${stat("Best Event Finish", bestEventFinish ?? "—")}
+          ${stat("Events Entered", eventsEntered)}
+          ${stat("Average Event Points", averageEventPoints)}
+          ${stat("Event Wins / Podiums", `${eventWins} / ${eventPodiums}`)}
+          ${stat("Race Wins / Podiums", `${raceWins} / ${racePodiums}`)}
+        </div>
+        <div style="font-weight:800; margin-bottom:8px;">Championship Journey</div>
+        ${renderChampionshipJourney(journey)}
+        <div class="tiny muted" style="margin-top:8px; line-height:1.45;">
+          Positions show your place in the main championship after each completed event.
+        </div>
+      `;
+    } catch (err) {
+      console.error("❌ loadPlayerSeasonSummary failed:", err);
+      container.innerHTML = `
+        <div class="tiny" style="padding:10px 0; color:#ffd0d0;">
+          Your season stats could not be loaded. Please try again.
+        </div>
+      `;
+    }
+  }
+
   async function handleLogin(e, root) {
     e.preventDefault();
 
@@ -219,12 +474,48 @@
           ${pointsTotal !== null ? `<br>Championship Points: ${pointsTotal}` : ""}
           <br>Drivers Selected: <span id="profile-drivers-selected">${driversSelected !== null ? driversSelected : "Loading…"}</span>
         </div>
+        <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(118,163,231,.2);">
+          <button
+            type="button"
+            id="player-season-toggle"
+            aria-expanded="false"
+            aria-controls="player-season-summary"
+            style="width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border:0; background:transparent; color:var(--text); cursor:pointer; text-align:left;"
+          >
+            <span style="font-weight:800;">Your Season</span>
+            <span id="player-season-chevron" aria-hidden="true" style="font-size:18px;">▸</span>
+          </button>
+          <div id="player-season-summary" hidden></div>
+        </div>
       `;
 
       countDriversSelectedAcrossEvents(uid).then((total) => {
         const driversSelectedEl = box.querySelector("#profile-drivers-selected");
         if (!driversSelectedEl || typeof total !== "number") return;
         driversSelectedEl.textContent = String(total);
+      });
+
+      const seasonToggle = box.querySelector("#player-season-toggle");
+      const seasonSummary = box.querySelector("#player-season-summary");
+      const seasonChevron = box.querySelector("#player-season-chevron");
+      let seasonLoaded = false;
+      let seasonLoading = false;
+
+      seasonToggle?.addEventListener("click", async () => {
+        const opening = seasonSummary.hidden;
+        seasonSummary.hidden = !opening;
+        seasonToggle.setAttribute("aria-expanded", String(opening));
+        if (seasonChevron) seasonChevron.textContent = opening ? "▾" : "▸";
+
+        if (!opening || seasonLoaded || seasonLoading) return;
+
+        seasonLoading = true;
+        try {
+          await loadPlayerSeasonSummary(seasonSummary, uid);
+          seasonLoaded = true;
+        } finally {
+          seasonLoading = false;
+        }
       });
     } catch (err) {
       console.error("❌ loadPlayerProfile failed:", err);
