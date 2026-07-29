@@ -133,20 +133,17 @@
       window.btccDb.collection("events").orderBy("eventNo").get(),
     ]);
 
-    const activeDrivers = driversSnap.docs
-      .map((doc) => {
-        const d = doc.data() || {};
-        return {
-          id: doc.id,
-          name: (d.name || doc.id).toString(),
-          active: d.active !== false,
-          categories: Array.isArray(d.categories) ? d.categories : [],
-        };
-      })
-      .filter((d) => d.active);
+    const categoryDrivers = driversSnap.docs.map((doc) => {
+      const d = doc.data() || {};
+      return {
+        id: doc.id,
+        name: (d.name || doc.id).toString(),
+        categories: Array.isArray(d.categories) ? d.categories : [],
+      };
+    });
 
-    if (!activeDrivers.length) {
-      throw new Error("No active drivers found for category standings engine");
+    if (!categoryDrivers.length) {
+      throw new Error("No drivers found for category standings engine");
     }
 
     const activePlayers = playersSnap.docs
@@ -176,6 +173,11 @@
       independent: new Map(),
       jacksears: new Map(),
     };
+    let latestCategorySizes = {
+      manufacturer: 0,
+      independent: 0,
+      jacksears: 0,
+    };
 
     activePlayers.forEach((player) => {
       seasonTotals.manufacturer.set(player.uid, 0);
@@ -189,15 +191,46 @@
         window.btccDb.collection("event_scores").doc(ev.id).collection("drivers").get(),
       ]);
 
+      const currentDriverById = new Map(
+        categoryDrivers.map((driver) => [driver.id, driver])
+      );
       const gpMap = new Map();
-      scoresSnap.forEach((doc) => {
+      const eventDrivers = scoresSnap.docs.map((doc) => {
         const data = doc.data() || {};
-        gpMap.set(String(doc.id), Number(data.pointsTotal || 0));
+        const driverId = String(doc.id);
+        const currentDriver = currentDriverById.get(driverId);
+        const hasCategorySnapshot = Array.isArray(data.categories);
+        const isLegacyCategoryEvent = ev.eventNo >= 1 && ev.eventNo <= 4;
+
+        if (!hasCategorySnapshot && !isLegacyCategoryEvent) {
+          throw new Error(
+            `Missing category snapshot for ${driverId} in ${ev.id}`
+          );
+        }
+
+        const categories = hasCategorySnapshot
+          ? data.categories
+          : (currentDriver?.categories || []);
+
+        gpMap.set(driverId, Number(data.pointsTotal || 0));
+
+        return {
+          id: driverId,
+          name: (data.name || currentDriver?.name || driverId).toString(),
+          categories,
+        };
       });
 
-      const manufacturer = buildCategoryDriverPoints(activeDrivers, gpMap, "manufacturer");
-      const independent = buildCategoryDriverPoints(activeDrivers, gpMap, "independent");
-      const jacksears = buildCategoryDriverPoints(activeDrivers, gpMap, "jacksears");
+      const eligibleEventDrivers = eventDrivers.filter((driver) => gpMap.has(driver.id));
+      const manufacturer = buildCategoryDriverPoints(eligibleEventDrivers, gpMap, "manufacturer");
+      const independent = buildCategoryDriverPoints(eligibleEventDrivers, gpMap, "independent");
+      const jacksears = buildCategoryDriverPoints(eligibleEventDrivers, gpMap, "jacksears");
+
+      latestCategorySizes = {
+        manufacturer: manufacturer.categorySize,
+        independent: independent.categorySize,
+        jacksears: jacksears.categorySize,
+      };
 
       entriesSnap.forEach((doc) => {
         const uid = doc.id;
@@ -231,7 +264,7 @@
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           lastEventId: eventId,
           playerCount: activePlayers.length,
-          engineVersion: "J5.0",
+          engineVersion: "J5.1",
         },
         { merge: true }
       );
@@ -247,7 +280,7 @@
             name: player.displayName,
             pointsTotal,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            engineVersion: "J5.0",
+            engineVersion: "J5.1",
           },
           { merge: true }
         );
@@ -259,9 +292,9 @@
     return {
       playerCount: activePlayers.length,
       eventCount: eventRows.length,
-      manufacturerDrivers: activeDrivers.filter((d) => (d.categories || []).includes("M")).length,
-      independentDrivers: activeDrivers.filter((d) => (d.categories || []).includes("I")).length,
-      jackSearsDrivers: activeDrivers.filter((d) => (d.categories || []).includes("JS")).length,
+      manufacturerDrivers: latestCategorySizes.manufacturer,
+      independentDrivers: latestCategorySizes.independent,
+      jackSearsDrivers: latestCategorySizes.jacksears,
     };
   }
 

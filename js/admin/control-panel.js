@@ -734,6 +734,20 @@ if (banner) {
             const activeDriverCount = await getActiveDriverCount();
             if (!activeDriverCount) throw new Error("No active drivers found for race scoring");
 
+            const driverMetaSnap = await window.btccDb.collection("drivers").get();
+            const driverMetaById = new Map(
+              driverMetaSnap.docs.map((doc) => {
+                const d = doc.data() || {};
+                return [
+                  String(doc.id),
+                  {
+                    name: (d.name || doc.id).toString(),
+                    categories: Array.isArray(d.categories) ? [...d.categories] : [],
+                  },
+                ];
+              })
+            );
+
             const racePointsForPos = (pos1) => racePoints(pos1, activeDriverCount);
 
             const qualiWeekendPointsForPos = (pos1) => {
@@ -864,7 +878,7 @@ if (banner) {
                   sourceResultsUpdatedAt: srcUpdatedAt,
                   computedAt: firebase.firestore.FieldValue.serverTimestamp(),
                   activeDriverCount,
-                  engineVersion: "I2.6",
+                  engineVersion: "I2.7",
                 },
                 { merge: false }
               );
@@ -881,7 +895,7 @@ if (banner) {
                 sourceResultsUpdatedAt: srcUpdatedAt,
                 ranAt: firebase.firestore.FieldValue.serverTimestamp(),
                 activeDriverCount,
-                engineVersion: "I2.6",
+                engineVersion: "I2.7",
               },
               { merge: true }
             );
@@ -890,17 +904,18 @@ if (banner) {
 
             // --- TRUE driver totals (post-write, sourced directly from results arrays) ---
             const driverTotals = new Map();
-            const driverNameById = new Map(
-              (Array.isArray(root.__drivers) ? root.__drivers : []).map((d) => [String(d.id), d.name || d.id])
-            );
 
             const ensureDriverTotal = (driverId) => {
               const key = String(driverId);
               let rec = driverTotals.get(key);
               if (!rec) {
+                const driverMeta = driverMetaById.get(key);
                 rec = {
                   driverId: key,
-                  name: driverNameById.get(key) || key,
+                  name: driverMeta?.name || key,
+                  categories: Array.isArray(driverMeta?.categories)
+                    ? [...driverMeta.categories]
+                    : [],
                   pointsTotal: 0,
                   breakdown: { qualifying: 0, race1: 0, race2: 0, race3: 0 },
                 };
@@ -930,6 +945,25 @@ if (banner) {
               });
             };
 
+            const seedStatusDrivers = (statusObj) => {
+              if (!statusObj || typeof statusObj !== "object") return;
+
+              ["FIN", "DNF", "DNS", "DSQ"].forEach((statusKey) => {
+                const driverIds = Array.isArray(statusObj[statusKey])
+                  ? statusObj[statusKey]
+                  : [];
+
+                driverIds.forEach((driverId) => {
+                  if (driverId) ensureDriverTotal(driverId);
+                });
+              });
+            };
+
+            seedStatusDrivers(resultsData.qualifyingStatus);
+            seedStatusDrivers(resultsData.race1Status);
+            seedStatusDrivers(resultsData.race2Status);
+            seedStatusDrivers(resultsData.race3Status);
+
             addOrderToDriverTotals(qualiOrder, qualiWeekendPointsForPos, "qualifying");
             addOrderToDriverTotals(race1Order, racePointsForPos, "race1");
             addOrderToDriverTotals(race2Order, racePointsForPos, "race2");
@@ -948,6 +982,7 @@ if (banner) {
                 {
                   driverId,
                   name: rec.name,
+                  categories: Array.isArray(rec.categories) ? [...rec.categories] : [],
                   pointsTotal: Number(rec.pointsTotal || 0),
                   breakdown: {
                     qualifying: Number(rec.breakdown?.qualifying || 0),
@@ -957,7 +992,7 @@ if (banner) {
                   },
                   computedAt: firebase.firestore.FieldValue.serverTimestamp(),
                   activeDriverCount,
-                  engineVersion: "I2.6",
+                  engineVersion: "I2.7",
                 },
                 { merge: false }
               );
