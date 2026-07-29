@@ -704,7 +704,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
           .map((entry) => Number(entry.eventNo || 0))
           .sort((a, b) => b - a);
 
-        if (!usedEvents.length) return "Usage: 0/2";
+        if (!usedEvents.length) return "";
 
         const lastEventNo = currentEventNo - 1;
         const twoAgoEventNo = currentEventNo - 2;
@@ -713,9 +713,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
         if (usedLast && usedTwoAgo) return "Usage: 2/2 — used last 2 events";
         if (usedLast) return "Usage: 1/2 — used last event";
-        if (usedTwoAgo) return "Usage: 1/2 — used 2 events ago";
-
-        return `Usage: ${usedEvents.length}/2 — used recently`;
+        return "";
       };
 
       const drivers = driversSnap.docs
@@ -726,6 +724,12 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         .map((doc) => {
         const d = doc.data() || {};
         const selectionsInLastTwo = Number(consecutiveCounts.get(doc.id) || 0);
+        const usedLastEvent = previousSelections.some((entry) => {
+          return (
+            Number(entry.eventNo || 0) === currentEventNo - 1 &&
+            entry.driverIds.includes(doc.id)
+          );
+        });
         const isSLD = !!currentSldDriverId && currentSldDriverId === doc.id;
         const blocked = selectionsInLastTwo >= 2 && !isSLD;
         const currentValue = Number.isFinite(Number(d.value))
@@ -743,6 +747,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
           ep: currentEp,
           tier: d.tier ?? null,
           selectionsInLastTwo,
+          usedLastEvent,
           usageDetailLabel: getUsageDetailLabel(doc.id),
           blocked,
           isSLD,
@@ -907,6 +912,16 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         if (!driver || !btn) return;
 
         const isSelected = selected.has(id);
+        const nextEventWarning = row.querySelector("[data-next-event-warning]");
+        if (nextEventWarning) {
+          nextEventWarning.hidden = !(
+            isSelected &&
+            driver.usedLastEvent &&
+            !driver.isSLD &&
+            !driver.blocked
+          );
+        }
+
         if (isSelected) {
           btn.textContent = driver.isSLD ? "SLD" : "Selected";
           row.style.opacity = "1";
@@ -1166,9 +1181,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
           ${drivers
             .map((driver) => {
               const tierLabel = isTierEvent() ? (driver.tier ? `${String(driver.tier).charAt(0).toUpperCase()}${String(driver.tier).slice(1)}` : "Tier TBD") : "Free choice";
-              const streakLabel = driver.usageDetailLabel || `Usage: ${driver.selectionsInLastTwo}/2`;
-              const sldLabel = driver.isSLD ? " • SLD" : "";
-              const blockedLabel = driver.blocked ? " • Blocked next event" : "";
+              const streakLabel = driver.usageDetailLabel || "";
               return `
                 <li
                   class="driverPickRow"
@@ -1185,11 +1198,12 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">Price ${fmtMoney(getEffectiveDriverPrice(driver))}</span>
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">EP: ${getDriverExpectedPoints(driver)}</span>
                         <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${escapeHtml(tierLabel)}</span>
-                        <span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${escapeHtml(streakLabel)}</span>
+                        ${streakLabel ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03);">${escapeHtml(streakLabel)}</span>` : ""}
+                        <span data-next-event-warning hidden style="padding:4px 8px; border-radius:999px; border:1px solid rgba(251,146,60,.5); background:rgba(251,146,60,.14); color:#fed7aa; font-weight:800;">Will be blocked next event</span>
                         ${driver.isSLD ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(34,197,94,.35); background:rgba(34,197,94,.10);">SLD +10%</span>` : ""}
                         ${!driver.isSLD && starDriverAId && driver.id === starDriverAId ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(96,165,250,.35); background:rgba(96,165,250,.10);">Underdog -20%</span>` : ""}
                         ${!driver.isSLD && starDriverBId && driver.id === starDriverBId ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(251,191,36,.35); background:rgba(251,191,36,.10);">Form +5%</span>` : ""}
-                        ${driver.blocked ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(250,204,21,.35); background:rgba(250,204,21,.10);">Blocked next event</span>` : ""}
+                        ${driver.blocked ? `<span style="padding:4px 8px; border-radius:999px; border:1px solid rgba(248,113,113,.45); background:rgba(248,113,113,.12); color:#fecaca; font-weight:800;">Blocked this event</span>` : ""}
                       </div>
                     </div>
                     <button
