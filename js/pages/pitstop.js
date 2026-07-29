@@ -40,36 +40,50 @@
     return n > 0 && ![10, 20, 30].includes(n);
   }
 
-  function isRound10Special(roundNo) {
-    return Number(roundNo || 0) === 10;
+  function isSharedPayoutRound(round) {
+    return (
+      round?.type === "special_round_10" ||
+      round?.type === "special_shared_payout"
+    );
   }
 
-  function getRound10PrizeTable() {
+  function isStoredNormalRound(round) {
+    const roundNo = Number(round?.roundNo || 0);
+    return roundNo > 0 && !isSharedPayoutRound(round);
+  }
+
+  function getCheckpointPrizePercentages() {
     return [
-      10.00,
-      5.00,
-      4.00,
-      3.50,
-      3.00,
-      2.80,
-      2.60,
-      2.40,
-      2.20,
-      2.00,
-      1.80,
-      1.70,
-      1.60,
-      1.50,
-      1.40,
-      1.30,
-      1.20,
-      1.10,
-      0.90,
+      20,
+      10,
+      8,
+      7,
+      6,
+      5.6,
+      5.2,
+      4.8,
+      4.4,
+      4,
+      3.6,
+      3.4,
+      3.2,
+      3,
+      2.8,
+      2.6,
+      2.4,
+      2.2,
+      1.8,
     ];
   }
 
+  function getRound10PrizeTable() {
+    return getCheckpointPrizePercentages().map((percentage) => {
+      return 50 * (percentage / 100);
+    });
+  }
+
   function getRoundPaidOut(round) {
-    if (round.type === "special_round_10") {
+    if (isSharedPayoutRound(round)) {
       return (round.specialPayouts || []).reduce((sum, payout) => {
         return sum + Number(payout.amount || 0);
       }, 0);
@@ -98,12 +112,11 @@
     let lastCompletedRound = null;
 
     sortedRounds.forEach((round) => {
-      const roundNo = Number(round.roundNo || 0);
-      if (!isNormalRound(roundNo) && !isRound10Special(roundNo)) return;
+      if (!isStoredNormalRound(round) && !isSharedPayoutRound(round)) return;
 
       lastCompletedRound = round;
 
-      if (isRound10Special(roundNo)) {
+      if (isSharedPayoutRound(round)) {
         rollover = 0;
         return;
       }
@@ -135,13 +148,13 @@
     let rolloverBefore = 0;
 
     return sortedRounds.map((round) => {
-      const normal = isNormalRound(round.roundNo);
-      const specialRound10 = isRound10Special(round.roundNo);
-      const startingPot = normal || specialRound10 ? entryPot + rolloverBefore : Number(round.potValue || 0);
+      const normal = isStoredNormalRound(round);
+      const sharedPayout = isSharedPayoutRound(round);
+      const startingPot = normal || sharedPayout ? entryPot + rolloverBefore : Number(round.potValue || 0);
       const paidOut = getRoundPaidOut(round);
       let rolloverAfter = rolloverBefore;
 
-      if (specialRound10) {
+      if (sharedPayout) {
         rolloverAfter = 0;
       } else if (normal) {
         if (round.drawnPlayerWon === true) {
@@ -154,7 +167,7 @@
       const calculated = {
         ...round,
         normal,
-        specialRound10,
+        sharedPayout,
         entryPot,
         rolloverBefore,
         startingPot,
@@ -162,7 +175,7 @@
         rolloverAfter,
       };
 
-      if (normal || specialRound10) {
+      if (normal || sharedPayout) {
         rolloverBefore = rolloverAfter;
       }
 
@@ -235,6 +248,71 @@
     });
   }
 
+  function allocateCheckpointPayout(ranking, potValue) {
+    const percentages = getCheckpointPrizePercentages();
+    const potPence = Math.round(Number(potValue || 0) * 100);
+
+    if (ranking.length !== percentages.length) {
+      throw new Error(`Checkpoint payout requires exactly ${percentages.length} ranked players.`);
+    }
+
+    const groups = [];
+
+    ranking.forEach((player, index) => {
+      const lastGroup = groups[groups.length - 1];
+      const percentage = Number(percentages[index] || 0);
+
+      if (lastGroup && lastGroup.position === player.position) {
+        lastGroup.players.push(player);
+        lastGroup.percentage += percentage;
+        return;
+      }
+
+      groups.push({
+        position: player.position,
+        players: [player],
+        percentage,
+      });
+    });
+
+    const groupAllocations = groups.map((group) => {
+      const exactPence = potPence * (group.percentage / 100);
+      const allocatedPence = Math.floor(exactPence);
+
+      return {
+        ...group,
+        exactPence,
+        allocatedPence,
+        remainder: exactPence - allocatedPence,
+      };
+    });
+
+    let penniesRemaining = potPence - groupAllocations.reduce((sum, group) => {
+      return sum + group.allocatedPence;
+    }, 0);
+
+    groupAllocations
+      .slice()
+      .sort((a, b) => b.remainder - a.remainder || a.position - b.position)
+      .forEach((group) => {
+        if (penniesRemaining <= 0) return;
+        group.allocatedPence += 1;
+        penniesRemaining -= 1;
+      });
+
+    return groupAllocations.flatMap((group) => {
+      const playerCount = group.players.length;
+      const basePence = Math.floor(group.allocatedPence / playerCount);
+      const extraPennies = group.allocatedPence % playerCount;
+
+      return group.players.map((player, index) => ({
+        position: group.position,
+        player: player.displayName,
+        amount: (basePence + (index < extraPennies ? 1 : 0)) / 100,
+      }));
+    });
+  }
+
   function ordinal(position) {
     const n = Number(position || 0);
     if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
@@ -245,7 +323,7 @@
   }
 
   function renderPayoutBreakdown(round) {
-    if (round.type === "special_round_10") {
+    if (isSharedPayoutRound(round)) {
       const payouts = (round.specialPayouts || [])
         .slice()
         .sort((a, b) => Number(a.position || 0) - Number(b.position || 0));
@@ -304,7 +382,7 @@
       });
     };
 
-    if (round.type === "special_round_10") {
+    if (isSharedPayoutRound(round)) {
       (round.specialPayouts || []).forEach((payout) => {
         addSplitPrize(`${Number(payout.position || 0)}${Number(payout.position || 0) === 1 ? "st" : Number(payout.position || 0) === 2 ? "nd" : Number(payout.position || 0) === 3 ? "rd" : "th"}`, payout.player, payout.amount);
       });
@@ -357,7 +435,7 @@
 
       existing.rounds.push(roundNo);
 
-      if (round.specialRound10) {
+      if (round.sharedPayout) {
         existing.hasSpecialReset = true;
       } else if (round.normal && round.drawnPlayerWon !== true) {
         existing.rolloverAdded += Number(round.rolloverAdded ?? 4.5);
@@ -395,7 +473,7 @@
             return `
               <tr>
                 <td>${r.roundNo || "-"}${r.normal ? "" : " *"}</td>
-                <td>${r.specialRound10 ? "Round 10 Shared" : escapeHtml(r.drawnPlayer || "-")}</td>
+                <td>${r.sharedPayout ? `Round ${roundNo} Shared` : escapeHtml(r.drawnPlayer || "-")}</td>
                 <td>${fmtMoney(r.startingPot)}</td>
                 <td style="font-weight:900; color:#dbeafe;">${fmtMoney(r.rolloverAfter)}</td>
                 <td>${fmtMoney(r.paidOut)}</td>
@@ -424,7 +502,7 @@
                 <td>${roundLabel}</td>
                 <td style="text-align:right;">${fmtMoney(event.rolloverAdded)}</td>
                 <td style="text-align:right; font-weight:800;">${fmtMoney(event.rolloverAfterEvent)}</td>
-                <td>${event.hasSpecialReset ? "Round 10 reset" : "—"}</td>
+                <td>${event.hasSpecialReset ? "Shared payout reset" : "—"}</td>
               </tr>
             `;
           })
@@ -483,8 +561,8 @@
         </div>
 
         <div id="pitstop-admin-form" style="display:none; gap:8px; margin-top:10px;">
-          <h2>Guided Round Preview</h2>
-          <p class="tiny muted">Read-only test mode. This loads the stored fantasy result for one round and calculates the Pit Stop outcome without writing anything to Firebase.</p>
+          <h2>Guided Round Entry</h2>
+          <p class="tiny muted">Loads the stored fantasy result, calculates the Pit Stop outcome and shows a final review. Nothing is written until you confirm the save.</p>
 
           <label class="tiny muted">Round Number</label>
           <input id="pitstop-wizard-round-no" type="number" min="1" max="30" placeholder="1" style="${pitstopInputStyle}" />
@@ -494,7 +572,7 @@
 
           <hr style="border:0; border-top:1px solid rgba(255,255,255,.12); width:100%; margin:14px 0;" />
           <h2>Legacy Manual Round Entry</h2>
-          <p class="tiny muted">Rounds 10, 20 and 30 are special draws and are blocked here for now.</p>
+          <p class="tiny muted">Checkpoint rounds 10, 20 and 30 are blocked here. Use Guided Round Entry above.</p>
 
           <label class="tiny muted">Round Number</label>
           <input id="pitstop-round-no" type="number" min="1" max="30" placeholder="1" style="${pitstopInputStyle}" />
@@ -563,7 +641,7 @@
         <div style="font-size:34px; line-height:1.05; font-weight:950; color:#fff; margin-top:4px;">${fmtMoney(pitstopTotals.calculatedRollover)}</div>
         <div class="tiny" style="color:rgba(255,255,255,.8); margin-top:6px; line-height:1.5;">
           Next normal-round pot: <strong style="color:#fff;">${fmtMoney(pitstopTotals.calculatedNextPot)}</strong><br>
-          Entry pot: ${fmtMoney(pitstopTotals.entryPot)} • Round 10 shared payout included when entered • Rounds 20 and 30 held separately
+          Entry pot: ${fmtMoney(pitstopTotals.entryPot)} • Shared checkpoint payouts reset the rollover when entered
         </div>
       </div>
 
@@ -792,12 +870,61 @@
         `;
 
         if (sharedCheckpoint) {
+          const specialPayouts = allocateCheckpointPayout(ranking, startingPot);
+          const allocatedTotal = specialPayouts.reduce((sum, payout) => {
+            return sum + Number(payout.amount || 0);
+          }, 0);
+
+          if (Math.round(allocatedTotal * 100) !== Math.round(startingPot * 100)) {
+            throw new Error(`Checkpoint allocation must total ${fmtMoney(startingPot)}. Current total: ${fmtMoney(allocatedTotal)}.`);
+          }
+
+          const payoutRows = specialPayouts
+            .map((payout) => {
+              return `
+                <tr>
+                  <td>${ordinal(payout.position)}</td>
+                  <td>${escapeHtml(payout.player)}</td>
+                  <td style="text-align:right; font-weight:800;">${fmtMoney(payout.amount)}</td>
+                </tr>
+              `;
+            })
+            .join("");
+          const saveControls = existingRound
+            ? ""
+            : `
+                <button id="pitstop-wizard-save-checkpoint" class="tile" type="button" style="margin-top:10px;">
+                  Confirm and Save Shared Payout
+                </button>
+                <div id="pitstop-wizard-checkpoint-msg" class="tiny muted" style="margin-top:8px;">
+                  Nothing has been saved yet.
+                </div>
+              `;
+
           preview.innerHTML = `
             ${summaryHtml}
             <div style="margin-top:12px; padding:10px; border-radius:10px; background:rgba(37,99,235,.16);">
               <strong>Shared checkpoint payout required</strong><br>
-              <span class="tiny">All 19 players must receive a prize totalling exactly ${fmtMoney(startingPot)}. The rollover resets to £0 after this payout. Shared-payout saving remains read-only until its allocation screen is completed.</span>
+              <span class="tiny">
+                All 19 players receive a percentage-based prize totalling exactly ${fmtMoney(startingPot)}.
+                Tied players share the combined percentages of the positions they occupy.
+                If a tied share cannot divide evenly to the penny, the extra penny is assigned alphabetically.
+                The rollover resets to £0 after this payout.
+              </span>
             </div>
+            <table class="table tiny" style="width:100%; margin-top:10px;">
+              <thead>
+                <tr><th>Pos</th><th>Player</th><th style="text-align:right;">Prize</th></tr>
+              </thead>
+              <tbody>${payoutRows}</tbody>
+              <tfoot>
+                <tr>
+                  <th colspan="2">Total payout</th>
+                  <th style="text-align:right;">${fmtMoney(allocatedTotal)}</th>
+                </tr>
+              </tfoot>
+            </table>
+            ${saveControls}
             <details style="margin-top:10px;">
               <summary style="cursor:pointer; font-weight:800;">View Round ${roundNo} finishing order</summary>
               <table class="table tiny" style="width:100%; margin-top:8px;">
@@ -809,7 +936,48 @@
             </details>
           `;
           preview.hidden = false;
-          setMsg(`Round ${roundNo} is a shared payout round. Read-only preview complete.`);
+
+          const saveCheckpointBtn = preview.querySelector("#pitstop-wizard-save-checkpoint");
+          saveCheckpointBtn?.addEventListener("click", async () => {
+            const checkpointMsg = preview.querySelector("#pitstop-wizard-checkpoint-msg");
+            const docId = getRoundDocId(roundNo);
+            const confirmed = window.confirm(
+              `Save Round ${roundNo} shared payout?\n\nThis will create pitstop_rounds/${docId}, pay ${fmtMoney(allocatedTotal)} across all 19 players and reset the rollover.`
+            );
+            if (!confirmed) return;
+
+            try {
+              saveCheckpointBtn.disabled = true;
+              saveCheckpointBtn.textContent = "Saving…";
+              if (checkpointMsg) checkpointMsg.textContent = "Saving shared payout…";
+
+              await window.btccDb.collection("pitstop_rounds").doc(docId).set({
+                roundNo,
+                type: roundNo === 10 ? "special_round_10" : "special_shared_payout",
+                drawnPlayer: `Round ${roundNo} Shared Payout`,
+                drawnPlayerWon: false,
+                potValue: startingPot,
+                specialPayouts,
+                rolloverAdded: 0,
+                notes: "Saved through guided percentage-based shared payout.",
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              }, { merge: true });
+
+              if (checkpointMsg) checkpointMsg.textContent = "Shared payout saved. Refreshing…";
+              await loadPitStop();
+            } catch (err) {
+              console.error("❌ Failed to save shared Pit Stop payout:", err);
+              if (checkpointMsg) checkpointMsg.textContent = err?.message || "Failed to save shared payout.";
+              saveCheckpointBtn.disabled = false;
+              saveCheckpointBtn.textContent = "Confirm and Save Shared Payout";
+            }
+          });
+
+          setMsg(
+            existingRound
+              ? `Round ${roundNo} shared payout preview loaded. The existing record will not be overwritten.`
+              : `Round ${roundNo} shared payout is ready for review.`
+          );
           return;
         }
 
@@ -847,9 +1015,7 @@
 
         const guidedSaveBlockReason = existingRound
           ? `Round ${roundNo} already exists. Guided mode will not overwrite it; use the legacy correction form if a deliberate correction is required.`
-          : context.checkpoint
-            ? `Round ${roundNo} is a checkpoint round. Saving remains blocked until the checkpoint payout workflow is completed.`
-            : "";
+          : "";
 
         const showGuidedSaveReview = (outcome, reviewHtml, payload) => {
           const saveControls = guidedSaveBlockReason
