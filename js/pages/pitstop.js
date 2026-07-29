@@ -632,16 +632,46 @@
       : "";
 
     root.innerHTML = `
-      <div class="card">
-        <h1>Pit Stop Pot</h1>
-        <p class="muted"> All draws are screen recorded and shared in the WhatsApp group </p>
+      <div class="card" style="position:relative; overflow:hidden; background:linear-gradient(145deg, rgba(15,35,65,.98), rgba(9,26,50,.98)); border-color:rgba(96,165,250,.25);">
+        <div style="position:absolute; top:-35px; right:-25px; width:130px; height:130px; border-radius:50%; background:rgba(37,99,235,.13);"></div>
+        <div style="position:relative;">
+          <div class="tiny" style="text-transform:uppercase; letter-spacing:.12em; color:#60a5fa; font-weight:900;">BTCC Fantasy League</div>
+          <h1 style="margin:5px 0 8px;">Pit Stop Pot</h1>
+          <p class="muted" style="margin:0; line-height:1.55;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 10px rgba(34,197,94,.7); margin-right:7px;"></span>
+            All draws are screen recorded and shared in the WhatsApp group
+          </p>
+        </div>
       </div>
-      <div class="card" style="margin-top:10px; background:linear-gradient(135deg, rgba(11,61,145,.95), rgba(37,99,235,.85)); border:1px solid rgba(147,197,253,.35); box-shadow:0 12px 30px rgba(0,0,0,.28);">
-        <div class="tiny" style="text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,.75); font-weight:800;">Current Rollover</div>
-        <div style="font-size:34px; line-height:1.05; font-weight:950; color:#fff; margin-top:4px;">${fmtMoney(pitstopTotals.calculatedRollover)}</div>
-        <div class="tiny" style="color:rgba(255,255,255,.8); margin-top:6px; line-height:1.5;">
-          Next normal-round pot: <strong style="color:#fff;">${fmtMoney(pitstopTotals.calculatedNextPot)}</strong><br>
-          Entry pot: ${fmtMoney(pitstopTotals.entryPot)} • Shared checkpoint payouts reset the rollover when entered
+
+      <div class="card" style="position:relative; overflow:hidden; margin-top:10px; padding:0; background:linear-gradient(135deg, #0b3d91 0%, #1857be 52%, #2563eb 100%); border:1px solid rgba(147,197,253,.5); box-shadow:0 16px 36px rgba(0,0,0,.32);">
+        <div style="position:absolute; inset:0; opacity:.13; background:repeating-linear-gradient(135deg, transparent 0 28px, rgba(255,255,255,.22) 28px 54px);"></div>
+        <div style="position:absolute; width:210px; height:210px; border-radius:50%; right:-90px; top:-105px; background:rgba(255,255,255,.1);"></div>
+
+        <div style="position:relative; display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:12px; padding:18px;">
+          <div style="display:flex; flex-direction:column; justify-content:center; min-height:112px;">
+            <div class="tiny" style="display:flex; align-items:center; gap:7px; text-transform:uppercase; letter-spacing:.11em; color:#dbeafe; font-weight:900;">
+              <span style="width:8px; height:8px; border-radius:50%; background:#facc15; box-shadow:0 0 10px rgba(250,204,21,.8);"></span>
+              Current Rollover
+            </div>
+            <div style="font-size:clamp(42px, 9vw, 62px); line-height:1; font-weight:950; color:#fff; letter-spacing:-.04em; margin-top:8px; text-shadow:0 3px 12px rgba(0,0,0,.22);">
+              ${fmtMoney(pitstopTotals.calculatedRollover)}
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; justify-content:center; min-height:112px; padding:14px 16px; border-radius:14px; background:rgba(4,18,43,.34); border:1px solid rgba(219,234,254,.2); backdrop-filter:blur(4px);">
+            <div class="tiny" style="text-transform:uppercase; letter-spacing:.09em; color:#bfdbfe; font-weight:850;">Next Normal-Round Pot</div>
+            <div style="font-size:30px; line-height:1.1; font-weight:950; color:#fff; margin-top:5px;">${fmtMoney(pitstopTotals.calculatedNextPot)}</div>
+            <div class="tiny" style="color:#dbeafe; margin-top:9px; line-height:1.5;">
+              Includes the ${fmtMoney(pitstopTotals.entryPot)} entry pot
+            </div>
+          </div>
+        </div>
+
+        <div class="tiny" style="position:relative; display:flex; flex-wrap:wrap; gap:7px 14px; padding:10px 18px; color:#dbeafe; background:rgba(3,15,36,.26); border-top:1px solid rgba(219,234,254,.16);">
+          <span><strong style="color:#fff;">£0.50</strong> per player</span>
+          <span><strong style="color:#fff;">${pitstopTotals.totalPlayers}</strong> players</span>
+          <span>Shared checkpoint payouts reset the rollover</span>
         </div>
       </div>
 
