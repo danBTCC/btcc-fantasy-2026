@@ -42,6 +42,8 @@ const ADMIN_EMAILS = [
     return ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email.toLowerCase());
   }
 
+  window.isBtccAdminEmail = isAdminEmail;
+
   function render(el, html) {
     el.innerHTML = html;
   }
@@ -249,6 +251,25 @@ const ADMIN_EMAILS = [
         <p class="tiny muted">Quick visual check of which players have submitted for Events 1–10.</p>
         <div id="admin-submission-tracker-msg" class="tiny muted" style="margin-top:8px;">Loading…</div>
         <div id="admin-submission-tracker" style="margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <button type="button" class="admin-collapse-toggle" data-target="admin-data-export-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Data Export</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-data-export-body" hidden style="margin-top:10px;">
+          <p class="tiny muted" style="margin:0; line-height:1.5;">
+            Download read-only JSON copies of league history for private analysis. Exports do not change any league data.
+          </p>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px; margin-top:12px;">
+            <button id="admin-export-full-history" class="tile" type="button">Export Full League History</button>
+            <button id="admin-export-latest-event" class="tile" type="button">Export Latest Event</button>
+            <button id="admin-export-current-drivers" class="tile" type="button">Export Current Drivers</button>
+            <button id="admin-export-current-players" class="tile" type="button">Export Current Players</button>
+          </div>
+          <div id="admin-data-export-msg" class="tiny muted" role="status" aria-live="polite" style="margin-top:10px;">Ready.</div>
         </div>
       </div>
 
@@ -479,6 +500,9 @@ const ADMIN_EMAILS = [
     setupAdminDriverManager(root);
     setupAdminPitStop(root);
     setupAdminRaceStandingsRebuild(root);
+    if (typeof window.setupAdminDataExport === "function") {
+      window.setupAdminDataExport(root, email);
+    }
     renderQualifyingForm(root);
     renderRaceForms(root);
     renderResultsPreview(root);
