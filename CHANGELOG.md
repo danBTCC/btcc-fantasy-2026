@@ -2,7 +2,7 @@
 
 ## 2026-08-06
 
-- Added a points-behind-leader gap and subtle championship-position colour bands to the Overall standings table.
+- Added a points-behind-leader gap, subtle championship-position colour bands and movement indicators across the standings tables.
 
 ## 2026-08-01
 

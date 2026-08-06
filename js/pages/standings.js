@@ -147,7 +147,7 @@
       document.head.appendChild(style);
     }
       // --- Helpers (shared by all tables) ---
-      const renderSimplePointsTable = (mountEl, rows, labelName) => {
+      const renderSimplePointsTable = (mountEl, rows, labelName, previousPositions = new Map()) => {
         if (!mountEl) return;
         if (!rows.length) {
           mountEl.textContent = "No data yet";
@@ -160,6 +160,7 @@
                 <th style="text-align:left; padding:6px;">Pos</th>
                 <th style="text-align:left; padding:6px;">${labelName}</th>
                 <th style="text-align:right; padding:6px;">Points</th>
+                <th style="text-align:center; padding:6px;">Move</th>
               </tr>
             </thead>
             <tbody>
@@ -170,6 +171,7 @@
                       <td style="padding:6px;">${idx + 1}</td>
                       <td style="padding:6px;">${r.name || "Unnamed"}</td>
                       <td style="padding:6px; text-align:right;"><span class="standings-points-pill">${r.points}</span></td>
+                      <td style="padding:6px; text-align:center;">${getMovementHtml(idx + 1, previousPositions.get(r.id))}</td>
                     </tr>
                   `;
                 })
@@ -198,6 +200,72 @@
         return '<span class="standings-move same">-</span>';
       };
 
+      const normaliseTeamIds = (data) => {
+        const candidates = [
+          data?.teamIds,
+          data?.driverIds,
+          data?.team,
+          data?.drivers,
+          data?.selectedDrivers,
+          data?.picks,
+          data?.selection,
+        ];
+        const selected = candidates.find((value) => Array.isArray(value)) || [];
+        return Array.from(new Set(selected.map((value) => {
+          if (typeof value === "string") return value;
+          if (value && typeof value === "object") return value.driverId || value.id || null;
+          return null;
+        }).filter(Boolean).map(String)));
+      };
+
+      const buildPositionMap = (rows) => {
+        const sorted = rows
+          .slice()
+          .sort((a, b) => Number(b.points || 0) - Number(a.points || 0) || String(a.name || a.id).localeCompare(String(b.name || b.id)));
+        return new Map(sorted.map((row, index) => [row.id, index + 1]));
+      };
+
+      let completedEventsPromise = null;
+      const getCompletedEvents = async () => {
+        if (!completedEventsPromise) {
+          completedEventsPromise = window.btccDb.collection("events").orderBy("eventNo").get().then((snapshot) => {
+            return snapshot.docs
+              .map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+              .filter((event) => {
+                const status = String(event.status || "").toLowerCase();
+                return status === "completed" || status === "complete";
+              })
+              .sort((a, b) => Number(a.eventNo || 0) - Number(b.eventNo || 0));
+          });
+        }
+        return completedEventsPromise;
+      };
+
+      let latestMovementContextPromise = null;
+      const getLatestMovementContext = async () => {
+        if (!latestMovementContextPromise) {
+          latestMovementContextPromise = (async () => {
+            const completedEvents = await getCompletedEvents();
+            if (completedEvents.length < 2) return null;
+
+            const latestEvent = completedEvents[completedEvents.length - 1];
+            const [playerScoresSnap, driverScoresSnap, resultsSnap] = await Promise.all([
+              window.btccDb.collection("event_scores").doc(latestEvent.id).collection("players").get(),
+              window.btccDb.collection("event_scores").doc(latestEvent.id).collection("drivers").get(),
+              window.btccDb.collection("results").doc(latestEvent.id).get(),
+            ]);
+
+            return {
+              latestEvent,
+              playerScores: new Map(playerScoresSnap.docs.map((doc) => [doc.id, doc.data() || {}])),
+              driverScores: new Map(driverScoresSnap.docs.map((doc) => [doc.id, doc.data() || {}])),
+              results: resultsSnap.exists ? (resultsSnap.data() || {}) : {},
+            };
+          })();
+        }
+        return latestMovementContextPromise;
+      };
+
       const readSortedPointsDocs = async (colRef) => {
         // Prefer server-side sort if pointsTotal exists
         const orderedSnap = await colRef.orderBy("pointsTotal", "desc").get();
@@ -216,11 +284,7 @@
 
       // Helper to build previous overall position map (for movement arrows)
       const buildPreviousOverallPositionMap = async () => {
-        const eventsSnap = await window.btccDb.collection("events").orderBy("eventNo").get();
-        const eventDocs = eventsSnap.docs
-          .map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
-          .filter((event) => String(event.status || "").toLowerCase() === "completed" || String(event.status || "").toLowerCase() === "complete")
-          .sort((a, b) => Number(a.eventNo || 0) - Number(b.eventNo || 0));
+        const eventDocs = await getCompletedEvents();
 
         if (eventDocs.length < 2) return new Map();
 
@@ -262,9 +326,10 @@
       };
 
       const buildRaceRowsFromEventScores = async (raceKey) => {
-        const [eventsSnap, playersSnap] = await Promise.all([
+        const [eventsSnap, playersSnap, movementContext] = await Promise.all([
           window.btccDb.collection("events").orderBy("eventNo").get(),
           window.btccDb.collection("players").get(),
+          getLatestMovementContext(),
         ]);
 
         const playerNames = new Map();
@@ -306,7 +371,156 @@
           });
         }
 
-        return Array.from(totals.values()).sort((a, b) => b.points - a.points);
+        const rows = Array.from(totals.values()).sort((a, b) => b.points - a.points);
+        if (!movementContext) return { rows, previousPositions: new Map() };
+
+        const previousRows = rows.map((row) => {
+          const latestScore = movementContext.playerScores.get(row.id) || {};
+          const latestBreakdown = latestScore.breakdown || {};
+          const latestRacePoints = Number(
+            latestBreakdown[raceKey] ??
+            latestScore[raceKey] ??
+            latestScore?.raceBreakdown?.[raceKey] ??
+            0
+          );
+          return {
+            id: row.id,
+            name: row.name,
+            points: Number(row.points || 0) - (Number.isFinite(latestRacePoints) ? latestRacePoints : 0),
+          };
+        });
+
+        return { rows, previousPositions: buildPositionMap(previousRows) };
+      };
+
+      const buildPreviousWingfootPositionMap = async (wingDocs) => {
+        const movementContext = await getLatestMovementContext();
+        if (!movementContext) return new Map();
+
+        const qualifyingOrder = Array.isArray(movementContext.results.qualifying)
+          ? movementContext.results.qualifying.map(String)
+          : [];
+        const qualifyingStatus = movementContext.results.qualifyingStatus && typeof movementContext.results.qualifyingStatus === "object"
+          ? movementContext.results.qualifyingStatus
+          : {};
+        const eventDriverIds = new Set([
+          ...qualifyingOrder,
+          ...(Array.isArray(qualifyingStatus.FIN) ? qualifyingStatus.FIN : []),
+          ...(Array.isArray(qualifyingStatus.DNF) ? qualifyingStatus.DNF : []),
+          ...(Array.isArray(qualifyingStatus.DNS) ? qualifyingStatus.DNS : []),
+          ...(Array.isArray(qualifyingStatus.DSQ) ? qualifyingStatus.DSQ : []),
+        ].filter(Boolean).map(String));
+
+        if (!qualifyingOrder.length || !eventDriverIds.size) return new Map();
+
+        const qualifyingPoints = new Map();
+        qualifyingOrder.forEach((driverId, index) => {
+          qualifyingPoints.set(driverId, Math.max(0, eventDriverIds.size - index));
+        });
+
+        const previousRows = wingDocs.map((doc) => {
+          const d = doc.data() || {};
+          const latestPlayerScore = movementContext.playerScores.get(doc.id) || {};
+          const latestPoints = normaliseTeamIds(latestPlayerScore).reduce((sum, driverId) => {
+            return sum + Number(qualifyingPoints.get(driverId) || 0);
+          }, 0);
+          return {
+            id: doc.id,
+            name: d.displayName || d.name || doc.id,
+            points: Number(d.pointsTotal ?? d.points ?? 0) - latestPoints,
+          };
+        });
+
+        return buildPositionMap(previousRows);
+      };
+
+      const buildPreviousCategoryPositionMap = async (docs, categoryKey) => {
+        const movementContext = await getLatestMovementContext();
+        if (!movementContext) return new Map();
+
+        let legacyDrivers = new Map();
+        const needsLegacyCategories = Number(movementContext.latestEvent.eventNo || 0) <= 4;
+        if (needsLegacyCategories) {
+          const driversSnap = await window.btccDb.collection("drivers").get();
+          legacyDrivers = new Map(driversSnap.docs.map((doc) => [doc.id, doc.data() || {}]));
+        }
+
+        const categoryCode = categoryKey === "manufacturer"
+          ? "M"
+          : categoryKey === "independent"
+            ? "I"
+            : "JS";
+        const eligibleDrivers = Array.from(movementContext.driverScores.entries())
+          .map(([driverId, score]) => {
+            const categories = Array.isArray(score.categories)
+              ? score.categories
+              : (Array.isArray(legacyDrivers.get(driverId)?.categories) ? legacyDrivers.get(driverId).categories : []);
+            return {
+              id: driverId,
+              name: String(score.name || legacyDrivers.get(driverId)?.name || driverId),
+              points: Number(score.pointsTotal ?? score.points ?? 0),
+              categories,
+            };
+          })
+          .filter((driver) => driver.categories.includes(categoryCode))
+          .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+
+        if (!eligibleDrivers.length) return new Map();
+
+        const driverCategoryPoints = new Map();
+        eligibleDrivers.forEach((driver, index) => {
+          driverCategoryPoints.set(driver.id, eligibleDrivers.length - index);
+        });
+
+        const previousRows = docs.map((doc) => {
+          const d = doc.data() || {};
+          const latestPlayerScore = movementContext.playerScores.get(doc.id) || {};
+          const selectedDriverIds = normaliseTeamIds(latestPlayerScore);
+          const categoryTeamIds = selectedDriverIds.length >= 3 && selectedDriverIds.length <= 6
+            ? selectedDriverIds
+            : [];
+          const latestPoints = categoryTeamIds.reduce((sum, driverId) => {
+            return sum + Number(driverCategoryPoints.get(driverId) || 0);
+          }, 0);
+          return {
+            id: doc.id,
+            name: d.displayName || d.name || doc.id,
+            points: Number(d.pointsTotal ?? d.points ?? 0) - latestPoints,
+          };
+        });
+
+        return buildPositionMap(previousRows);
+      };
+
+      const buildPreviousTeamPositionMap = async (teamDocs) => {
+        const movementContext = await getLatestMovementContext();
+        if (!movementContext) return new Map();
+
+        const playersSnap = await window.btccDb.collection("players").get();
+        const teamByPlayer = new Map();
+        playersSnap.forEach((doc) => {
+          const d = doc.data() || {};
+          teamByPlayer.set(doc.id, String(d.teamId || "unassigned"));
+        });
+
+        const latestPointsByTeam = new Map();
+        movementContext.playerScores.forEach((score, uid) => {
+          const teamId = teamByPlayer.get(uid) || "unassigned";
+          const points = Number(score.pointsTotal ?? score.points ?? score.total ?? score.breakdown?.total ?? 0);
+          latestPointsByTeam.set(teamId, Number(latestPointsByTeam.get(teamId) || 0) + (Number.isFinite(points) ? points : 0));
+        });
+
+        const previousRows = teamDocs.map((doc) => {
+          const d = doc.data() || {};
+          const teamId = String(d.teamId || doc.id);
+          return {
+            id: teamId,
+            name: d.teamName || teamId,
+            points: Number(d.pointsTotal ?? d.points ?? 0) - Number(latestPointsByTeam.get(teamId) || 0),
+          };
+        });
+
+        return buildPositionMap(previousRows);
       };
 
     try {
@@ -490,6 +704,7 @@
         if (!teamsDocs.length) {
           teamsEl.textContent = "No data yet";
         } else {
+          const previousTeamPositions = await buildPreviousTeamPositionMap(teamsDocs);
           teamsEl.innerHTML = `
             <table class="table tiny standings-table">
               <thead>
@@ -497,6 +712,7 @@
                   <th style="text-align:left; padding:6px;">Pos</th>
                   <th style="text-align:left; padding:6px;">Team</th>
                   <th style="text-align:right; padding:6px;">Points</th>
+                  <th style="text-align:center; padding:6px;">Move</th>
                 </tr>
               </thead>
               <tbody>
@@ -508,6 +724,7 @@
                         <td style="padding:6px;">${idx + 1}</td>
                         <td style="padding:6px;">${d.teamName || "Unnamed team"}</td>
                         <td style="padding:6px; text-align:right;"><span class="standings-points-pill">${d.pointsTotal ?? d.points ?? 0}</span></td>
+                        <td style="padding:6px; text-align:center;">${getMovementHtml(idx + 1, previousTeamPositions.get(String(d.teamId || doc.id)))}</td>
                       </tr>
                     `;
                   })
@@ -553,6 +770,7 @@
         if (!wingDocs.length) {
           wingfootEl.textContent = "No data yet";
         } else {
+          const previousWingfootPositions = await buildPreviousWingfootPositionMap(wingDocs);
           wingfootEl.innerHTML = `
             <table class="table tiny standings-table">
               <thead>
@@ -560,6 +778,7 @@
                   <th style="text-align:left; padding:6px;">Pos</th>
                   <th style="text-align:left; padding:6px;">Player</th>
                   <th style="text-align:right; padding:6px;">Points</th>
+                  <th style="text-align:center; padding:6px;">Move</th>
                 </tr>
               </thead>
               <tbody>
@@ -571,6 +790,7 @@
                         <td style="padding:6px;">${idx + 1}</td>
                         <td style="padding:6px;">${d.displayName || "Unnamed"}</td>
                         <td style="padding:6px; text-align:right;"><span class="standings-points-pill">${d.pointsTotal ?? d.points ?? 0}</span></td>
+                        <td style="padding:6px; text-align:center;">${getMovementHtml(idx + 1, previousWingfootPositions.get(doc.id))}</td>
                       </tr>
                     `;
                   })
@@ -595,12 +815,14 @@
         const rows = docs.map((doc) => {
           const d = doc.data() || {};
           return {
+            id: doc.id,
             name: d.displayName || "Unnamed",
             points: Number(d.pointsTotal ?? d.points ?? 0),
           };
         });
 
-        renderSimplePointsTable(manufacturerEl, rows, "Player");
+        const previousPositions = await buildPreviousCategoryPositionMap(docs, "manufacturer");
+        renderSimplePointsTable(manufacturerEl, rows, "Player", previousPositions);
         console.log("✅ Manufacturer standings loaded:", rows.length);
       }
 
@@ -616,12 +838,14 @@
         const rows = docs.map((doc) => {
           const d = doc.data() || {};
           return {
+            id: doc.id,
             name: d.displayName || "Unnamed",
             points: Number(d.pointsTotal ?? d.points ?? 0),
           };
         });
 
-        renderSimplePointsTable(independentEl, rows, "Player");
+        const previousPositions = await buildPreviousCategoryPositionMap(docs, "independent");
+        renderSimplePointsTable(independentEl, rows, "Player", previousPositions);
         console.log("✅ Independent standings loaded:", rows.length);
       }
 
@@ -637,33 +861,35 @@
         const rows = docs.map((doc) => {
           const d = doc.data() || {};
           return {
+            id: doc.id,
             name: d.displayName || "Unnamed",
             points: Number(d.pointsTotal ?? d.points ?? 0),
           };
         });
 
-        renderSimplePointsTable(jacksearsEl, rows, "Player");
+        const previousPositions = await buildPreviousCategoryPositionMap(docs, "jacksears");
+        renderSimplePointsTable(jacksearsEl, rows, "Player", previousPositions);
         console.log("✅ Jack Sears standings loaded:", rows.length);
       }
 
       // ---- Race 1 standings ----
       if (race1El) {
-        const rows = await buildRaceRowsFromEventScores("race1");
-        renderSimplePointsTable(race1El, rows, "Player");
+        const { rows, previousPositions } = await buildRaceRowsFromEventScores("race1");
+        renderSimplePointsTable(race1El, rows, "Player", previousPositions);
         console.log("✅ Race 1 standings loaded from event_scores:", rows.length);
       }
 
       // ---- Race 2 standings ----
       if (race2El) {
-        const rows = await buildRaceRowsFromEventScores("race2");
-        renderSimplePointsTable(race2El, rows, "Player");
+        const { rows, previousPositions } = await buildRaceRowsFromEventScores("race2");
+        renderSimplePointsTable(race2El, rows, "Player", previousPositions);
         console.log("✅ Race 2 standings loaded from event_scores:", rows.length);
       }
 
       // ---- Race 3 standings ----
       if (race3El) {
-        const rows = await buildRaceRowsFromEventScores("race3");
-        renderSimplePointsTable(race3El, rows, "Player");
+        const { rows, previousPositions } = await buildRaceRowsFromEventScores("race3");
+        renderSimplePointsTable(race3El, rows, "Player", previousPositions);
         console.log("✅ Race 3 standings loaded from event_scores:", rows.length);
       }
 
