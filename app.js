@@ -1,6 +1,7 @@
 console.log("BTCC Fantasy League 2026 loaded");
 
 const loadedRoutes = new Set();
+const SHOW_THRUXTON_EVENT_UPDATE = false;
 
 function showThruxtonEventUpdate() {
   const modal = document.createElement("div");
@@ -288,7 +289,9 @@ async function loadNextEventCountdown() {
 
 // ---------- App Boot ----------
 document.addEventListener("DOMContentLoaded", async () => {
-  showThruxtonEventUpdate();
+  if (SHOW_THRUXTON_EVENT_UPDATE) {
+    showThruxtonEventUpdate();
+  }
 
   // Build stamp
   const stampEl = document.getElementById("buildStamp");
