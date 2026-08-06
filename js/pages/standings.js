@@ -61,6 +61,25 @@
         .standings-table tbody tr:nth-child(3) {
           background: linear-gradient(90deg, rgba(205,127,50,.16), rgba(255,255,255,.04));
         }
+        .standings-table--overall tbody tr:nth-child(4),
+        .standings-table--overall tbody tr:nth-child(5) {
+          background: linear-gradient(90deg, rgba(37,99,235,.18), rgba(255,255,255,.035));
+        }
+        .standings-table--overall tbody tr:nth-child(n+6):nth-child(-n+10) {
+          background: linear-gradient(90deg, rgba(37,99,235,.10), rgba(255,255,255,.03));
+        }
+        .standings-table--overall tbody tr:nth-child(16) {
+          background: linear-gradient(90deg, rgba(127,29,29,.10), rgba(255,255,255,.025));
+        }
+        .standings-table--overall tbody tr:nth-child(17) {
+          background: linear-gradient(90deg, rgba(153,27,27,.14), rgba(255,255,255,.025));
+        }
+        .standings-table--overall tbody tr:nth-child(18) {
+          background: linear-gradient(90deg, rgba(153,27,27,.18), rgba(255,255,255,.025));
+        }
+        .standings-table--overall tbody tr:nth-child(n+19) {
+          background: linear-gradient(90deg, rgba(185,28,28,.22), rgba(255,255,255,.025));
+        }
         .standings-table tbody td {
           padding: 9px 10px !important;
           border: 0 !important;
@@ -98,6 +117,31 @@
         }
         .standings-move.same {
           color:rgba(255,255,255,.55);
+        }
+        .standings-gap {
+          display:inline-block;
+          min-width:34px;
+          color:rgba(255,255,255,.72);
+          font-weight:800;
+          text-align:center;
+        }
+        .standings-gap.leader {
+          color:#facc15;
+        }
+        @media (max-width: 520px) {
+          .standings-table--overall thead th,
+          .standings-table--overall tbody td {
+            padding-left:5px !important;
+            padding-right:5px !important;
+          }
+          .standings-table--overall .standings-points-pill {
+            min-width:36px;
+            padding-left:6px;
+            padding-right:6px;
+          }
+          .standings-table--overall .standings-move {
+            min-width:34px;
+          }
         }
       `;
       document.head.appendChild(style);
@@ -323,13 +367,15 @@
         if (!playersDocs.length) {
           playersEl.textContent = "No data yet";
         } else {
+          const leaderPoints = Number(playersDocs[0].data()?.pointsTotal ?? playersDocs[0].data()?.points ?? 0);
           playersEl.innerHTML = `
-            <table class="table tiny standings-table">
+            <table class="table tiny standings-table standings-table--overall">
               <thead>
                 <tr>
                   <th style="text-align:left; padding:6px;">Pos</th>
                   <th style="text-align:left; padding:6px;">Player</th>
                   <th style="text-align:right; padding:6px;">Points</th>
+                  <th style="text-align:center; padding:6px;">Gap</th>
                   <th style="text-align:center; padding:6px;">Move</th>
                 </tr>
               </thead>
@@ -337,11 +383,17 @@
                 ${playersDocs
                   .map((doc, idx) => {
                     const d = doc.data() || {};
+                    const playerPoints = Number(d.pointsTotal ?? d.points ?? 0);
+                    const pointsBehind = Math.max(0, leaderPoints - playerPoints);
+                    const gapHtml = pointsBehind === 0
+                      ? '<span class="standings-gap leader">—</span>'
+                      : `<span class="standings-gap">-${pointsBehind}</span>`;
                     return `
                       <tr>
                         <td style="padding:6px;">${idx + 1}</td>
                         <td style="padding:6px;">${d.displayName || "Unnamed"}</td>
                         <td style="padding:6px; text-align:right;"><span class="standings-points-pill">${d.pointsTotal ?? d.points ?? 0}</span></td>
+                        <td style="padding:6px; text-align:center;">${gapHtml}</td>
                         <td style="padding:6px; text-align:center;">${getMovementHtml(idx + 1, d.previousPosition ?? previousOverallPositions.get(doc.id))}</td>
                       </tr>
                     `;
