@@ -224,6 +224,48 @@
     return head + body + foot;
   };
 
+  const getHistoricalEventGridSize = async (eventId) => {
+    const engineRunSnap = await window.btccDb.collection("engine_runs").doc(eventId).get();
+    const engineRunCount = Number(engineRunSnap.data()?.activeDriverCount || 0);
+
+    if (engineRunSnap.exists && engineRunCount > 0) {
+      return engineRunCount;
+    }
+
+    const valueRunSnap = await window.btccDb.collection("driver_value_runs").doc(eventId).get();
+    const valueRunCount = Number(valueRunSnap.data()?.activeDriverCount || 0);
+
+    if (valueRunSnap.exists && valueRunCount > 0) {
+      return valueRunCount;
+    }
+
+    const driverScoresSnap = await window.btccDb
+      .collection("event_scores")
+      .doc(eventId)
+      .collection("drivers")
+      .limit(1)
+      .get();
+    const driverScoreCount = driverScoresSnap.empty
+      ? 0
+      : Number(driverScoresSnap.docs[0].data()?.activeDriverCount || 0);
+
+    if (driverScoreCount > 0) {
+      return driverScoreCount;
+    }
+
+    const playerScoresSnap = await window.btccDb
+      .collection("event_scores")
+      .doc(eventId)
+      .collection("players")
+      .limit(1)
+      .get();
+    const playerScoreCount = playerScoresSnap.empty
+      ? 0
+      : Number(playerScoresSnap.docs[0].data()?.activeDriverCount || 0);
+
+    return playerScoreCount > 0 ? playerScoreCount : null;
+  };
+
   // ---- main ----
   async function loadResults() {
     const el = document.getElementById("events-list");
@@ -360,8 +402,18 @@
                 resultsSlot.innerHTML = renderDriverResultsTable(rows);
               }
               if (driverScoresSlot) {
-                const driverRows = buildDriverEventPointsRows(rdata, driverNameById);
-                driverScoresSlot.innerHTML = renderDriverFantasyTable(driverRows);
+                try {
+                  const eventGridSize = await getHistoricalEventGridSize(eventId);
+                  if (!eventGridSize) {
+                    throw new Error("Historical active-driver count is not available for this event.");
+                  }
+
+                  const driverRows = buildDriverEventPointsRows(rdata, driverNameById, eventGridSize);
+                  driverScoresSlot.innerHTML = renderDriverFantasyTable(driverRows);
+                } catch (gridError) {
+                  console.warn("⚠️ Could not determine historical grid size for", eventId, gridError);
+                  driverScoresSlot.innerHTML = `<div class="note warnNote">Driver fantasy points unavailable: historical grid size could not be verified.</div>`;
+                }
               }
             }
           } catch (e) {
@@ -420,7 +472,7 @@ scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
 
   window.loadResults = loadResults;
 })();
-  const buildDriverEventPointsRows = (resultData, driverNameById) => {
+  const buildDriverEventPointsRows = (resultData, driverNameById, eventGridSize) => {
     const qualifying = Array.isArray(resultData?.qualifying) ? resultData.qualifying : [];
     const race1 = Array.isArray(resultData?.race1) ? resultData.race1 : [];
     const race2 = Array.isArray(resultData?.race2) ? resultData.race2 : [];
@@ -451,8 +503,9 @@ scoreDocs.sort((a, b) => (Number(b.points) || 0) - (Number(a.points) || 0));
     };
 
     const racePointsForPos = (pos1) => {
-      if (!pos1 || pos1 < 1 || pos1 > 21) return 0;
-      return 22 - pos1;
+      const totalDrivers = Number(eventGridSize || 0);
+      if (!pos1 || pos1 < 1 || !totalDrivers || pos1 > totalDrivers) return 0;
+      return totalDrivers - pos1 + 1;
     };
 
     return allIds
