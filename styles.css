@@ -431,6 +431,63 @@ th {
     color: var(--text);
 }
 
+.newsReactions {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, .09);
+}
+
+.newsReactionsTitle {
+    margin-bottom: 7px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.newsReactionButtons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.newsReactionButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 54px;
+    min-height: 40px;
+    padding: 6px 10px;
+    color: var(--text);
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.newsReactionButton[aria-pressed="true"] {
+    background: rgba(37, 99, 235, .32);
+    border-color: rgba(147, 197, 253, .62);
+    box-shadow: 0 0 0 1px rgba(96, 165, 250, .18);
+}
+
+.newsReactionButton:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+.newsReactionButton:disabled {
+    cursor: not-allowed;
+    opacity: .65;
+}
+
+.newsReactionStatus {
+    min-height: 16px;
+    margin-top: 6px;
+}
+
 .footer {
     padding: 16px 14px 22px;
     border-top: 1px solid var(--border);

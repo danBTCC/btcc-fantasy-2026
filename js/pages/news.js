@@ -2,6 +2,13 @@
 // Exposes: window.loadNews()
 
 (function () {
+  const NEWS_REACTIONS = [
+    { type: "like", emoji: "👍", label: "Like" },
+    { type: "love", emoji: "❤️", label: "Love" },
+    { type: "funny", emoji: "😂", label: "Funny" },
+    { type: "wow", emoji: "😮", label: "Wow" },
+  ];
+
   function escapeHtml(value) {
     return String(value ?? "")
       .replace(/&/g, "&amp;")
@@ -16,6 +23,113 @@
     if (!raw) return "Dan";
     if (raw.includes("@")) return "Dan";
     return raw;
+  }
+
+  function renderReactionButtons(mount, counts, selectedType, currentUser) {
+    if (!mount) return;
+
+    const canReact = Boolean(currentUser);
+    const buttons = NEWS_REACTIONS.map((reaction) => {
+      const count = Number(counts?.[reaction.type] || 0);
+      const selected = selectedType === reaction.type;
+      const loginHint = canReact ? "" : ". Log in to react";
+
+      return `
+        <button
+          class="newsReactionButton"
+          type="button"
+          data-reaction-type="${reaction.type}"
+          aria-label="${reaction.label}: ${count} reaction${count === 1 ? "" : "s"}${loginHint}"
+          aria-pressed="${selected ? "true" : "false"}"
+          ${!canReact ? "disabled" : ""}
+        >
+          <span aria-hidden="true">${reaction.emoji}</span>
+          <span>${count}</span>
+        </button>
+      `;
+    }).join("");
+
+    mount.innerHTML = `
+      <div class="newsReactionsTitle">Reactions</div>
+      <div class="newsReactionButtons">${buttons}</div>
+      <div class="newsReactionStatus tiny muted" role="status" aria-live="polite">
+        ${canReact ? "" : "Log in to add a reaction."}
+      </div>
+    `;
+  }
+
+  async function loadNewsReactions(newsId, mount, currentUser) {
+    if (!newsId || !mount || !window.btccDb) return;
+
+    const counts = Object.fromEntries(NEWS_REACTIONS.map((reaction) => [reaction.type, 0]));
+    const validTypes = new Set(NEWS_REACTIONS.map((reaction) => reaction.type));
+
+    try {
+      mount.dataset.reactionsLoaded = "loading";
+      mount.dataset.newsId = newsId;
+      mount.innerHTML = `<div class="tiny muted">Loading reactions…</div>`;
+
+      const snap = await window.btccDb
+        .collection("news")
+        .doc(newsId)
+        .collection("reactions")
+        .get();
+
+      let selectedType = "";
+      snap.forEach((doc) => {
+        const type = String(doc.data()?.type || "").toLowerCase();
+        if (!validTypes.has(type)) return;
+        counts[type] += 1;
+        if (currentUser && doc.id === currentUser.uid) selectedType = type;
+      });
+
+      mount.dataset.reactionsLoaded = "true";
+      renderReactionButtons(mount, counts, selectedType, currentUser);
+
+      mount.querySelectorAll("[data-reaction-type]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const user = firebase.auth().currentUser;
+          const type = button.getAttribute("data-reaction-type");
+          if (!user || !validTypes.has(type)) return;
+
+          const reactionRef = window.btccDb
+            .collection("news")
+            .doc(newsId)
+            .collection("reactions")
+            .doc(user.uid);
+
+          try {
+            mount.querySelectorAll("[data-reaction-type]").forEach((reactionButton) => {
+              reactionButton.disabled = true;
+            });
+            const status = mount.querySelector(".newsReactionStatus");
+            if (status) status.textContent = "Updating reaction…";
+
+            if (selectedType === type) {
+              await reactionRef.delete();
+            } else {
+              await reactionRef.set({
+                type,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              });
+            }
+
+            await loadNewsReactions(newsId, mount, user);
+          } catch (err) {
+            console.error("❌ Failed to update news reaction:", err);
+            mount.querySelectorAll("[data-reaction-type]").forEach((reactionButton) => {
+              reactionButton.disabled = false;
+            });
+            const errorStatus = mount.querySelector(".newsReactionStatus");
+            if (errorStatus) errorStatus.textContent = `Reaction failed: ${err?.message || "Please try again."}`;
+          }
+        });
+      });
+    } catch (err) {
+      console.error("❌ Failed to load news reactions:", err);
+      delete mount.dataset.reactionsLoaded;
+      mount.innerHTML = `<div class="tiny muted">Reactions unavailable.</div>`;
+    }
   }
 
   function renderNews(root) {
@@ -116,6 +230,9 @@
     renderNews(root);
 
     const list = root.querySelector("#news-list");
+    let currentUser = typeof firebase !== "undefined" && firebase.auth
+      ? firebase.auth().currentUser
+      : null;
 
     if (list && window.btccDb) {
       try {
@@ -148,7 +265,10 @@
                     <span class="tiny muted">▸</span>
                   </div>
                 </button>
-                <div id="${newsBodyId}" hidden class="tiny muted" style="margin-top:8px; white-space:pre-line;">${escapeHtml(content)}</div>
+                <div id="${newsBodyId}" hidden class="tiny muted" style="margin-top:8px;">
+                  <div style="white-space:pre-line;">${escapeHtml(content)}</div>
+                  <div class="newsReactions" data-news-reactions data-news-id="${escapeHtml(doc.id)}"></div>
+                </div>
               </div>
             `;
           }).join("");
@@ -168,12 +288,30 @@
 
         el.hidden = !el.hidden;
 
+        if (!el.hidden) {
+          const reactionsMount = el.querySelector("[data-news-reactions]");
+          const newsId = reactionsMount?.getAttribute("data-news-id") || "";
+          const reactionState = reactionsMount?.dataset?.reactionsLoaded || "";
+          if (reactionsMount && reactionState !== "loading" && reactionState !== "true") {
+            loadNewsReactions(newsId, reactionsMount, currentUser);
+          }
+        }
+
         const chevron = btn.querySelector(".tiny");
         if (chevron) {
           chevron.textContent = el.hidden ? "▸" : "▾";
         }
       });
     });
+
+    if (typeof firebase !== "undefined" && firebase.auth) {
+      firebase.auth().onAuthStateChanged((user) => {
+        currentUser = user;
+        root.querySelectorAll('[data-news-reactions][data-reactions-loaded="true"]').forEach((mount) => {
+          loadNewsReactions(mount.getAttribute("data-news-id") || "", mount, currentUser);
+        });
+      });
+    }
   }
 
   window.loadNews = loadNews;
