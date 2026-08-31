@@ -1517,5 +1517,6 @@
     }
   }
 
+  window.btccBuildPitStopPlayerWinnings = buildPlayerWinnings;
   window.loadPitStop = loadPitStop;
 })();

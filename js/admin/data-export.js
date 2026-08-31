@@ -3,7 +3,7 @@
 
 (function () {
   const SEASON = 2026;
-  const EXPORT_VERSION = "1.0";
+  const EXPORT_VERSION = "1.1";
   const EXPORT_SOURCE = "BTCC Fantasy League Web App";
 
   const numberOrNull = (value) => {
@@ -107,6 +107,12 @@
     }).filter(Boolean).map(String)));
   }
 
+  function isSubmissionInvalid(submission) {
+    return submission?.invalidSubmission === true ||
+      submission?.invalid === true ||
+      submission?.valid === false;
+  }
+
   function snapToMap(snapshot) {
     return new Map(snapshot.docs.map((doc) => [doc.id, doc.data() || {}]));
   }
@@ -166,13 +172,15 @@
   async function loadEventExportContext(eventDoc) {
     const eventData = eventDoc.data() || {};
     const eventId = eventDoc.id;
-    const [entries, playerScoresSnap, driverScoresSnap, valueRunsSnap, budgetRunsSnap, boostRunsSnap, engineRunSnap, resultsSnap] = await Promise.all([
+    const [entries, playerScoresSnap, driverScoresSnap, valueRunsSnap, budgetRunsSnap, boostRunsSnap, tierRunSnap, tierRowsSnap, engineRunSnap, resultsSnap] = await Promise.all([
       getEntriesForEvent(eventId),
       window.btccDb.collection("event_scores").doc(eventId).collection("players").get(),
       window.btccDb.collection("event_scores").doc(eventId).collection("drivers").get(),
       window.btccDb.collection("driver_value_runs").doc(eventId).collection("drivers").get(),
       window.btccDb.collection("player_budget_runs").doc(eventId).collection("players").get(),
       window.btccDb.collection("budget_boost_runs").doc(eventId).collection("players").get(),
+      window.btccDb.collection("driver_tier_runs").doc(eventId).get(),
+      window.btccDb.collection("driver_tier_runs").doc(eventId).collection("drivers").get(),
       window.btccDb.collection("engine_runs").doc(eventId).get(),
       window.btccDb.collection("results").doc(eventId).get(),
     ]);
@@ -193,6 +201,8 @@
       valueRuns: snapToMap(valueRunsSnap),
       budgetRuns: snapToMap(budgetRunsSnap),
       boostRuns: snapToMap(boostRunsSnap),
+      tierRun: tierRunSnap.exists ? (tierRunSnap.data() || {}) : null,
+      tierRows: snapToMap(tierRowsSnap),
       engineRun: engineRunSnap.exists ? (engineRunSnap.data() || {}) : null,
       results: resultsSnap.exists ? (resultsSnap.data() || {}) : null,
       processed: engineRunSnap.exists || !playerScoresSnap.empty,
@@ -200,12 +210,13 @@
   }
 
   async function loadLeagueExportData() {
-    const [playersSnap, driversSnap, eventsSnap, playerStandingsSnap, driverStandingsSnap] = await Promise.all([
+    const [playersSnap, driversSnap, eventsSnap, playerStandingsSnap, driverStandingsSnap, pitStopRoundsSnap] = await Promise.all([
       window.btccDb.collection("players").get(),
       window.btccDb.collection("drivers").get(),
       window.btccDb.collection("events").orderBy("eventNo").get(),
       window.btccDb.collection("standings_players").doc("season_2026").collection("players").get(),
       window.btccDb.collection("standings_drivers").doc("season_2026").collection("drivers").get(),
+      window.btccDb.collection("pitstop_rounds").get(),
     ]);
 
     const eventContexts = [];
@@ -222,6 +233,19 @@
       });
     });
 
+    const eventIdByNumber = new Map(eventContexts.map((context) => [context.eventNumber, context.id]));
+    const tierByTargetEventAndDriver = new Map();
+    eventContexts.forEach((context) => {
+      const targetEventNumber = firstNumber(context.tierRun?.appliesToEventNo);
+      const targetEventId = targetEventNumber === null ? "" : eventIdByNumber.get(targetEventNumber);
+      if (!targetEventId) return;
+      context.tierRows.forEach((tierRow, driverId) => {
+        if (tierRow?.tier) {
+          tierByTargetEventAndDriver.set(`${targetEventId}/${driverId}`, String(tierRow.tier));
+        }
+      });
+    });
+
     return {
       players: snapToMap(playersSnap),
       drivers: snapToMap(driversSnap),
@@ -229,6 +253,10 @@
       driverStandings: snapToMap(driverStandingsSnap),
       events: eventContexts,
       boostByTargetEventAndPlayer,
+      tierByTargetEventAndDriver,
+      pitStopRounds: pitStopRoundsSnap.docs
+        .map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+        .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0)),
     };
   }
 
@@ -242,8 +270,17 @@
     const warnings = new Set();
     const summaries = [];
     const cumulativePoints = new Map();
+    const activePlayerIds = Array.from(data.players.entries())
+      .filter(([, player]) => player.active !== false)
+      .map(([uid]) => uid);
 
     data.events.forEach((event) => {
+      if (event.processed) {
+        activePlayerIds.forEach((uid) => {
+          if (!cumulativePoints.has(uid)) cumulativePoints.set(uid, 0);
+        });
+      }
+
       event.playerScores.forEach((score, uid) => {
         const points = firstNumber(score.pointsTotal, score.points, score.total, score.breakdown?.total) ?? 0;
         cumulativePoints.set(uid, Number(cumulativePoints.get(uid) || 0) + points);
@@ -273,6 +310,7 @@
         ...event.entries.keys(),
         ...event.playerScores.keys(),
         ...event.budgetRuns.keys(),
+        ...(event.processed ? activePlayerIds : []),
       ]);
 
       playerIds.forEach((uid) => {
@@ -317,9 +355,17 @@
           warnings.add("Per-event player penalties were not consistently snapshotted and are exported as null where unavailable.");
         }
 
-        const explicitInvalid = submission
-          ? submission.invalidSubmission === true || submission.invalid === true || submission.valid === false
-          : false;
+        const explicitInvalid = submission ? isSubmissionInvalid(submission) : false;
+        const scoreBreakdown = score?.breakdown || null;
+        if (score && [
+          scoreBreakdown?.qualifying,
+          scoreBreakdown?.race1,
+          scoreBreakdown?.race2,
+          scoreBreakdown?.race3,
+        ].some((value) => numberOrNull(value) === null)) {
+          warnings.add("Some player event-score documents do not contain a complete qualifying/Race 1/Race 2/Race 3 breakdown; unavailable session points are exported as null.");
+        }
+        const missedWithoutScore = event.processed && !submission && !score;
 
         summaries.push({
           season: SEASON,
@@ -333,7 +379,13 @@
           amountSpent: roundMoney(amountSpent),
           unusedBudget: roundMoney(unusedBudget),
           budgetAfterEvent: roundMoney(budgetRun ? firstNumber(budgetRun.newBudget, budgetRun.budgetAfterEvent) : null),
-          playerEventPoints: score ? firstNumber(score.pointsTotal, score.points, score.total, score.breakdown?.total) : null,
+          playerEventPoints: score
+            ? firstNumber(score.pointsTotal, score.points, score.total, score.breakdown?.total)
+            : missedWithoutScore ? 0 : null,
+          qualifyingPoints: score ? firstNumber(scoreBreakdown?.qualifying) : null,
+          race1Points: score ? firstNumber(scoreBreakdown?.race1) : null,
+          race2Points: score ? firstNumber(scoreBreakdown?.race2) : null,
+          race3Points: score ? firstNumber(scoreBreakdown?.race3) : null,
           eventPosition: score ? (eventRank.get(uid) || null) : null,
           overallPointsAfterEvent: cumulativePoints.has(uid) ? Number(cumulativePoints.get(uid) || 0) : null,
           overallPositionAfterEvent: overallRank.get(uid) || null,
@@ -364,6 +416,8 @@
           const currentDriver = data.drivers.get(driverId) || {};
           const driverScore = event.driverScores.get(driverId) || {};
           const valueRun = event.valueRuns.get(driverId) || {};
+          const perDriverBreakdown = playerScore.perDriverBreakdown?.[driverId] || {};
+          const perDriverBySession = playerScore.perDriverBySession || {};
           const isSLD = String(submission.sldDriverId || "") === driverId;
           const isStarA = !isSLD && event.starDriverAId === driverId;
           const isStarB = !isSLD && event.starDriverBId === driverId;
@@ -393,16 +447,39 @@
             warnings.add("Historical base values and event prices are null where no driver value-run snapshot exists.");
           }
 
-          const historicalTier = submission.driverTiers?.[driverId] ??
-            submission.tiers?.[driverId] ??
-            valueRun.tier ??
-            driverScore.tier ??
-            "";
+          const historicalTier = data.tierByTargetEventAndDriver.get(`${event.id}/${driverId}`) || "";
           if (!historicalTier) {
-            warnings.add("Historical driver tiers were not consistently snapshotted and are exported as an empty string where unavailable.");
+            warnings.add("Some historical driver tiers could not be matched to a driver tier-run that applies to the selection event and are exported as an empty string.");
           }
-          if (firstNumber(valueRun.ep, valueRun.expectedPoints) === null) {
-            warnings.add("Historical Expected Points are null where no driver value-run snapshot exists.");
+          if (!event.valueRuns.has(driverId)) {
+            warnings.add("Some selected drivers have no historical driver value-run snapshot; value and Expected Points fields are exported as null.");
+          }
+          if (!event.driverScores.has(driverId)) {
+            warnings.add("Some selected drivers have no matching historical driver event-score document.");
+          }
+
+          const qualifyingPoints = firstNumber(
+            perDriverBySession.qualifying?.[driverId],
+            perDriverBreakdown.q,
+            perDriverBreakdown.qualifying
+          );
+          const race1Points = firstNumber(
+            perDriverBySession.race1?.[driverId],
+            perDriverBreakdown.r1,
+            perDriverBreakdown.race1
+          );
+          const race2Points = firstNumber(
+            perDriverBySession.race2?.[driverId],
+            perDriverBreakdown.r2,
+            perDriverBreakdown.race2
+          );
+          const race3Points = firstNumber(
+            perDriverBySession.race3?.[driverId],
+            perDriverBreakdown.r3,
+            perDriverBreakdown.race3
+          );
+          if ([qualifyingPoints, race1Points, race2Points, race3Points].some((value) => value === null)) {
+            warnings.add("Some selected-driver session breakdowns are unavailable in historical player event-score documents and are exported as null.");
           }
 
           selections.push({
@@ -416,8 +493,20 @@
             driverTier: String(historicalTier || ""),
             baseValue: roundMoney(baseValue),
             eventPrice,
+            valueAfterEvent: roundMoney(firstNumber(valueRun.ndv)),
+            performanceDifferenceRatio: firstNumber(valueRun.d),
+            valueChange: roundMoney(firstNumber(
+              valueRun.ac,
+              numberOrNull(valueRun.ndv) !== null && numberOrNull(valueRun.dv) !== null
+                ? Number(valueRun.ndv) - Number(valueRun.dv)
+                : null
+            )),
             expectedPoints: firstNumber(valueRun.ep, valueRun.expectedPoints),
             driverEventPoints: firstNumber(playerScore.perDriver?.[driverId], playerScore.perDriverBreakdown?.[driverId]?.total, driverScore.pointsTotal),
+            qualifyingPoints,
+            race1Points,
+            race2Points,
+            race3Points,
             isSLD,
             starDriverType,
             priceAdjustmentType,
@@ -428,6 +517,101 @@
     });
 
     return { selections, warnings };
+  }
+
+  function buildDriverEventResults(data, includedEventIds = null) {
+    const warnings = new Set();
+    const results = [];
+
+    data.events.forEach((event) => {
+      if (!event.processed) return;
+      if (includedEventIds && !includedEventIds.has(event.id)) return;
+
+      const validSubmissions = Array.from(event.entries.entries())
+        .filter(([, submission]) => !isSubmissionInvalid(submission));
+      const selectionCounts = new Map();
+      validSubmissions.forEach(([, submission]) => {
+        safeTeamIds(submission).forEach((driverId) => {
+          selectionCounts.set(driverId, Number(selectionCounts.get(driverId) || 0) + 1);
+        });
+      });
+
+      if (!event.driverScores.size) {
+        warnings.add("Some processed events have no historical driver event-score documents and cannot produce driverEventResults records.");
+      }
+
+      event.driverScores.forEach((score, driverId) => {
+        const breakdown = score.breakdown || {};
+        const qualifyingPoints = firstNumber(breakdown.qualifying);
+        const race1Points = firstNumber(breakdown.race1);
+        const race2Points = firstNumber(breakdown.race2);
+        const race3Points = firstNumber(breakdown.race3);
+        if ([qualifyingPoints, race1Points, race2Points, race3Points].some((value) => value === null)) {
+          warnings.add("Some historical driver event-score documents do not contain a complete session breakdown; unavailable session points are exported as null.");
+        }
+
+        const selectionCount = Number(selectionCounts.get(driverId) || 0);
+        results.push({
+          season: SEASON,
+          eventNumber: event.eventNumber,
+          eventName: event.eventName,
+          driverId,
+          driverName: String(score.name || driverId),
+          pointsTotal: firstNumber(score.pointsTotal, score.points),
+          breakdown: normaliseFirestoreValue(breakdown),
+          qualifyingPoints,
+          race1Points,
+          race2Points,
+          race3Points,
+          categories: Array.isArray(score.categories) ? [...score.categories] : [],
+          activeDriverCount: firstNumber(score.activeDriverCount, event.engineRun?.activeDriverCount),
+          computedAt: toIsoString(score.computedAt),
+          engineVersion: String(score.engineVersion || event.engineRun?.engineVersion || ""),
+          selectionCount,
+          selectionRate: validSubmissions.length
+            ? roundMoney((selectionCount / validSubmissions.length) * 100)
+            : null,
+        });
+      });
+    });
+
+    return { results, warnings };
+  }
+
+  function buildPitStopExport(rounds) {
+    const warnings = new Set();
+    const pitStopRounds = rounds.map((round) => ({
+      roundId: String(round.id || ""),
+      roundNo: firstNumber(round.roundNo),
+      type: String(round.type || ""),
+      drawnPlayer: String(round.drawnPlayer || ""),
+      drawnPlayerWon: typeof round.drawnPlayerWon === "boolean" ? round.drawnPlayerWon : null,
+      fullPotPrize: roundMoney(firstNumber(round.fullPotPrize)),
+      firstPlaceText: String(round.firstPlaceText || ""),
+      firstPrize: roundMoney(firstNumber(round.firstPrize)),
+      secondPlaceText: String(round.secondPlaceText || ""),
+      secondPrize: roundMoney(firstNumber(round.secondPrize)),
+      thirdPlaceText: String(round.thirdPlaceText || ""),
+      thirdPrize: roundMoney(firstNumber(round.thirdPrize)),
+      selectedPlayerPrize: roundMoney(firstNumber(round.selectedPlayerPrize)),
+      rolloverAdded: roundMoney(firstNumber(round.rolloverAdded)),
+      potValue: roundMoney(firstNumber(round.potValue)),
+      specialPayouts: normaliseFirestoreValue(Array.isArray(round.specialPayouts) ? round.specialPayouts : []),
+      notes: String(round.notes || ""),
+      updatedAt: toIsoString(round.updatedAt),
+    }));
+
+    let pitStopPlayerTotals = [];
+    if (typeof window.btccBuildPitStopPlayerWinnings === "function") {
+      pitStopPlayerTotals = window.btccBuildPitStopPlayerWinnings(rounds).map((row) => ({
+        playerName: String(row.player || ""),
+        totalWon: roundMoney(row.total),
+      }));
+    } else if (rounds.length) {
+      warnings.add("Pit Stop rounds were exported, but cumulative player winnings could not be calculated because the live Pit Stop payout helper was unavailable.");
+    }
+
+    return { pitStopRounds, pitStopPlayerTotals, warnings };
   }
 
   function buildCurrentDrivers(data) {
@@ -515,6 +699,7 @@
         currentBudget: roundMoney(budget),
         currentBudgetBoost: roundMoney(budgetBoost),
         effectiveBudget: roundMoney(effectiveBudget),
+        currentDeductibles: roundMoney(firstNumber(player.deductibles)),
         championshipPoints: firstNumber(standing.pointsTotal, standing.points),
         championshipPosition: positions.get(uid) || null,
         missedSubmissionCount,
@@ -542,6 +727,11 @@
       starDriverBId: event.starDriverBId,
       submissionsSource: event.entriesPath,
       engineRunTimestamp: toIsoString(event.engineRun?.ranAt),
+      activeDriverCount: firstNumber(event.engineRun?.activeDriverCount),
+      engineVersion: String(event.engineRun?.engineVersion || ""),
+      engineMode: String(event.engineRun?.mode || ""),
+      engineEntryCount: firstNumber(event.engineRun?.entryCount),
+      sourceResultsUpdatedAt: toIsoString(event.engineRun?.sourceResultsUpdatedAt),
     };
   }
 
@@ -551,18 +741,25 @@
     const latestEvent = getLatestProcessedEvent(data.events);
     const summariesResult = buildPlayerEventSummaries(data);
     const selectionsResult = buildPlayerDriverSelections(data);
+    const driverResultsResult = buildDriverEventResults(data);
+    const pitStopResult = buildPitStopExport(data.pitStopRounds);
     const exportWarnings = Array.from(new Set([
       ...summariesResult.warnings,
       ...selectionsResult.warnings,
+      ...driverResultsResult.warnings,
+      ...pitStopResult.warnings,
     ])).sort();
     const output = {
       ...exportHeader(),
       latestEventNumber: Number(latestEvent?.eventNumber || 0),
       playerEventSummaries: summariesResult.summaries,
       playerDriverSelections: selectionsResult.selections,
+      driverEventResults: driverResultsResult.results,
       drivers: buildCurrentDrivers(data),
       players: buildCurrentPlayers(data),
       events: data.events.map(eventMetadata),
+      pitStopRounds: pitStopResult.pitStopRounds,
+      pitStopPlayerTotals: pitStopResult.pitStopPlayerTotals,
       exportWarnings,
     };
     downloadJsonFile(`BTCC_2026_Full_History_${dateStamp()}.json`, output);
@@ -579,24 +776,18 @@
     const included = new Set([latestEvent.id]);
     const summariesResult = buildPlayerEventSummaries(data, included);
     const selectionsResult = buildPlayerDriverSelections(data, included);
+    const driverResultsResult = buildDriverEventResults(data, included);
     const exportWarnings = Array.from(new Set([
       ...summariesResult.warnings,
       ...selectionsResult.warnings,
+      ...driverResultsResult.warnings,
     ])).sort();
-    const driverEventResults = Array.from(latestEvent.driverScores.entries()).map(([driverId, score]) => ({
-      driverId,
-      driverName: String(score.name || data.drivers.get(driverId)?.name || driverId),
-      pointsTotal: firstNumber(score.pointsTotal, score.points),
-      breakdown: normaliseFirestoreValue(score.breakdown || {}),
-      categories: Array.isArray(score.categories) ? [...score.categories] : [],
-      activeDriverCount: firstNumber(score.activeDriverCount),
-    }));
     const output = {
       ...exportHeader(),
       event: eventMetadata(latestEvent),
       playerEventSummaries: summariesResult.summaries,
       playerDriverSelections: selectionsResult.selections,
-      driverEventResults,
+      driverEventResults: driverResultsResult.results,
       exportWarnings,
     };
     const eventNumber = String(latestEvent.eventNumber).padStart(2, "0");
