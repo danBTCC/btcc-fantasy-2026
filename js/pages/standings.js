@@ -3,6 +3,17 @@
 
 (function () {
   async function loadStandings() {
+    const standingsSnapshot = {
+      overall: [],
+      wingfoot: [],
+      manufacturer: [],
+      independent: [],
+      jacksears: [],
+      race1: [],
+      race2: [],
+      race3: [],
+      teams: [],
+    };
     const updatedEl = document.getElementById("standings-updated");
     const updatedRowEl = updatedEl ? updatedEl.closest("p") : null;
     const playersEl = document.getElementById("standings-players");
@@ -618,6 +629,16 @@
           `;
         }
 
+        standingsSnapshot.overall = playersDocs.map((doc, idx) => {
+          const d = doc.data() || {};
+          return {
+            id: doc.id,
+            name: d.displayName || d.name || "Unnamed",
+            points: Number(d.pointsTotal ?? d.points ?? 0),
+            position: idx + 1,
+          };
+        });
+
         console.log("✅ Players standings loaded:", playersDocs.length);
       }
 
@@ -734,6 +755,16 @@
           `;
         }
 
+        standingsSnapshot.teams = teamsDocs.map((doc, idx) => {
+          const d = doc.data() || {};
+          return {
+            id: String(d.teamId || doc.id),
+            name: d.teamName || "Unnamed team",
+            points: Number(d.pointsTotal ?? d.points ?? 0),
+            position: idx + 1,
+          };
+        });
+
         // teamsWrapEl exists and is hidden by default, no change needed to show/hide
         console.log("✅ Teams standings loaded:", teamsDocs.length);
       }
@@ -799,6 +830,15 @@
             </table>
           `;
         }
+        standingsSnapshot.wingfoot = wingDocs.map((doc, idx) => {
+          const d = doc.data() || {};
+          return {
+            id: doc.id,
+            name: d.displayName || d.name || "Unnamed",
+            points: Number(d.pointsTotal ?? d.points ?? 0),
+            position: idx + 1,
+          };
+        });
 
         console.log("✅ WingFoot standings loaded:", wingDocs.length);
       }
@@ -823,6 +863,7 @@
 
         const previousPositions = await buildPreviousCategoryPositionMap(docs, "manufacturer");
         renderSimplePointsTable(manufacturerEl, rows, "Player", previousPositions);
+        standingsSnapshot.manufacturer = rows.map((row, idx) => ({ ...row, position: idx + 1 }));
         console.log("✅ Manufacturer standings loaded:", rows.length);
       }
 
@@ -846,6 +887,7 @@
 
         const previousPositions = await buildPreviousCategoryPositionMap(docs, "independent");
         renderSimplePointsTable(independentEl, rows, "Player", previousPositions);
+        standingsSnapshot.independent = rows.map((row, idx) => ({ ...row, position: idx + 1 }));
         console.log("✅ Independent standings loaded:", rows.length);
       }
 
@@ -869,6 +911,7 @@
 
         const previousPositions = await buildPreviousCategoryPositionMap(docs, "jacksears");
         renderSimplePointsTable(jacksearsEl, rows, "Player", previousPositions);
+        standingsSnapshot.jacksears = rows.map((row, idx) => ({ ...row, position: idx + 1 }));
         console.log("✅ Jack Sears standings loaded:", rows.length);
       }
 
@@ -876,6 +919,7 @@
       if (race1El) {
         const { rows, previousPositions } = await buildRaceRowsFromEventScores("race1");
         renderSimplePointsTable(race1El, rows, "Player", previousPositions);
+        standingsSnapshot.race1 = rows.map((row, idx) => ({ ...row, position: idx + 1 }));
         console.log("✅ Race 1 standings loaded from event_scores:", rows.length);
       }
 
@@ -883,6 +927,7 @@
       if (race2El) {
         const { rows, previousPositions } = await buildRaceRowsFromEventScores("race2");
         renderSimplePointsTable(race2El, rows, "Player", previousPositions);
+        standingsSnapshot.race2 = rows.map((row, idx) => ({ ...row, position: idx + 1 }));
         console.log("✅ Race 2 standings loaded from event_scores:", rows.length);
       }
 
@@ -890,8 +935,12 @@
       if (race3El) {
         const { rows, previousPositions } = await buildRaceRowsFromEventScores("race3");
         renderSimplePointsTable(race3El, rows, "Player", previousPositions);
+        standingsSnapshot.race3 = rows.map((row, idx) => ({ ...row, position: idx + 1 }));
         console.log("✅ Race 3 standings loaded from event_scores:", rows.length);
       }
+
+      window.__btccStandingsSnapshot = standingsSnapshot;
+      return standingsSnapshot;
 
     } catch (err) {
       console.error("❌ loadStandings failed:", err);
@@ -916,4 +965,5 @@
 
   // Export so app.js can call it later
   window.loadStandings = loadStandings;
+  window.getBtccStandingsSnapshot = async () => loadStandings();
 })();

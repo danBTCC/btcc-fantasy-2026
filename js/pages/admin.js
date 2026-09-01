@@ -74,6 +74,7 @@ const ADMIN_EMAILS = [
   }
 
   function renderLoggedOut(root) {
+    window.stopAdminTrophyTracker?.();
     render(
       root,
       `
@@ -106,6 +107,7 @@ const ADMIN_EMAILS = [
   }
 
   function renderNoAccess(root, email) {
+    window.stopAdminTrophyTracker?.();
     render(
       root,
       `
@@ -270,6 +272,18 @@ const ADMIN_EMAILS = [
             <button id="admin-export-current-players" class="tile" type="button">Export Current Players</button>
           </div>
           <div id="admin-data-export-msg" class="tiny muted" role="status" aria-live="polite" style="margin-top:10px;">Ready.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <button type="button" class="admin-collapse-toggle" data-target="admin-trophy-tracker-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">Trophy Tracker</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-trophy-tracker-body" hidden style="margin-top:10px;">
+          <p class="tiny muted" style="margin:0; line-height:1.5;">Current end-of-season awards, calculated read-only from the live Standings tables.</p>
+          <div id="admin-trophy-tracker-status" class="tiny muted" role="status" aria-live="polite" style="margin-top:8px;">Loading…</div>
+          <div id="admin-trophy-tracker" style="margin-top:10px;"></div>
         </div>
       </div>
 
@@ -500,6 +514,9 @@ const ADMIN_EMAILS = [
     setupAdminDriverManager(root);
     setupAdminPitStop(root);
     setupAdminRaceStandingsRebuild(root);
+    if (typeof window.setupAdminTrophyTracker === "function") {
+      window.setupAdminTrophyTracker(root);
+    }
     if (typeof window.setupAdminDataExport === "function") {
       window.setupAdminDataExport(root, email);
     }

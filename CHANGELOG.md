@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01
+
+- Added an Admin-only, read-only Trophy Tracker that auto-updates from all nine live standings tables, shows current recipients for 12 trophies, 12 medals and four team plates, and totals each player's awards.
+
 ## 2026-08-31
 
 - Upgraded the League Data Export to v1.1 with historical player and selected-driver qualifying/Race 1/Race 2/Race 3 breakdowns, historical tiers where available, driver value history and performance ratios, full driver-event results, per-event selection counts and rates, complete missed-submission rows, engine metadata, current deductibles, and Pit Stop round history with cumulative winnings.

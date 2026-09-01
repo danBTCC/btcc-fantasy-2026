@@ -755,3 +755,157 @@ th {
 #view-submit #driver-picker .tiny {
   font-size: 13px;
 }
+.trophy-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.trophy-totals > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .03);
+  text-align: center;
+}
+
+.trophy-totals strong {
+  font-size: 22px;
+}
+
+.trophy-totals span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.trophy-section-title {
+  margin: 18px 0 8px;
+}
+
+.trophy-table-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.trophy-table-card {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .025);
+}
+
+.trophy-table-card h4 {
+  margin: 0 0 8px;
+}
+
+.trophy-recipient {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto auto;
+  gap: 7px;
+  align-items: center;
+  padding: 7px 0;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+  font-size: 12px;
+}
+
+.trophy-recipient--empty {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  color: var(--muted);
+}
+
+.trophy-position {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, .25);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.trophy-recipient__name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trophy-recipient__points {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.trophy-award {
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.trophy-team-winner {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
+}
+
+.trophy-team-members {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.trophy-team-members span {
+  padding: 7px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .04);
+  font-size: 11px;
+}
+
+.trophy-missing-recipient {
+  color: #facc15;
+}
+
+.trophy-summary {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.trophy-summary__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px 52px 52px;
+  gap: 5px;
+  padding: 9px 10px;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+  font-size: 12px;
+}
+
+.trophy-summary__row:first-child {
+  border-top: 0;
+}
+
+@media (max-width: 520px) {
+  .trophy-table-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trophy-recipient {
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+  }
+
+  .trophy-recipient__points {
+    display: none;
+  }
+
+  .trophy-team-members {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
