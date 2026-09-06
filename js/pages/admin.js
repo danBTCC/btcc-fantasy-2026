@@ -317,7 +317,7 @@ const ADMIN_EMAILS = [
             <button id="admin-assisted-load" class="tile" type="button">Load Player Details</button>
             <div id="admin-assisted-msg" class="tiny muted">Ready.</div>
             <div id="admin-assisted-details" class="note" style="margin-top:2px;" hidden></div>
-            <button id="admin-assisted-editor-load" class="tile" type="button" hidden>Load Read-Only Submission Editor</button>
+            <button id="admin-assisted-editor-load" class="tile" type="button" hidden>Load Submission Editor</button>
             <div id="admin-assisted-editor" class="note" style="margin-top:2px;" hidden></div>
           </div>
         </div>
@@ -508,15 +508,11 @@ const ADMIN_EMAILS = [
     setupAdminNewsManager(root);
     loadAdminMathsSummary(root);
     setupAdminStarDrivers(root);
-    loadAdminSubmissionTracker(root);
     setupAdminAssistedSubmission(root);
     setupAdminPlayerManager(root);
     setupAdminDriverManager(root);
     setupAdminPitStop(root);
     setupAdminRaceStandingsRebuild(root);
-    if (typeof window.setupAdminTrophyTracker === "function") {
-      window.setupAdminTrophyTracker(root);
-    }
     if (typeof window.setupAdminDataExport === "function") {
       window.setupAdminDataExport(root, email);
     }
@@ -545,6 +541,16 @@ const ADMIN_EMAILS = [
       btn.onclick = () => {
         body.hidden = !body.hidden;
         sync();
+
+        if (!body.hidden && body.dataset.adminLoaded !== "true") {
+          if (targetId === "admin-submission-tracker-body") {
+            body.dataset.adminLoaded = "true";
+            loadAdminSubmissionTracker(root);
+          } else if (targetId === "admin-trophy-tracker-body" && typeof window.setupAdminTrophyTracker === "function") {
+            body.dataset.adminLoaded = "true";
+            window.setupAdminTrophyTracker(root);
+          }
+        }
       };
 
       sync();
@@ -1154,6 +1160,7 @@ const ADMIN_EMAILS = [
     const editor = root.querySelector("#admin-assisted-editor");
 
     let lastAssistedContext = null;
+    let assistedEvents = [];
 
     if (!playerSelect || !loadBtn) return;
 
@@ -1288,26 +1295,23 @@ const ADMIN_EMAILS = [
       const usageMap = new Map();
       if (!selectedUid || !currentEventNo) return usageMap;
 
-      const eventsSnap = await window.btccDb.collection("events").orderBy("eventNo").get();
-      const previousEvents = eventsSnap.docs
-        .map((doc) => ({ id: doc.id, eventNo: Number(doc.data()?.eventNo || 0) }))
+      const previousEvents = assistedEvents
         .filter((event) => event.eventNo > 0 && event.eventNo < Number(currentEventNo))
-        .sort((a, b) => b.eventNo - a.eventNo);
+        .sort((a, b) => b.eventNo - a.eventNo)
+        .slice(0, 2);
 
-      const previousSubmissions = [];
-      for (const event of previousEvents) {
+      const previousSubmissions = await Promise.all(previousEvents.map(async (event) => {
         const subSnap = await window.btccDb
           .collection("submissions")
           .doc(event.id)
           .collection("entries")
           .doc(selectedUid)
           .get();
-
-        previousSubmissions.push({
+        return {
           eventNo: event.eventNo,
           driverIds: subSnap.exists ? normaliseSubmissionDriverIdsLocal(subSnap.data()) : [],
-        });
-      }
+        };
+      }));
 
       const allDriverIds = new Set();
       previousSubmissions.forEach((sub) => sub.driverIds.forEach((driverId) => allDriverIds.add(driverId)));
@@ -1434,7 +1438,7 @@ const ADMIN_EMAILS = [
 
         validation.innerHTML = messages.length
           ? `<div class="note warnNote" style="margin-top:8px;">${messages.map((m) => `• ${escapeLocal(m)}`).join("<br>")}</div>`
-          : `<div class="note" style="margin-top:8px;">Validation OK. Phase 5A only — no submission can be saved yet.</div>`;
+          : `<div class="note" style="margin-top:8px;">Validation OK. Ready to save.</div>`;
 
         if (saveBtn) {
           saveBtn.disabled = messages.length > 0;
@@ -1523,29 +1527,35 @@ const ADMIN_EMAILS = [
           return;
         }
 
-        const latestEngineRun = await hasEngineRunForEvent(currentEvent.id);
-        if (latestEngineRun) {
-          setMsg("Blocked: engine has already run for this event.");
-          saveBtn.disabled = true;
-          saveBtn.textContent = "Blocked — engine already run";
-          return;
-        }
-
-        const selectedIds = Array.from(selectedSet);
-        const totalCost = roundMoneyLocal(calculateSelectedCost());
-        const budgetAvailable = roundMoneyLocal(Number(budgetInfo.availableBudget || 0));
-        const budgetRemaining = roundMoneyLocal(budgetAvailable - totalCost);
-        const adminUser = firebase.auth().currentUser;
-        const playerName = playerData?.displayName || selectedName || selectedUid;
-
-        const confirmed = window.confirm(
-          `Save authorised late submission for ${playerName}?\n\nEvent: Event ${currentEvent.eventNo} — ${currentEvent.venue}\nDrivers: ${selectedIds.length}\nTotal Cost: ${fmtMoneyLocal(totalCost)}\nRemaining: ${fmtMoneyLocal(budgetRemaining)}\n\nThis will write to submissions/${currentEvent.id}/entries/${selectedUid}.`
-        );
-
-        if (!confirmed) return;
-
         try {
           saveBtn.disabled = true;
+          saveBtn.textContent = "Checking…";
+          setMsg("Checking the event is still safe to update…");
+
+          const latestEngineRun = await hasEngineRunForEvent(currentEvent.id);
+          if (latestEngineRun) {
+            setMsg("Blocked: engine has already run for this event.");
+            saveBtn.textContent = "Blocked — engine already run";
+            return;
+          }
+
+          const selectedIds = Array.from(selectedSet);
+          const totalCost = roundMoneyLocal(calculateSelectedCost());
+          const budgetAvailable = roundMoneyLocal(Number(budgetInfo.availableBudget || 0));
+          const budgetRemaining = roundMoneyLocal(budgetAvailable - totalCost);
+          const adminUser = firebase.auth().currentUser;
+          const playerName = playerData?.displayName || selectedName || selectedUid;
+
+          const confirmed = window.confirm(
+            `Save authorised late submission for ${playerName}?\n\nEvent: Event ${currentEvent.eventNo} — ${currentEvent.venue}\nDrivers: ${selectedIds.length}\nTotal Cost: ${fmtMoneyLocal(totalCost)}\nRemaining: ${fmtMoneyLocal(budgetRemaining)}\n\nThis will write to submissions/${currentEvent.id}/entries/${selectedUid}.`
+          );
+
+          if (!confirmed) {
+            setMsg("Save cancelled. No submission was changed.");
+            renderSummary();
+            return;
+          }
+
           saveBtn.textContent = "Saving…";
           setMsg("Saving authorised late submission…");
 
@@ -1630,6 +1640,7 @@ const ADMIN_EMAILS = [
         })
         .filter((event) => event.eventNo >= 1 && event.eventNo <= 10)
         .sort((a, b) => a.eventNo - b.eventNo);
+      assistedEvents = events;
 
       if (eventSelect) {
         if (!events.length) {
@@ -1713,11 +1724,13 @@ const ADMIN_EMAILS = [
         if (editor) editor.hidden = true;
         lastAssistedContext = null;
 
-        const [playerSnap, selectedEventSnap, submissionSnap, driversSnap] = await Promise.all([
+        const [playerSnap, selectedEventSnap, submissionSnap, driversSnap, engineRun, usageMap] = await Promise.all([
           window.btccDb.collection("players").doc(selectedUid).get(),
           window.btccDb.collection("events").doc(selectedEventId).get(),
           window.btccDb.collection("submissions").doc(selectedEventId).collection("entries").doc(selectedUid).get(),
           window.btccDb.collection("drivers").get(),
+          hasEngineRunForEvent(selectedEventId),
+          buildUsageMapLocal(selectedUid, selectedEventNo),
         ]);
 
         const selectedEventData = selectedEventSnap.exists ? (selectedEventSnap.data() || {}) : {};
@@ -1736,7 +1749,6 @@ const ADMIN_EMAILS = [
 
         const playerData = playerSnap.data() || {};
         const budgetInfo = getBudgetSnapshotLocal(playerData);
-        const engineRun = await hasEngineRunForEvent(currentEvent.id);
         const statusText = engineRun
           ? "BLOCKED — engine has already run for this event."
           : "Eligible — engine has not run for this event.";
@@ -1771,8 +1783,6 @@ const ADMIN_EMAILS = [
           })
           .filter((driver) => driver.active);
 
-        const usageMap = await buildUsageMapLocal(selectedUid, currentEvent.eventNo);
-
         lastAssistedContext = {
           selectedUid,
           selectedName,
@@ -1790,7 +1800,7 @@ const ADMIN_EMAILS = [
         if (editorLoadBtn) {
           editorLoadBtn.hidden = engineRun;
           editorLoadBtn.disabled = engineRun;
-          editorLoadBtn.textContent = "Load Read-Only Submission Editor";
+          editorLoadBtn.textContent = "Load Submission Editor";
         }
 
         if (details) {
@@ -1831,7 +1841,7 @@ const ADMIN_EMAILS = [
                 <ol style="margin:4px 0 0 18px; padding:0;">${selectedDriverRows || `<li>No driver IDs found</li>`}</ol>
               ` : ""}
               <br>
-              Phase 3 read-only — no submission has been changed or saved.
+              No submission has been changed yet.
             </div>
           `;
         }
