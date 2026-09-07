@@ -175,6 +175,91 @@
     return totals;
   }
 
+  function normaliseFastestLapIds(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean).map(String);
+    return [String(value)];
+  }
+
+  async function loadDriverRaceStats(db, events, drivers) {
+    const stats = new Map(
+      drivers.map((driver) => [
+        String(driver.id),
+        { bestFinish: null, lowestFinish: null, podiums: 0, fastestLaps: 0 },
+      ])
+    );
+
+    const completedEvents = events.filter((eventDoc) => {
+      const data = eventDoc.data() || {};
+      const status = String(data.status || "").toLowerCase();
+      return data.resultsLocked === true || status === "complete";
+    });
+
+    await Promise.all(
+      completedEvents.map(async (eventDoc) => {
+        try {
+          const resultDoc = await db.collection("results").doc(eventDoc.id).get();
+          if (!resultDoc.exists) return;
+
+          const data = resultDoc.data() || {};
+
+          [1, 2, 3].forEach((raceNumber) => {
+            const raceKey = `race${raceNumber}`;
+            const classified = Array.isArray(data[raceKey]) ? data[raceKey] : [];
+
+            classified.forEach((driverId, index) => {
+              const driverStats = stats.get(String(driverId));
+              if (!driverStats) return;
+
+              const position = index + 1;
+              driverStats.bestFinish = driverStats.bestFinish === null
+                ? position
+                : Math.min(driverStats.bestFinish, position);
+              driverStats.lowestFinish = driverStats.lowestFinish === null
+                ? position
+                : Math.max(driverStats.lowestFinish, position);
+              if (position <= 3) driverStats.podiums += 1;
+            });
+
+            const fastestLapIds = normaliseFastestLapIds(
+              data[`${raceKey}FastestLapDriverIds`] ||
+              data[`${raceKey}FastestLapIds`] ||
+              data[`${raceKey}FastestLapDriverId`] ||
+              data[`${raceKey}FastestLap`]
+            );
+
+            fastestLapIds.forEach((driverId) => {
+              const driverStats = stats.get(driverId);
+              if (driverStats) driverStats.fastestLaps += 1;
+            });
+          });
+        } catch (err) {
+          console.warn(`results/${eventDoc.id} read failed`, err);
+        }
+      })
+    );
+
+    return stats;
+  }
+
+  function formatOrdinal(position) {
+    const value = Number(position);
+    if (!Number.isInteger(value) || value < 1) return "—";
+
+    const lastTwo = value % 100;
+    const suffix = lastTwo >= 11 && lastTwo <= 13
+      ? "th"
+      : value % 10 === 1
+      ? "st"
+      : value % 10 === 2
+      ? "nd"
+      : value % 10 === 3
+      ? "rd"
+      : "th";
+
+    return `${value}${suffix}`;
+  }
+
 
   function renderStatsTable(title, columns, rows, emptyMessage) {
     const head = columns.map((col) => `<th>${col}</th>`).join("");
@@ -191,7 +276,7 @@
     return `
       <section class="cardSection" style="margin-top:16px;">
         <h3 style="margin:0 0 6px;">${escapeHtml(title)}</h3>
-        <div class="tiny muted" style="margin-bottom:10px;">Tap Driver, Value, Tier, EP, Points or Selections to sort.</div>
+        <div class="tiny muted" style="margin-bottom:10px;">Tap any column with arrows to sort.</div>
         <div style="overflow-x:auto;">
           <table class="table" style="width:100%;">
             <thead>
@@ -236,11 +321,12 @@
       const ppv = window.getPpvForActiveDriverCount(drivers.length);
       const events = eventsSnap.docs;
 
-      const [selectionCounts, storedDriverEventScores, storedDriverStandings, driverPoints] = await Promise.all([
+      const [selectionCounts, storedDriverEventScores, storedDriverStandings, driverPoints, driverRaceStats] = await Promise.all([
         loadSelectionCounts(db, events),
         loadStoredDriverEventScores(db, events),
         loadStoredDriverStandings(db),
         loadDriverPoints(db, events),
+        loadDriverRaceStats(db, events, drivers),
       ]);
 
       const getDriverPointsTotal = (driver) => {
@@ -269,6 +355,12 @@
           const ep = calculateExpectedPoints(value, tdv, ppv);
           const points = getDriverPointsTotal(driver);
           const selections = Number(selectionCounts.get(driver.id) || 0);
+          const raceStats = driverRaceStats.get(String(driver.id)) || {
+            bestFinish: null,
+            lowestFinish: null,
+            podiums: 0,
+            fastestLaps: 0,
+          };
           const tr = trendMeta(driver);
 
           return {
@@ -279,6 +371,10 @@
             ep,
             points,
             selections,
+            bestFinish: raceStats.bestFinish,
+            lowestFinish: raceStats.lowestFinish,
+            podiums: raceStats.podiums,
+            fastestLaps: raceStats.fastestLaps,
             trendIcon: tr.icon,
           };
         });
@@ -293,6 +389,16 @@
           if (sortKey === "ep") return dir * (a.ep - b.ep);
           if (sortKey === "points") return dir * (a.points - b.points);
           if (sortKey === "selections") return dir * (a.selections - b.selections);
+          if (sortKey === "bestFinish" || sortKey === "lowestFinish") {
+            const aValue = a[sortKey];
+            const bValue = b[sortKey];
+            if (aValue === null && bValue === null) return a.name.localeCompare(b.name);
+            if (aValue === null) return 1;
+            if (bValue === null) return -1;
+            return dir * (aValue - bValue);
+          }
+          if (sortKey === "podiums") return dir * (a.podiums - b.podiums);
+          if (sortKey === "fastestLaps") return dir * (a.fastestLaps - b.fastestLaps);
 
           return 0;
         });
@@ -305,6 +411,10 @@
           Math.round(row.ep),
           String(row.points),
           String(row.selections),
+          formatOrdinal(row.bestFinish),
+          formatOrdinal(row.lowestFinish),
+          String(row.podiums),
+          String(row.fastestLaps),
           row.trendIcon,
         ]);
       };
@@ -356,6 +466,10 @@
             '<span data-sort="ep">EP ⇅</span>',
             '<span data-sort="points">Points ↓</span>',
             '<span data-sort="selections">Selections ⇅</span>',
+            '<span data-sort="bestFinish" title="Best classified race finish">Best Finish ⇅</span>',
+            '<span data-sort="lowestFinish" title="Lowest classified race finish">Lowest Classified ⇅</span>',
+            '<span data-sort="podiums">Podiums ⇅</span>',
+            '<span data-sort="fastestLaps">Fastest Laps ⇅</span>',
             'Trend'
           ],
           driverOverviewRows,
@@ -398,6 +512,14 @@
               ? "Points"
               : headerKey === "selections"
               ? "Selections"
+              : headerKey === "bestFinish"
+              ? "Best Finish"
+              : headerKey === "lowestFinish"
+              ? "Lowest Classified"
+              : headerKey === "podiums"
+              ? "Podiums"
+              : headerKey === "fastestLaps"
+              ? "Fastest Laps"
               : headerEl.textContent.replace(/[⇅↑↓]/g, "").trim();
             headerEl.textContent = `${label} ${sortKey === headerKey ? (sortDir === "asc" ? "↑" : "↓") : "⇅"}`;
           });
