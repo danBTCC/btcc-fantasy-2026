@@ -1,9 +1,9 @@
 console.log("BTCC Fantasy League 2026 loaded");
 
 const loadedRoutes = new Set();
-const SHOW_THRUXTON_EVENT_UPDATE = false;
+const SHOW_CROFT_RESULTS_WARNING = true;
 
-function showThruxtonEventUpdate() {
+function showCroftResultsWarning() {
   const modal = document.createElement("div");
   modal.className = "spoiler-warning";
   modal.setAttribute("role", "dialog");
@@ -14,13 +14,13 @@ function showThruxtonEventUpdate() {
   modal.innerHTML = `
     <div class="spoiler-warning__card">
       <div class="spoiler-warning__flag" aria-hidden="true">🏁</div>
-      <h1 id="spoiler-warning-title">Event 5 — Thruxton Complete</h1>
+      <h1 id="spoiler-warning-title">Spoiler Warning</h1>
       <div id="spoiler-warning-message" class="spoiler-warning__message">
-        <div>✓ All budgets, boosts and driver values updated</div>
-        <div>✓ Submissions now open for Event 6 — Knockhill</div>
+        <div>Do not enter if you have not watched all the races.</div>
+        <div>Event 8 — Croft results are now live.</div>
       </div>
-      <a href="#news" class="spoiler-warning__news">
-        Read the Thruxton review on the News page
+      <a href="#results" class="spoiler-warning__news">
+        View Event 8 — Croft Results
       </a>
       <button type="button" class="spoiler-warning__continue">
         Continue to Home
@@ -29,7 +29,7 @@ function showThruxtonEventUpdate() {
   `;
 
   const continueButton = modal.querySelector(".spoiler-warning__continue");
-  const newsLink = modal.querySelector(".spoiler-warning__news");
+  const resultsLink = modal.querySelector(".spoiler-warning__news");
   const appShell = document.getElementById("app-shell");
   const previousOverflow = document.body.style.overflow;
 
@@ -49,9 +49,9 @@ function showThruxtonEventUpdate() {
     dismissAndNavigate("home");
   }, { once: true });
 
-  newsLink.addEventListener("click", (event) => {
+  resultsLink.addEventListener("click", (event) => {
     event.preventDefault();
-    dismissAndNavigate("news");
+    dismissAndNavigate("results");
   }, { once: true });
 }
 
@@ -289,8 +289,8 @@ async function loadNextEventCountdown() {
 
 // ---------- App Boot ----------
 document.addEventListener("DOMContentLoaded", async () => {
-  if (SHOW_THRUXTON_EVENT_UPDATE) {
-    showThruxtonEventUpdate();
+  if (SHOW_CROFT_RESULTS_WARNING) {
+    showCroftResultsWarning();
   }
 
   // Build stamp
