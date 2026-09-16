@@ -22,9 +22,8 @@
     }).length;
   };
 
-  // --- H7.1: Admin Results Preview panel (read-only, no lock/unlock writes) ---
   // ============================================================
-  // SECTION 5: RESULTS PREVIEW + LOCK / UNLOCK (H7)
+  // SECTION 5: RESULTS PREVIEW + LOCK / UNLOCK
   // ============================================================
   async function loadSelectedEventMetaAndResults(root) {
   const eventId = root.__selectedEventId;
@@ -51,7 +50,6 @@
     root.__eventMeta = eventSnap.exists ? (eventSnap.data() || {}) : null;
     root.__savedResults = resultsSnap.exists ? (resultsSnap.data() || {}) : null;
 
-    // NOTE: H7.1 is preview only; we do NOT enforce lock behaviour yet.
     renderResultsPreview(root);
     loadAdminSubmissionTracker(root);
   } catch (err) {
@@ -242,7 +240,7 @@ if (banner) {
           Event ID: <span class="tiny">${eventId}</span><br>
           Status: <span class="tiny">${status}</span> • Locked: <span class="tiny">${locked}</span><br>
           Last updated: <span class="tiny">${updatedAt}</span> by <span class="tiny">${updatedBy}</span><br>
-          Results doc updatedAt: <span class="tiny">${savedUpdatedAt}</span>
+          Results last saved: <span class="tiny">${savedUpdatedAt}</span>
         </div>
         ${err ? `<div class="note warnNote"><strong>Preview note:</strong><br><span class="tiny muted">${err?.message || err}</span></div>` : ""}
         ${section("Qualifying", {
@@ -293,12 +291,10 @@ if (banner) {
           : `<button type="button" id="admin-lock-results" class="tile" style="margin-top:12px;">Lock results (set complete)</button>`
         }
 
-        <div class="tiny muted" style="margin-top:10px;">H7.4 records unlock reason + timestamp on events/${eventId}.</div>
-
         <div class="card" style="margin-top:12px;">
-          <h2 style="margin:0 0 6px 0;">Engine (Phase I)</h2>
+          <h2 style="margin:0 0 6px 0;">Scoring Engine</h2>
           <div class="tiny muted" style="margin:0;">
-            Runs scoring for the selected event (writes overwrite-safe to event_scores), then rebuilds season standings from event_scores.
+            Processes the selected event and then rebuilds the season standings from the saved scores.
           </div>
           <button type="button" id="admin-run-engine-i1" class="tile" style="margin-top:10px;">
             Run engine for selected event
@@ -307,8 +303,8 @@ if (banner) {
           <button type="button" id="admin-refresh-event-scores" class="tile tinyBtn" style="margin-top:10px;">Refresh event scores</button>
           <div id="admin-event-scores-preview" class="note" style="margin-top:10px;" hidden></div>
           <div class="note" style="margin-top:12px;">
-            <strong>Standings rebuild (I3)</strong><br>
-            <span class="tiny muted">Rebuilds season standings from event_scores for events up to the selected event (overwrite-safe).</span>
+            <strong>Player standings rebuild</strong><br>
+            <span class="tiny muted">Rebuilds the season standings for every event up to the selected event.</span>
             <button type="button" id="admin-rebuild-standings-i3" class="tile" style="margin-top:10px;">Rebuild PLAYER standings up to selected event</button>
             <div id="admin-standings-msg" class="tiny muted" style="margin-top:8px;"></div>
             <button type="button" id="admin-refresh-standings" class="tile tinyBtn" style="margin-top:10px;">Refresh player standings preview</button>
@@ -316,8 +312,8 @@ if (banner) {
 
             <div style="height:10px;"></div>
 
-            <strong>Teams standings rebuild (I3.2)</strong><br>
-            <span class="tiny muted">Aggregates player standings into team totals (sum of players in the same teamId). Overwrite-safe.</span>
+            <strong>Team standings rebuild</strong><br>
+            <span class="tiny muted">Combines player standings into team totals.</span>
             <button type="button" id="admin-rebuild-teams-i3" class="tile" style="margin-top:10px;">Rebuild TEAM standings up to selected event</button>
             <div id="admin-teams-msg" class="tiny muted" style="margin-top:8px;"></div>
             <button type="button" id="admin-refresh-teams" class="tile tinyBtn" style="margin-top:10px;">Refresh teams standings preview</button>
@@ -325,8 +321,8 @@ if (banner) {
 
             <div style="height:10px;"></div>
 
-            <strong>Driver standings rebuild (I3.3)</strong><br>
-            <span class="tiny muted">Aggregates fantasy driver points from event_scores, ranks drivers, and assigns current tiers using the dynamic active-grid allocation for Event 2+.</span>
+            <strong>Driver standings rebuild</strong><br>
+            <span class="tiny muted">Rebuilds driver points and assigns the current tiers for Event 2 onwards.</span>
             <button type="button" id="admin-rebuild-drivers-i3" class="tile" style="margin-top:10px;">Rebuild DRIVER standings up to selected event</button>
             <div id="admin-drivers-standings-msg" class="tiny muted" style="margin-top:8px;"></div>
             <button type="button" id="admin-refresh-drivers-standings" class="tile tinyBtn" style="margin-top:10px;">Refresh driver standings preview</button>
@@ -334,7 +330,7 @@ if (banner) {
 
             <div style="height:10px;"></div>
 
-            <strong>Wingfoot standings rebuild (I3.4)</strong><br>
+            <strong>WingFoot standings rebuild</strong><br>
             <span class="tiny muted">Builds qualifying-only player standings using each event's full grid scale (1st = event grid size, last = 1) from results and entries up to the selected event.</span>
             <button type="button" id="admin-rebuild-wingfoot-i3" class="tile" style="margin-top:10px;">Rebuild WINGFOOT standings up to selected event</button>
             <div id="admin-wingfoot-msg" class="tiny muted" style="margin-top:8px;"></div>
@@ -697,14 +693,14 @@ if (banner) {
           if (hasResults && entryCount > 0) {
             // Confirm before writing
             const okWrite = window.confirm(
-              `Write event_scores for ${eid}?\n\nThis is overwrite-safe: it will REPLACE existing docs for this event.`
+              `Process scores for ${eid}?\n\nThis will replace any existing saved scores for this event.`
             );
             if (!okWrite) {
               setEngineMsg("Dry run complete (write cancelled)." );
               return;
             }
 
-            setEngineMsg(`Writing event_scores for ${entryCount} player(s)…`);
+            setEngineMsg(`Saving event scores for ${entryCount} player(s)…`);
 
             const resultsData = resultsSnap.data() || {};
             const srcUpdatedAt = resultsData.updatedAt || null;
@@ -1000,8 +996,8 @@ if (banner) {
 
             await driverBatch.commit();
 
-            console.log("✅ Engine I1 wrote event_scores (overwrite-safe):", eid, entryCount);
-            setEngineMsg(`Wrote event_scores for ${entryCount} player(s). Re-run to confirm overwrite.`);
+          console.log("✅ Scoring engine wrote event scores:", eid, entryCount);
+          setEngineMsg(`Saved event scores for ${entryCount} player(s).`);
             await loadEventScoresPreview(root);
             // PHASE I3: Rebuild standings after event_scores write
             await rebuildStandingsPlayersI3(root);
@@ -1023,11 +1019,11 @@ if (banner) {
            setEngineMsg(
             tierResult.skipped
              ? (boostResult.skipped
-               ? `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers skipped for Event 1. Budget Boost skipped for Event 1.`
-               : `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers skipped for Event 1. Budget Boost updated for ${boostResult.playerCount} player(s).`)
+               ? `Saved event scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers skipped for Event 1. Budget Boost skipped for Event 1.`
+               : `Saved event scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers skipped for Event 1. Budget Boost updated for ${boostResult.playerCount} player(s).`)
              : (boostResult.skipped
-                ? `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers assigned for ${tierResult.driverCount} driver(s). Budget Boost skipped for Event 1.`
-               : `Wrote event_scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers assigned for ${tierResult.driverCount} driver(s). Budget Boost updated for ${boostResult.playerCount} player(s).`)
+                ? `Saved event scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers assigned for ${tierResult.driverCount} driver(s). Budget Boost skipped for Event 1.`
+               : `Saved event scores for ${entryCount} player(s). Driver values updated for ${valueResult.driverCount} active driver(s) (TDV £${valueResult.tdv.toFixed(2)}, VV ${valueResult.vv.toFixed(2)}). Budgets updated for ${budgetResult.playerCount} player(s). Tiers assigned for ${tierResult.driverCount} driver(s). Budget Boost updated for ${boostResult.playerCount} player(s).`)
            );
           }
         } catch (e) {
@@ -1075,7 +1071,7 @@ if (banner) {
         .get();
 
       if (snap.empty) {
-        mount.innerHTML = `<strong>Event scores</strong><br><span class="tiny muted">No event_scores found yet for this event. Run Engine (I1) to create them.</span>`;
+        mount.innerHTML = `<strong>Event scores</strong><br><span class="tiny muted">No event scores found yet for this event. Run the scoring engine to create them.</span>`;
         return;
       }
 
@@ -1103,7 +1099,7 @@ if (banner) {
 
       mount.innerHTML = `
         <strong>Event scores</strong>
-        <div class="tiny muted" style="margin-top:6px;">Showing ${rows.length} player(s) from event_scores/${eid}/players</div>
+        <div class="tiny muted" style="margin-top:6px;">Showing ${rows.length} player(s).</div>
         <div style="margin-top:10px; border:1px solid var(--border); border-radius:12px; padding:10px; background:rgba(255,255,255,.02);">
           <ol class="list" style="margin:0; padding-left:18px;">
             ${rows.map((r,i) => `<li class="tiny" style="margin:6px 0;">${i+1}. ${r.name} — ${r.pts} pts <span class="muted">(computed ${r.at})</span></li>`).join("")}

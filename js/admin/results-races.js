@@ -31,10 +31,10 @@
 
   const raceCard = (raceKey, title) => `
     <div class="card" style="margin-top:10px;">
-      <h2 style="margin:0 0 6px 0;">${title} (UI only)</h2>
+      <h2 style="margin:0 0 6px 0;">${title}</h2>
       <div class="tiny muted" style="margin-bottom:10px;">
         Event ID: <span class="tiny">${eventId}</span><br>
-        Enter finishing order. Saving comes next.
+        Enter the finishing order below.
       </div>
 
       <div id="admin-${raceKey}-validation" class="note warnNote" hidden></div>
@@ -92,7 +92,7 @@
       </div>
 
       <button type="button" id="admin-${raceKey}-save" class="tile" style="margin-top:12px;" disabled>
-        ${(raceKey === "race1" || raceKey === "race2" || raceKey === "race3") ? `Save ${title}` : `Save ${title} (next step)`}
+        Save ${title}
       </button>
     </div>
   `;
@@ -220,7 +220,7 @@ mount.querySelectorAll(`select[data-${raceKey}-dnf], select[data-${raceKey}-dns]
 updatePositionOptions();
 validate();
 
-    // H6.2: Save Race 1 only (Race 2/3 remain UI-only)
+    // Save Race 1.
     if (raceKey === "race1" && saveBtn) {
       saveBtn.addEventListener("click", async () => {
         const validationEl2 = mount.querySelector(`#admin-${raceKey}-validation`);
@@ -309,7 +309,7 @@ validate();
       });
     }
 
-    // H6.3: Save Race 2 (Race 3 remains UI-only)
+    // Save Race 2.
     if (raceKey === "race2" && saveBtn) {
       saveBtn.addEventListener("click", async () => {
         const validationEl2 = mount.querySelector(`#admin-${raceKey}-validation`);
@@ -397,7 +397,7 @@ validate();
         }
       });
     }
-    // H6.4: Save Race 3
+    // Save Race 3.
     if (raceKey === "race3" && saveBtn) {
       saveBtn.addEventListener("click", async () => {
         const validationEl2 = mount.querySelector(`#admin-${raceKey}-validation`);

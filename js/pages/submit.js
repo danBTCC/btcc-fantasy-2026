@@ -563,7 +563,7 @@
       if (!snap.exists) {
         box.innerHTML = `
           <strong>No profile found.</strong><br>
-          <span class="tiny muted">Ask admin to create players/${uid}.</span>
+          <span class="tiny muted">Ask Dan to set up your player profile.</span>
         `;
         return;
       }
@@ -887,8 +887,6 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
         </div>
       </form>
 
-      <p class="tiny muted" style="margin-top:10px;">
-      </p>
       `
     );
 

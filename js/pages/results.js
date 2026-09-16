@@ -36,15 +36,6 @@
     }
   };
 
-  const renderDriverList = (label, arr) => {
-    if (!Array.isArray(arr) || arr.length === 0) {
-      return `<li>${escapeHtml(label)}: <span class="muted">not available</span></li>`;
-    }
-    // We store driverIds in results/*, so show ids for now. (Later we can map id->name.)
-    return `<li>${escapeHtml(label)}: <span class="muted">${arr
-      .map((x) => escapeHtml(x))
-      .join(", ")}</span></li>`;
-  };
   const renderDriverResultsTable = (rows) => {
     // rows: [{ driverId, name, qPos, r1Pos, r2Pos, r3Pos }]
     if (!Array.isArray(rows) || rows.length === 0) {

@@ -193,13 +193,27 @@ async function loadFinaleFeature() {
       db.collection("standings_players").doc("season_2026").collection("players").get(),
     ]);
 
-    const remaining = eventsSnap.docs.filter((doc) => {
-      const event = doc.data() || {};
-      return event.resultsLocked !== true && String(event.status || "").toLowerCase() !== "complete";
-    }).length;
+    const events = eventsSnap.docs
+      .filter((doc) => Number.isFinite(Number(doc.data()?.eventNo)))
+      .sort((a, b) => Number(a.data().eventNo) - Number(b.data().eventNo));
+
+    // Standings advance when scores are saved, which can differ from event status.
+    let latestScoredIndex = -1;
+    for (let index = events.length - 1; index >= 0; index--) {
+      const scoresSnap = await db.collection("event_scores")
+        .doc(events[index].id)
+        .collection("players")
+        .limit(1)
+        .get();
+      if (!scoresSnap.empty) {
+        latestScoredIndex = index;
+        break;
+      }
+    }
+    const remaining = events.length - latestScoredIndex - 1;
 
     // This is a run-in feature, not a permanent second standings table.
-    if (remaining < 1 || remaining > 2 || standingsSnap.empty) return;
+    if (latestScoredIndex < 0 || remaining < 1 || remaining > 2 || standingsSnap.empty) return;
 
     const players = standingsSnap.docs
       .map((doc) => {
@@ -381,10 +395,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (SHOW_CROFT_RESULTS_WARNING) {
     showCroftResultsWarning();
   }
-
-  // Build stamp
-  const stampEl = document.getElementById("buildStamp");
-  if (stampEl) stampEl.textContent = new Date().toLocaleString();
 
   // Routing first: tabs must work even if Firebase/page loaders are slow.
   setActiveTab(getRouteFromHash());

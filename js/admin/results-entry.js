@@ -30,7 +30,6 @@
       return;
     }
 
-    // For v1 UI, we enter positions for all drivers in the current test set.
     const N = drivers.length;
 
     const options = drivers
@@ -42,7 +41,7 @@
         <h2 style="margin:0 0 6px 0;">Qualifying</h2>
         <div class="tiny muted" style="margin-bottom:10px;">
           Event ID: <span class="tiny">${eventId}</span><br>
-          Enter finishing order. No saving yet (next step).
+          Enter the qualifying order below.
         </div>
 
         <div id="admin-quali-validation" class="note warnNote" hidden></div>

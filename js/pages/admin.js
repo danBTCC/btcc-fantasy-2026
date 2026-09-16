@@ -2,7 +2,7 @@
 // Exposes: window.loadAdmin()
 
 // ============================================================
-// ADMIN.JS STRUCTURE INDEX (Phase H / I)
+// ADMIN.JS STRUCTURE INDEX
 // ============================================================
 // 1. Auth + Access Control
 //    - isAdminEmail
@@ -21,14 +21,14 @@
 //    - renderQualifyingForm
 //    - renderRaceForms
 //
-// 5. Results Preview + Locking (H7)
+// 5. Results Preview + Locking
 //    - loadSelectedEventMetaAndResults
 //    - renderResultsPreview
 //    - Lock / Unlock handlers
 //
-// 6. Engine (Phase I)
-//    - I1 Dry Run + Write
-//    - I2 Scoring Rules
+// 6. Scoring Engine
+//    - Validation + Write
+//    - Scoring Rules
 //    - loadEventScoresPreview
 // ============================================================
 
@@ -141,13 +141,9 @@ const ADMIN_EMAILS = [
           <span class="tiny muted" data-chevron>▸</span>
         </button>
         <div id="admin-home-news-body" hidden style="margin-top:10px;">
-        <p class="tiny muted" style="margin:0;">Editable home page snippets (not pulled from the News tab). Saved to <span class="tiny">meta/homeNews</span>.</p>
+        <p class="tiny muted" style="margin:0;">Edit the short updates shown on the Home page.</p>
 
         <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-          <label class="tiny muted">Pit lane gossip</label>
-          <textarea id="admin-home-news-pit" rows="3" placeholder="A few lines…"
-            style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
-
           <label class="tiny muted">Latest event news</label>
           <textarea id="admin-home-news-latest" rows="3" placeholder="A few lines…"
             style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);"></textarea>
