@@ -32,14 +32,19 @@
   <main class="container">
     <!-- HOME -->
     <section class="view" id="view-home" data-view="home">
-      <div class="card">
-        <h1>The 2026 Championship Battle Continues</h1>
-        <p class="muted">
-          We’re into the second half of the season and every selection matters.
-          Submit your drivers, follow the battles across the league tables, and keep up with the latest results, budgets, driver values and news.
-          Good luck for the run-in!
+      <section class="card finaleFeature" id="finale-feature" aria-labelledby="finale-title" hidden>
+        <div class="finaleFeature__intro">
+          <div class="finaleFeature__eyebrow">THE FINAL STRETCH</div>
+          <h1 id="finale-title">Every point matters now.</h1>
+          <p id="finale-remaining">Loading the championship battles…</p>
+        </div>
+        <div class="finaleFeature__grid" id="finale-battles"></div>
+        <a class="finaleFeature__link" href="#tables">See the full standings <span aria-hidden="true">→</span></a>
+      </section>
 
-        </p>
+      <div class="card" id="home-intro-fallback">
+        <h1>The 2026 Championship Battle Continues</h1>
+        <p class="muted">Submit your drivers, follow the league tables, and keep up with the latest results, budgets, driver values and news.</p>
       </div>
 
 <div id="home-message" class="card" style="margin-top:10px;">

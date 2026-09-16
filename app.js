@@ -1,7 +1,7 @@
 console.log("BTCC Fantasy League 2026 loaded");
 
 const loadedRoutes = new Set();
-const SHOW_CROFT_RESULTS_WARNING = true;
+const SHOW_CROFT_RESULTS_WARNING = false;
 
 function showCroftResultsWarning() {
   const modal = document.createElement("div");
@@ -60,8 +60,11 @@ async function loadRouteData(route) {
 
   const loaders = {
     home: async () => {
-      await loadNextEventCountdown();
-      await loadHomeNewsSnippets();
+      await Promise.all([
+        loadNextEventCountdown(),
+        loadHomeNewsSnippets(),
+        loadFinaleFeature(),
+      ]);
     },
     submit: () => window.loadSubmit?.(),
     drivers: () => window.loadDrivers?.(),
@@ -165,6 +168,92 @@ function formatCountdownLong(ms) {
   const secs = totalSeconds % 60;
 
   return `${days} Days ${hours} Hours ${mins} Mins ${secs} Seconds`;
+}
+
+function escapeFinaleHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+async function loadFinaleFeature() {
+  const feature = document.getElementById("finale-feature");
+  const fallback = document.getElementById("home-intro-fallback");
+  const battlesEl = document.getElementById("finale-battles");
+  const remainingEl = document.getElementById("finale-remaining");
+  if (!feature || !fallback || !battlesEl || !remainingEl || !window.btccDb) return;
+
+  try {
+    const db = window.btccDb;
+    const [eventsSnap, standingsSnap] = await Promise.all([
+      db.collection("events").get(),
+      db.collection("standings_players").doc("season_2026").collection("players").get(),
+    ]);
+
+    const remaining = eventsSnap.docs.filter((doc) => {
+      const event = doc.data() || {};
+      return event.resultsLocked !== true && String(event.status || "").toLowerCase() !== "complete";
+    }).length;
+
+    // This is a run-in feature, not a permanent second standings table.
+    if (remaining < 1 || remaining > 2 || standingsSnap.empty) return;
+
+    const players = standingsSnap.docs
+      .map((doc) => {
+        const data = doc.data() || {};
+        return {
+          id: doc.id,
+          name: data.displayName || data.name || "Unnamed",
+          points: Number(data.pointsTotal ?? data.points ?? 0),
+        };
+      })
+      .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
+      .map((player, index) => ({ ...player, position: index + 1 }));
+
+    if (players.length < 3) return;
+
+    const renderBattle = (title, kicker, rows, targetIndex, theme) => {
+      const target = players[targetIndex];
+      if (!target || !rows.length) return "";
+
+      return `
+        <article class="finaleBattle finaleBattle--${theme}">
+          <div class="finaleBattle__kicker">${escapeFinaleHtml(kicker)}</div>
+          <h2>${escapeFinaleHtml(title)}</h2>
+          <div class="finaleBattle__rows">
+            ${rows.map((player) => {
+              const gap = player.points - target.points;
+              const gapText = gap > 0 ? `+${gap}` : gap < 0 ? String(gap) : "—";
+              return `
+                <div class="finaleBattle__row${gap === 0 ? " finaleBattle__row--target" : ""}">
+                  <span class="finaleBattle__position">${player.position}</span>
+                  <span class="finaleBattle__name">${escapeFinaleHtml(player.name)}</span>
+                  <span class="finaleBattle__points">${player.points}</span>
+                  <span class="finaleBattle__gap" aria-label="${gap === 0 ? "At the target position" : `${Math.abs(gap)} points ${gap > 0 ? "ahead of" : "behind"} the target position`}">${gapText}</span>
+                </div>
+              `;
+            }).join("")}
+          </div>
+          <div class="finaleBattle__foot">Gap to ${targetIndex === 0 ? "1st" : targetIndex === 2 ? "3rd" : "6th"}</div>
+        </article>
+      `;
+    };
+
+    battlesEl.innerHTML = [
+      renderBattle("Battle for 1st", "THE TITLE", players.slice(0, 2), 0, "title"),
+      renderBattle("Podium race", "BATTLE FOR THIRD", players.slice(2, 5), 2, "podium"),
+      renderBattle("Mid-pack battle", "THE MID-PACK BATTLE", players.slice(5, 14), 5, "midpack"),
+    ].join("");
+
+    remainingEl.textContent = `${remaining} event${remaining === 1 ? "" : "s"} to go. Three battles to watch.`;
+    feature.hidden = false;
+    fallback.hidden = true;
+  } catch (err) {
+    console.warn("Finale feature unavailable", err);
+  }
 }
 
 // Loads the editable Home page snippets saved by Admin (meta/homeNews)
