@@ -74,7 +74,7 @@
           .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
       : [];
     const teamPlateRecipients = winningTeam
-      ? Array.from({ length: 4 }, (_, index) => teamMembers[index] || null)
+      ? Array.from({ length: 3 }, (_, index) => teamMembers[index] || null)
       : [];
 
     teamPlateRecipients.forEach((player, index) => {
@@ -138,11 +138,11 @@
   }
 
   function renderTracker(mount, model) {
-    const countStatus = model.physicalAwardCount === 28
-      ? "28 physical awards currently allocated"
-      : `${model.physicalAwardCount} of 28 physical awards currently allocated`;
-    const teamMemberWarning = model.winningTeam && model.teamMembers.length !== 4
-      ? `<div class="note warnNote tiny" style="margin-top:10px;">The leading team currently has ${model.teamMembers.length} linked member(s); four plate recipients are expected. Check player team assignments.</div>`
+    const countStatus = model.physicalAwardCount === 27
+      ? "27 physical awards currently allocated"
+      : `${model.physicalAwardCount} of 27 physical awards currently allocated`;
+    const teamMemberWarning = model.winningTeam && model.teamMembers.length !== 3
+      ? `<div class="note warnNote tiny" style="margin-top:10px;">The leading team currently has ${model.teamMembers.length} linked member(s); three plate recipients are expected. Check player team assignments.</div>`
       : "";
 
     mount.innerHTML = `
