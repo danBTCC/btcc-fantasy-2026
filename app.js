@@ -229,7 +229,7 @@ async function loadFinaleFeature() {
 
     if (players.length < 3) return;
 
-    const renderBattle = (title, kicker, rows, targetIndex, theme) => {
+    const renderBattle = (title, kicker, rows, targetIndex, targetLabel, theme) => {
       const target = players[targetIndex];
       if (!target || !rows.length) return "";
 
@@ -251,15 +251,15 @@ async function loadFinaleFeature() {
               `;
             }).join("")}
           </div>
-          <div class="finaleBattle__foot">Gap to ${targetIndex === 0 ? "1st" : targetIndex === 2 ? "3rd" : "6th"}</div>
+          <div class="finaleBattle__foot">Gap to ${escapeFinaleHtml(targetLabel)}</div>
         </article>
       `;
     };
 
     battlesEl.innerHTML = [
-      renderBattle("Battle for 1st", "THE TITLE", players.slice(0, 2), 0, "title"),
-      renderBattle("Podium race", "BATTLE FOR THIRD", players.slice(2, 5), 2, "podium"),
-      renderBattle("Mid-pack battle", "THE MID-PACK BATTLE", players.slice(5, 14), 5, "midpack"),
+      renderBattle("Battle for 1st", "THE TITLE", players.slice(0, 2), 0, "1st", "title"),
+      renderBattle("Podium race", "BATTLE FOR THIRD", players.slice(2, 4), 2, "3rd", "podium"),
+      renderBattle("Mid-pack battle", "THE MID-PACK BATTLE", players.slice(4, 14), 4, "5th", "midpack"),
     ].join("");
 
     remainingEl.textContent = `${remaining} event${remaining === 1 ? "" : "s"} to go. Three battles to watch.`;
