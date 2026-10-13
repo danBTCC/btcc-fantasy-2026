@@ -118,12 +118,12 @@
   }
 
   function delayFor(position) {
-    if (position === 1) return 2200;
-    if (position === 2) return 1750;
-    if (position === 3) return 1400;
-    if (position <= 6) return 850;
-    if (position <= 10) return 620;
-    return 420;
+    if (position === 1) return 3200;
+    if (position === 2) return 2600;
+    if (position === 3) return 2100;
+    if (position <= 6) return 1250;
+    if (position <= 10) return 950;
+    return 750;
   }
 
   function wait(milliseconds) {
