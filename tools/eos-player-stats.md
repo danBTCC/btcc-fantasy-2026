@@ -304,7 +304,7 @@ for 2026.
 For the completed 2026 season:
 
 - A submitted team always returned positive fantasy points.
-- A zero/null weekend score represents a missed submission.
+- Identify missed submissions using `missedSubmission === true`.
 - Missed submissions are excluded from entered-event averages.
 - Missed submissions break streaks.
 - Historical positions should be used as stored.
