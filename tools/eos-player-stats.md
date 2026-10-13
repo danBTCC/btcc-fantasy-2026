@@ -1,424 +1,244 @@
-# BTCC Fantasy League — End of Season Player Stats
+# End-of-Season Player Stats
 
 ## Purpose
 
-Create a public-facing **Season in Numbers** feature for the BTCC Fantasy League website.
+Add a public **Season Stats** area to the BTCC Fantasy League website.
 
-Every player will use the **same player-stat template** so seasons can be compared consistently.
+Anyone should be able to select a player and view their 2026 season statistics.
 
-The page will eventually allow anybody to select any player and view their 2026 season statistics.
+Example:
 
-Examples:
+Steve → Steve's stats  
+Daniel → Daniel's stats  
+Sue → Sue's stats
 
-- Steve can view Sue's statistics.
-- Daniel can view Fliss's statistics.
-- No player login is required.
-- This should behave like the existing public Standings, Results and News pages.
+No login is required.
 
-This document defines the statistics to calculate and display.
-
----
-
-# Core Principles
-
-- One template is used for every player.
-- Do not create player-specific rules or layouts.
-- A statistic should not disappear simply because its value is zero.
-- Examples:
-  - `0 Event Wins`
-  - `0 Missed Submissions`
-  - `Season Long Driver: None`
-- Historical event snapshots and the final season export are the primary source of truth.
-- Do not reconstruct historical values from current Firestore driver/player state where historical snapshots exist.
-- Do not expose private/internal information such as:
-  - Firebase UIDs
-  - authentication information
-  - internal processing metadata
-  - unnecessary exact submission timestamps
-- The public Season in Numbers data should be derived/read-only data.
-- The statistics feature must not alter scoring, standings, budgets, event results or any other existing league data.
+The same layout and statistics should be used for every player.
 
 ---
 
-# Primary Data Sources
+# Source of Truth
 
-## 1. Full League History JSON
-
-Primary source:
+The primary source for 2026 is:
 
 `BTCC_2026_Full_History_2026-10-13.json`
 
-Relevant exported datasets include:
+This is the completed 2026 Full League History export.
+
+Use the historical values stored in the export.
+
+Do not recreate historical values from current driver/player state where historical data already exists.
+
+The main datasets used are:
 
 - `playerEventSummaries`
 - `playerDriverSelections`
-- `driverEventResults`
-- `drivers`
 - `players`
 - `events`
 - `pitStopRounds`
 - `pitStopPlayerTotals`
 
-## 2. Firestore
+If a wanted statistic is not contained in the Full History export, retrieve it once from the existing season-end Firestore data and preserve it as a small supplemental source file.
 
-Use Firestore only where the final JSON does not contain enough information.
-
-Likely examples include:
-
-- specialist standings
-- raw race/result classifications
-- additional Pit Stop Pot detail
-- statistics requiring information that was not included in the full-history export
-
-Do not manually retrieve data from Firestore if the JSON already contains authoritative historical data for the statistic.
+The public website should not query Firestore live to calculate historical 2026 statistics.
 
 ---
 
 # Player Header
 
-Display:
+Show:
 
 - Player name
-- Final Overall Championship position
-- Final Overall Championship points
-- Gap to Overall Champion
-- Fantasy team name
-  - Show `Independent / No Team` or agreed equivalent for players without a fantasy team
+- Final championship position
+- Final championship points
+- Gap to champion
+- Fantasy team name, if applicable
 
-Potential later addition:
-
-- Championship finishing-position badge/medal styling
+Daniel was not assigned to a fantasy team in 2026.
 
 ---
 
-# 1. Championship Summary
+# Championship
 
-Display:
+Show:
 
-- Final championship position
-- Final championship points
+- Final position
+- Final points
 - Gap to champion
 - Events entered
 - Events missed
 - Event wins
-- Event podium finishes
+- Event podiums
 - Top 6 event finishes
 - Average event score
 - Average event finishing position
-- Highest event score
-- Lowest event score
-- Best event
-- Worst event
+- Highest event score and event
+- Lowest entered-event score and event
+- Longest Top 6 streak
+- Longest podium streak
 
-### Definitions
+Missed events are not included in averages.
 
-**Events entered**
+A missed event breaks a consecutive-event streak.
 
-Number of events where the player made a valid submission and received an event score.
-
-**Events missed**
-
-Number of genuine missed submissions.
-
-**Event win**
-
-Player finished P1 in the fantasy results for that race weekend.
-
-**Event podium**
-
-Player finished P1–P3 for that race weekend.
-
-**Top 6**
-
-Player finished P1–P6 for that race weekend.
-
-**Average event score**
-
-Total points scored across entered events divided by entered events.
-
-Missed submissions must not artificially reduce the average unless we later explicitly decide otherwise.
-
-**Best event**
-
-Event with the player's highest event score.
-
-If more than one event has the same highest score, retain all tied events unless a tie-display rule is later agreed.
-
-**Worst event**
-
-Lowest score from an event the player actually entered.
-
-A genuine missed submission should not automatically become their "worst performance".
+Use the historical event positions stored in the export.
 
 ---
 
-# 2. Championship Journey
+# Championship Journey
 
-Display:
+Show:
 
 - Championship position after Event 1
-- Highest championship position reached
+- Best championship position reached
 - Lowest championship position reached
-- Biggest position gain between consecutive events
-- Biggest position loss between consecutive events
+- Biggest position gain between events
+- Biggest position loss between events
 - Final championship position
 
-Potential visual:
+Also provide the event-by-event championship positions needed for a championship journey graph.
 
-- Championship position line graph across Events 1–10
+Use the stored historical championship position after each event.
 
-Example:
-
-`1 → 1 → 1 → 2 → 3 → 2 → 2 → 2 → 2 → 2`
-
-### Notes
-
-Use stored `overallPositionAfterEvent` historical values.
-
-Do not recreate historical positions from the final standings.
+Do not reconstruct the championship table.
 
 ---
 
-# 3. Race Weekend Performance
+# Session Performance
 
-Display:
-
-- Best-scoring event
-- Worst-scoring entered event
-- Average event score
-- Event wins
-- Event podiums
-- Top 6 finishes
-- Highest event finishing position
-- Lowest entered-event finishing position
-- Longest consecutive Top 6 streak
-- Longest consecutive podium streak
-
-Potential later addition:
-
-- Most improved weekend compared with previous event
-- Biggest points increase from one event to the next
-- Biggest points decrease from one event to the next
-
----
-
-# 4. Session Performance
-
-Display totals for:
+Show season totals for:
 
 - Qualifying
 - Race 1
 - Race 2
 - Race 3
 
-Display:
+Also show:
 
-- Total Qualifying points
-- Total Race 1 points
-- Total Race 2 points
-- Total Race 3 points
-- Strongest session type
+- Strongest session
 - Qualifying wins
 - Race 1 wins
 - Race 2 wins
 - Race 3 wins
-- Highest single-session score
-- Event/session where that score occurred
+- Highest single-session score and where it occurred
 
-### Strongest Session
+Strongest session should use average points per entered event.
 
-Initially define strongest session as:
-
-> The session type with the player's highest cumulative season points.
-
-Possible alternative calculation:
-
-> Highest average score per session.
-
-This definition must be agreed before implementation.
-
-### Session Wins
-
-A player wins a session when they have the highest fantasy-player score for that session.
-
-Ties must be recorded as tied wins unless we explicitly choose another rule.
+If multiple players share the highest fantasy score in a session, each counts as a session winner.
 
 ---
 
-# 5. Driver Selections
+# Driver Selections
 
-Display:
+Show:
 
 - Total driver selections
 - Number of different drivers used
 - Most-selected driver
-- Number of times most-selected driver was selected
-- Driver who earned the player the most total fantasy points
-- Total points earned from that driver while selected
-- Highest-scoring individual driver selection
+- Number of times selected
+- Driver who earned the player the most total points
+- Total points earned from that driver
+- Highest-scoring single driver selection
 - Event where that selection occurred
 - Most-selected High-tier driver
 - Most-selected Middle-tier driver
 - Most-selected Low-tier driver
-- Season Long Driver
-- Number of events the SLD was selected/used
+- Average team size
+- Most common team size
 
-### Total Driver Selections
+Use each driver's historical tier at the event where they were selected.
 
-Count every driver selected in every submitted event.
+Do not use their final/current tier to rewrite earlier selections.
 
-Example:
-
-Five selected drivers across ten events = 50 selections.
-
-### Different Drivers Used
-
-Count unique driver IDs selected by the player during the season.
-
-### Most-Selected Driver
-
-Driver selected at the highest number of events.
-
-Ties should be shown as ties unless another display rule is agreed.
-
-### Highest-Scoring Individual Driver Pick
-
-Highest `driverEventPoints` produced by one driver while selected by that player at one event.
-
-Example:
-
-`Tom Ingram — 67 points at Silverstone`
+If multiple drivers tie for a statistic, preserve the tie.
 
 ---
 
-# 6. Season Long Driver
+# Season Long Driver
 
-Display:
+Show:
 
-- SLD driver name
-- Events used
-- Total fantasy points earned from SLD
-- Average SLD points per event
+- SLD driver
+- Number of entered events where the SLD was used
+- Total SLD points
+- Average SLD points
 - Best SLD event
-- Best SLD score
+- Best SLD event score
 
-If the player did not select an SLD:
+If the player did not have an SLD, display **None**.
 
-`Season Long Driver: None`
-
-Potential later statistics:
-
-- Difference between SLD performance and player's normal driver selections
-- SLD value gain/loss during the season
+A missed event does not count as an SLD appearance.
 
 ---
 
-# 7. Star Drivers
+# Star Drivers
 
-Display:
+For the Underdog Driver show:
 
-## Underdog
+- Number of selections
+- Total points
+- Average points
+- Best selection
+- Best score
 
-- Number of Underdog selections
-- Total points earned from Underdog selections
-- Average Underdog score
-- Best Underdog selection
-- Best Underdog score
+For the Form Driver show:
 
-## Form Driver
+- Number of selections
+- Total points
+- Average points
+- Best selection
+- Best score
 
-- Number of Form Driver selections
-- Total points earned from Form Driver selections
-- Average Form Driver score
-- Best Form Driver selection
-- Best Form Driver score
-
-Potential combined statistic:
+Also show:
 
 - Total Star Driver selections
-- Total Star Driver points
+
+Star Driver points are part of the player's normal driver points.
+
+They are not additional bonus points.
 
 ---
 
-# 8. Budget Statistics
+# Budget
 
-Display:
+Show:
 
 - Starting base budget
 - Final base budget
-- Highest base budget reached
-- Lowest base budget reached
-- Overall budget change
-- Total amount spent across the season
-- Average amount spent per submitted event
+- Highest base budget
+- Lowest base budget
+- Overall base-budget change
+- Average team spend
 - Average unused budget
-- Lowest unused budget
-- Events with exactly £0.00 remaining
-- Biggest post-event budget increase
-- Biggest post-event budget decrease
+- Closest the player came to spending their full available budget
+- Number of events with exactly £0.00 remaining
+- Biggest base-budget increase
+- Biggest base-budget decrease
 
-### Starting Budget
+Starting base budget for 2026 was £10.00.
 
-All players began Event 1 with:
+Base-budget statistics should not include Budget Boost.
 
-`£10.00`
-
-### Final Budget
-
-Use the final stored base/current budget after Event 10.
-
-Do not confuse:
-
-- base budget
-- Budget Boost
-- effective budget
-
-These must remain separate concepts.
-
-### Highest / Lowest Budget
-
-Use historically stored budget snapshots where available.
-
-Do not reconstruct missing historical budgets from current player state.
-
-### Closest to Maximum Spend
-
-Lowest valid `unusedBudget` during the season.
-
-Example:
-
-`£0.01 remaining — Silverstone`
+Event spending statistics should use the actual effective budget available for that event.
 
 ---
 
-# 9. Consistency
+# Consistency
 
-Display:
+Show:
 
-- Average event score
 - Median event score
-- Highest event score
-- Lowest entered-event score
-- Score range
-- Standard deviation of event scores
+- Event score range
+- Population standard deviation of entered-event scores
 
-Potential display label:
-
-`Consistency`
-
-Potential later derived value:
-
-`Consistency Rating`
-
-A custom Consistency Rating must not be introduced until its formula has been explicitly agreed.
-
-If created, it must be clearly presented as a BTCC Fantasy League derived statistic rather than an official championship measure.
+Do not create a custom "Consistency Rating" in version 1.
 
 ---
 
-# 10. Specialist Championships
+# Specialist Championships
 
-Display the player's final position and points for:
+Show final position and final points for:
 
 - WingFoot
 - Race 1 Championship
@@ -428,470 +248,128 @@ Display the player's final position and points for:
 - Independents Championship
 - Jack Sears Championship
 
-Where a player has no meaningful score in a specialist championship, display the real recorded value rather than inventing one.
+These should come from the existing authoritative season-end standings.
 
-Potential format:
+If these values are not present in the Full History export, preserve them in the supplemental season-end source data.
 
-| Championship | Position | Points |
-|---|---:|---:|
-| WingFoot | 4th | 000 |
-| Race 1 | 2nd | 000 |
-| Race 2 | 6th | 000 |
-| Race 3 | 1st | 000 |
+Do not rebuild specialist championships specifically for this feature if an authoritative final table already exists.
 
 ---
 
-# 11. Fantasy Team
+# Fantasy Team
 
-For players assigned to a fantasy team, display:
+Show:
 
 - Fantasy team name
-- Final Teams Championship position
-- Final Teams Championship points
+- Final team championship position
+- Final team championship points
 
-Potential later statistics:
+Nobody changed fantasy team during the 2026 season.
 
-- Player's contribution to team total
-- Percentage of team championship points contributed by player
+Daniel was not assigned to a fantasy team because the player numbers would have produced unequal teams.
 
-For players without a fantasy team, display:
+For Daniel display:
 
 `Fantasy Team: None`
 
-Do not hide this section purely because the player is unassigned.
+Final team standings should come from the authoritative season-end team standings.
 
 ---
 
-# 12. Pit Stop Pot
+# Pit Stop Pot
 
-Display:
+Show:
 
 - Total money won
-- Final earnings rank
-- Number of Pit Stop rounds where player received money
-- Number of full-pot wins
-- Biggest individual payout
+- Final Pit Stop earnings rank
+- Number of rounds where the player received a payout
+- Biggest payout
 - Round/event of biggest payout
+- Full-pot wins
 
-Potential later statistics:
+No player won the full Pit Stop Pot jackpot during 2026.
 
-- Total times drawn
-- Money won when drawn
-- Money won through race finishing rewards
-- Checkpoint/shared payout total
+All accumulated pots ultimately reached the checkpoint shared payouts at rounds 10, 20 and 30.
 
-These depend on whether `pitStopRounds` contains enough reliable historical information.
+Therefore all players have:
 
----
+`Full-pot wins: 0`
 
-# 13. Season Highlights
-
-This section should present a small number of automatically selected factual highlights.
-
-Examples:
-
-- `Won 2 race weekends`
-- `Finished in the Top 6 at 7 of 10 events`
-- `Race 2 was their strongest session`
-- `Picked Tom Ingram 6 times`
-- `Scored a season-best 250 points at Snetterton`
-- `Used 18 different BTCC drivers`
-- `Finished the season with £10.58`
-- `Won £35.65 in the Pit Stop Pot`
-
-Highlights must be generated from actual calculated statistics.
-
-Do not generate subjective praise or criticism.
+for 2026.
 
 ---
 
-# 14. Possible Fun Statistics
+# Basic Rules
 
-These are optional and should only be added where the definition is meaningful and reproducible.
+For the completed 2026 season:
 
-Ideas:
+- A submitted team always returned positive fantasy points.
+- A zero/null weekend score represents a missed submission.
+- Missed submissions are excluded from entered-event averages.
+- Missed submissions break streaks.
+- Historical positions should be used as stored.
+- Historical driver tiers should be used as stored.
+- Ties should be preserved rather than arbitrarily broken.
+- Money should be handled accurately to the penny.
+- Missing/not-applicable data should not be invented.
 
-- Favourite driver
-- Favourite circuit
-- Strongest race number
-- Biggest gamble
-- Best value selection
-- Most successful Underdog pick
-- Most successful Form Driver pick
-- Most loyal driver selection
-- Driver they selected once who scored the most
-- Driver they selected most often without strong results
-- Most common team size
-- Average team size
-- Most-used tier combination
-- Number of unique team combinations
-
-Each fun statistic requires an agreed calculation before implementation.
+The 2026 missed-event penalty system never became operational and is not part of these statistics.
 
 ---
 
-# 15. Statistics Not Yet Fully Defined
+# Public Data
 
-Do not implement these until definitions are agreed:
+The website should use a small generated static file such as:
 
-- Consistency Rating
-- Biggest Gamble
-- Best Value Pick
-- Most Profitable Driver
-- Favourite Circuit
-- Strongest Session if comparing totals versus averages
-- Specialist session-win tie handling
-- Driver-selection tie display behaviour
-- Championship journey tie/display behaviour
+`data/season-stats/2026.json`
 
-These can be discussed and added to this document later.
+The Full History export should not be downloaded directly by every website visitor.
+
+A small generator can read the trusted source data and produce the public season-stat file.
+
+The generated public data should contain only information required by the Season Stats page.
+
+Do not expose:
+
+- Firebase UIDs
+- submission timestamps
+- engine audit data
+- internal metadata
+- other private/internal fields
+
+Each player should have a stable public slug, for example:
+
+- `steve`
+- `daniel`
+- `kaitlin-rose`
+- `ellie-c`
 
 ---
 
-# 16. Public Website Behaviour
+# Website Behaviour
 
-The Season in Numbers player page will be public.
+The public Season Stats page should:
 
-No sign-in should be required.
+1. Show the available players.
+2. Allow any player to be selected.
+3. Display that player's season statistics.
+4. Use the same layout for all players.
+5. Work without login.
+6. Be suitable for mobile and desktop.
+7. Allow future seasons to use the same feature with a different season data file.
 
-Expected user journey:
-
-1. Open `Season in Numbers`.
-2. View the season overview or player selection.
-3. Choose any player.
-4. View that player's statistics.
-5. Switch directly to another player.
-
-Potential future navigation:
-
-- Clicking a player's name in Standings could open their Season in Numbers profile.
-- Direct URLs/hash routes could open a specific player.
-
-Example concept:
+Example route:
 
 `#season-stats/daniel`
 
-Exact routing must follow the existing application's architecture and should not be implemented until the feature design is agreed.
+The exact visual design can be decided during implementation.
 
 ---
 
-# 17. Public Data Model
+# Version 1 Scope
 
-Do not expose the raw full-history JSON directly to the browser purely to power this page.
+Version 1 should concentrate on the statistics listed in this document.
 
-Create a derived public season-stat dataset containing only the information required by the feature.
+Do not add additional experimental statistics during the initial build.
 
-Conceptual structure:
-
-```text
-season_stats
-└── 2026
-    ├── overview
-    └── players
-        ├── amy
-        ├── daniel
-        ├── ellie-c
-        ├── ellie-m
-        ├── ezra
-        └── ...
-
-
-        Player public-stat documents should use harmless public identifiers/slugs rather than requiring Firebase authentication UIDs to be exposed.
-Example:
-season_stats/2026/players/daniel
-rather than:
-season_stats/2026/players/<firebase-uid>
-The exact Firestore structure is not yet final and must be agreed before implementation.
-18. Development Approach
-Do not begin by building the user interface.
-Development should proceed in this order:
-1. Finalise the statistics list.
-2. Define every statistic precisely.
-3. Identify the source for every statistic.
-4. Mark each statistic as:
-   - JSON
-   - Firestore
-   - Derived calculation
-   - Unavailable
-5. Calculate and validate the complete 2026 player-stat dataset.
-6. Spot-check multiple players manually.
-7. Decide the public data structure.
-8. Store/generate the public stats dataset.
-9. Build the public Season in Numbers page.
-10. Test all 19 players using the same template.
-19. Validation
-Before statistics are published:
-- All 19 players must be processed using the same calculation code.
-- Final championship positions and points must match the live standings.
-- Event totals must reconcile with stored player event scores.
-- Session totals must reconcile with event summaries.
-- Driver-selection totals must reconcile with player selection history.
-- Missed submissions must match authoritative event history.
-- Budget values must use historical snapshots rather than current-state reconstruction.
-- Pit Stop winnings must reconcile with the existing Pit Stop Pot totals.
-- Ties must not be silently broken unless a rule has been explicitly agreed.
-Any unexplained discrepancy should be investigated before publishing the statistic.
-20. Current Status
-Status: Planning
-Agreed:
-- Public-facing feature.
-- One identical player template for all players.
-- All players can view every other player's statistics.
-- No login required.
-- 2026 full-history export is the primary data source.
-- Firestore can supplement missing information.
-- A derived public statistics dataset should be used rather than exposing the raw history export.
-- Final UI/layout has not yet been designed.
-- Statistics and their definitions should be agreed before coding begins.
-Next Task
-Review the proposed player statistics in this document.
-For each statistic:
-- Keep
-- Remove
-- Amend
-- Add definition
-- Identify source
-Once the list is agreed, create a formal calculation specification for the 2026 dataset.
-
-
-# Season Stats Data Architecture
-
-## Agreed Approach
-
-End-of-season statistics are static historical data.
-
-Once a season is complete, its statistics should not change unless a genuine historical correction is deliberately made.
-
-The public website must therefore **not calculate the full season statistics every time a user opens the page**.
-
-The intended flow is:
-
-```text
-Authoritative Full History Export
-            +
-Any Required Supplemental Historical Data
-            ↓
-Season Stats Generator
-            ↓
-Generated Public Season Stats JSON
-            ↓
-Season in Numbers Website Page
-For 2026:
-BTCC_2026_Full_History_2026-10-13.json
-            ↓
-generate-season-stats.js
-            ↓
-data/season-stats/2026.json
-            ↓
-Public Season in Numbers page
-Public Stats JSON
-Create one generated public JSON file for each completed season.
-Suggested structure:
-data/
-└── season-stats/
-    ├── 2026.json
-    ├── 2027.json
-    └── seasons.json
-The exact paths may be adjusted to fit the existing repository structure, but the separation between:
-- source history
-- generator
-- generated public data
-- website presentation
-must be preserved.
-Important
-Do not hard-code individual player statistics directly inside the page JavaScript.
-Bad example:
-const players = {
-  daniel: {
-    championshipPoints: 2030,
-    eventWins: 2
-  }
-};
-Player statistics belong in the generated season-data file.
-The JavaScript page should be responsible for:
-- loading the selected season data
-- choosing the selected player
-- rendering the common player template
-- handling navigation and interaction
-The JSON should contain the historical facts.
-Season Stats Generator
-Create a reusable generator script rather than manually calculating and entering the statistics.
-Suggested location:
-tools/generate-season-stats.js
-The exact filename/location may be adjusted if another location better matches the existing project.
-The generator must:
-1. Read the authoritative full-history export for the requested season.
-2. Calculate all agreed player statistics using the definitions in this document.
-3. Calculate agreed season-wide statistics where required.
-4. Incorporate approved supplemental historical data where the export is insufficient.
-5. Validate important calculations before writing output.
-6. Produce the public season JSON.
-7. Produce the same schema for every season.
-The generator should be deterministic:
-The same source data and the same generator version should produce the same season-stat output.
-
-Source Data Must Remain Separate
-The full-history export is the authoritative analytical source.
-It should not become the public website data file.
-The full export may contain information that the Season in Numbers page does not need or should not expose, including:
-- Firebase player UIDs
-- exact submission timestamps
-- engine metadata
-- internal processing information
-- audit fields
-- historical implementation details
-The generated public JSON must contain only the information required by the public Season in Numbers feature.
-Supplemental Historical Data
-Some statistics may require information that is not present in the full-history JSON.
-Where this happens:
-1. Confirm that the value cannot reliably be derived from the export.
-2. Retrieve the value from the appropriate authoritative Firestore record.
-3. Preserve that information in a reproducible source rather than manually inserting unexplained final numbers into the generated output.
-If required, create a supplemental season source file.
-Example:
-data/
-└── season-stats-source/
-    └── 2026-extra.json
-Example purpose:
-{
-  "specialistStandings": {},
-  "additionalResultsData": {}
-}
-This structure is conceptual only.
-The exact supplemental schema must be based on the statistics that are genuinely missing.
-Do not create supplemental values where the full-history export already contains sufficient authoritative information.
-Generated Data Must Not Be Manually Maintained
-2026.json should be considered generated output.
-Normal changes to player statistics should be made by:
-1. correcting the authoritative source data if required,
-2. correcting the calculation/definition if required,
-3. rerunning the generator.
-Avoid manually editing calculated statistics inside 2026.json.
-An exception may be made only for a deliberate historical correction where the reason is documented and the source cannot otherwise be preserved.
-Suggested Public JSON Structure
-The final schema is not yet fixed.
-A likely structure is:
-{
-  "season": 2026,
-  "generatedAt": "...",
-  "overview": {},
-  "players": {
-    "steve": {},
-    "daniel": {},
-    "jake": {}
-  }
-}
-Each player should use the same schema.
-Example:
-{
-  "daniel": {
-    "name": "Daniel",
-    "championship": {},
-    "weekends": {},
-    "sessions": {},
-    "drivers": {},
-    "sld": {},
-    "starDrivers": {},
-    "budget": {},
-    "consistency": {},
-    "specialistChampionships": {},
-    "fantasyTeam": {},
-    "pitStopPot": {},
-    "highlights": []
-  }
-}
-This is a conceptual example.
-Do not finalise the schema until the player-stat definitions are agreed.
-Public Player Identifiers
-Public stats should use readable, harmless identifiers such as:
-daniel
-steve
-kaitlin-rose
-tegan-aurora
-ellie-m
-Do not require Firebase Authentication UIDs as public player identifiers.
-Player slugs should remain stable once published.
-Multi-Season Support
-The feature should be designed from the beginning to support future seasons.
-The player template should not be written specifically around 2026 data.
-Expected future process:
-2026 History → Generator → 2026.json
-2027 History → Generator → 2027.json
-2028 History → Generator → 2028.json
-The same page and template should display all supported seasons.
-Do not duplicate the Season in Numbers page for each season.
-Season Index
-A small season index may be used so the website knows which seasons are available.
-Conceptual example:
-{
-  "seasons": [
-    {
-      "season": 2026,
-      "file": "2026.json"
-    },
-    {
-      "season": 2027,
-      "file": "2027.json"
-    }
-  ]
-}
-This would allow future seasons to be added without changing the player-page logic.
-The exact implementation should follow the existing application's architecture.
-Historical Corrections
-Although completed season data is normally immutable, genuine corrections may occasionally be required.
-If a historical correction is made:
-1. Identify the authoritative source that is being corrected.
-2. Record the reason.
-3. Update the correct historical source.
-4. Regenerate the season stats.
-5. Validate affected players and season-wide records.
-6. Commit the regenerated public JSON with the correction.
-Do not silently alter an individual number in the public stats file without documenting why.
-Generator Validation
-Before writing the final public season file, the generator should validate at minimum:
-- every active league player is represented
-- no unexpected duplicate player IDs/slugs exist
-- final Overall points match authoritative season standings
-- final Overall positions match authoritative season standings
-- player event totals reconcile with event history
-- submitted/missed event counts reconcile with event history
-- session totals reconcile with stored event summaries
-- driver-selection counts reconcile with selection records
-- Pit Stop totals reconcile where included
-- required fields contain valid values
-- no NaN, undefined or accidental internal IDs appear in public output
-Generation should fail clearly rather than silently publishing obviously incomplete or inconsistent data.
-2027 and Future Seasons
-The 2026 implementation should establish the reusable system.
-At the end of 2027 the intended process should be approximately:
-1. Complete and validate the final 2027 league-history export.
-2. Supply any genuinely required supplemental source data.
-3. Run the existing season-stat generator for 2027.
-4. Validate the generated data.
-5. Add 2027.json.
-6. Add 2027 to the available-season index.
-7. No redesign of the player template should be necessary unless a new league feature genuinely requires new statistics.
-The goal is:
-Add a season, not rebuild the feature.
-
-
-That last sentence is probably the bit I'd tattoo onto Codex's forehead:
-
-> **Add a season, not rebuild the feature.**
-
-😂
-
-The other thing I'd now add to our workflow is that when we start defining each stat, we should put a tiny **source + formula** underneath it in the same markdown. For example:
-
-```markdown
-**Event Wins**
-
-Source: `playerEventSummaries`
-
-Calculation:
-
-Count rows where:
-
-`eventPosition === 1`
-
-Exclude genuine missed submissions.
+Possible future additions can be considered after the core Season Stats page is working and its data has been validated.
