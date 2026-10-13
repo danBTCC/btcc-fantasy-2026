@@ -373,3 +373,66 @@ Version 1 should concentrate on the statistics listed in this document.
 Do not add additional experimental statistics during the initial build.
 
 Possible future additions can be considered after the core Season Stats page is working and its data has been validated.
+
+## Additional Implementation Notes
+
+### Tier Statistics
+
+High/Middle/Low driver-selection statistics apply from Event 2 onward.
+
+Event 1 is excluded because the tier-balance selection rules did not apply at Event 1.
+
+Any missing historical tier values from Events 2–10 must be recovered from an authoritative historical source and placed in the supplemental source data.
+
+Do not substitute current/final driver tiers.
+
+If reliable historical tier data cannot be recovered, omit the affected tier statistic rather than infer it.
+
+### Missed Submissions
+
+Use the explicit `missedSubmission` field to identify missed events.
+
+Do not infer a missed submission solely from a zero event score.
+
+### Missed Events and Budgets
+
+A missed event does not change the player's base budget.
+
+The previous base budget carries forward unchanged to the next event.
+
+For entered events:
+
+`baseBudgetChange = budgetAfterEvent - startingBudget`
+
+For missed events:
+
+`baseBudgetChange = 0`
+
+### Public Player Slugs
+
+Use a small explicit mapping between the 19 2026 player names and their public slugs.
+
+Do not expose Firebase player IDs in public URLs or generated public data.
+
+### Pit Stop Full-Pot Wins
+
+Calculate full-pot wins from the historical `pitStopRounds` data.
+
+Do not hardcode zero wins into the public page.
+
+All calculated full-pot win totals happen to be zero for 2026.
+
+### Event 1 Tier Rules
+
+Event 1 was a free-selection event.
+
+The normal High/Middle/Low tier-balance restrictions did not apply.
+
+The only relevant Event 1 constraints were:
+
+- the £10.00 starting budget
+- any player's chosen Season Long Driver, where applicable
+
+Therefore Event 1 should be excluded from High/Middle/Low selection statistics.
+
+Tier-based selection statistics begin from Event 2.
