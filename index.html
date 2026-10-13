@@ -13,7 +13,38 @@
 </head>
 
 
-<body>
+<body class="final-results-lock">
+  <section class="finalResultsGate" id="final-results-gate" aria-labelledby="final-results-title">
+    <div class="finalResultsGate__lights" aria-hidden="true"></div>
+    <div class="finalResultsGate__card">
+      <div class="finalResultsGate__flag" aria-hidden="true"></div>
+      <div class="finalResultsGate__eyebrow">2026 SEASON FINALE</div>
+      <div class="finalResultsGate__trophy" aria-hidden="true">🏆</div>
+      <h1 id="final-results-title">Final results are being entered</h1>
+      <p class="finalResultsGate__lead">The chequered flag has fallen. The last points, prizes and championship positions are now being confirmed.</p>
+      <div class="finalResultsGate__notice">
+        <span class="finalResultsGate__noticeIcon" aria-hidden="true">📣</span>
+        <span>Please wait for the WhatsApp announcement before returning.</span>
+      </div>
+      <div class="finalResultsGate__rule" aria-hidden="true"><span></span></div>
+      <p class="finalResultsGate__footnote">Dan's Family &amp; Friends BTCC Fantasy League</p>
+
+      <button class="finalResultsGate__adminToggle" id="final-results-admin-toggle" type="button" aria-expanded="false" aria-controls="final-results-admin-panel">
+        League admin access
+      </button>
+      <div class="finalResultsGate__adminPanel" id="final-results-admin-panel" hidden>
+        <form id="final-results-admin-form">
+          <label for="final-results-admin-email">Email</label>
+          <input id="final-results-admin-email" type="email" autocomplete="email" required>
+          <label for="final-results-admin-password">Password</label>
+          <input id="final-results-admin-password" type="password" autocomplete="current-password" required>
+          <button type="submit">Open admin site</button>
+          <div class="finalResultsGate__adminStatus" id="final-results-admin-status" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <div id="app-shell">
 
   <div class="raceBanner"></div>
