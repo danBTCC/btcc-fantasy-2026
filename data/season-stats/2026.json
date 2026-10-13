@@ -1,0 +1,6859 @@
+{
+  "schemaVersion": 1,
+  "season": 2026,
+  "playerOrder": [
+    "amy",
+    "daniel",
+    "ellie-c",
+    "ellie-m",
+    "ezra",
+    "fliss",
+    "immie",
+    "izzy",
+    "jake",
+    "kaitlin-rose",
+    "kelsey",
+    "maddie",
+    "olly",
+    "rhys",
+    "steve",
+    "sue",
+    "tegan-aurora",
+    "vicky",
+    "yvonne"
+  ],
+  "players": {
+    "amy": {
+      "name": "Amy",
+      "fantasyTeamName": "Track Limits, Optional",
+      "championship": {
+        "position": 13,
+        "points": 1791,
+        "gapToChampion": 302,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 0,
+        "eventPodiums": 1,
+        "top6Finishes": 3,
+        "averageEventScore": 179.1,
+        "averageEventPosition": 10.8,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 214
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "score": 133
+          }
+        ],
+        "longestTop6Streak": 1,
+        "longestPodiumStreak": 1
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 16,
+        "bestPosition": 13,
+        "lowestPosition": 18,
+        "biggestPositionGain": {
+          "positions": 4,
+          "transitions": [
+            {
+              "fromEventNumber": 4,
+              "toEventNumber": 5,
+              "fromPosition": 17,
+              "toPosition": 13,
+              "positions": 4
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 2,
+          "transitions": [
+            {
+              "fromEventNumber": 1,
+              "toEventNumber": 2,
+              "fromPosition": 16,
+              "toPosition": 18,
+              "positions": 2
+            }
+          ]
+        },
+        "finalPosition": 13,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 16
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 18
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 18
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 17
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 13
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 14
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 15
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 16
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 15
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 13
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 59,
+          "race1": 632,
+          "race2": 588,
+          "race3": 512
+        },
+        "averages": {
+          "qualifying": 5.9,
+          "race1": 63.2,
+          "race2": 58.8,
+          "race3": 51.2
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 1,
+          "race1": 0,
+          "race2": 0,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race2",
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 85
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 51,
+        "differentDriversUsed": 23,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "aron-taylorsmith",
+            "driverName": "Aron Taylor-Smith",
+            "selections": 5
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "dan-cammish",
+            "driverName": "Dan Cammish",
+            "points": 192
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "josh-cook",
+            "driverName": "Josh Cook",
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "points": 67
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "dan-cammish",
+              "driverName": "Dan Cammish",
+              "selections": 4
+            },
+            {
+              "driverId": "tom-ingram",
+              "driverName": "Tom Ingram",
+              "selections": 4
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aron-taylorsmith",
+              "driverName": "Aron Taylor-Smith",
+              "selections": 4
+            }
+          ],
+          "low": [
+            {
+              "driverId": "lewis-selby",
+              "driverName": "Lewis Selby",
+              "selections": 4
+            }
+          ]
+        },
+        "averageTeamSize": 5.1,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 9
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 5,
+          "totalPoints": 175,
+          "averagePoints": 35,
+          "bestSelections": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 65
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 2,
+          "totalPoints": 115,
+          "averagePoints": 57.5,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 58
+            }
+          ]
+        },
+        "totalSelections": 7
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.69,
+        "highestBaseBudget": 10,
+        "lowestBaseBudget": 9.55,
+        "overallBaseBudgetChange": -0.31,
+        "averageTeamSpend": 9.61,
+        "averageUnusedBudget": 0.26,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "unusedBudget": 0
+          }
+        ],
+        "exactBudgetEvents": 1,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.09,
+          "events": [
+            {
+              "eventNumber": 10,
+              "eventName": "Brands Hatch (GP)",
+              "entered": true,
+              "startingBudget": 9.6,
+              "budgetAfterEvent": 9.69,
+              "change": 0.09
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.17,
+          "events": [
+            {
+              "eventNumber": 4,
+              "eventName": "Oulton Park",
+              "entered": true,
+              "startingBudget": 9.86,
+              "budgetAfterEvent": 9.69,
+              "change": -0.17
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 178.5,
+        "eventScoreRange": 81,
+        "populationStandardDeviation": 26.67
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 8,
+          "points": 607
+        },
+        "race1": {
+          "position": 7,
+          "points": 73
+        },
+        "race2": {
+          "position": 2,
+          "points": 85
+        },
+        "race3": {
+          "position": 12,
+          "points": 43
+        },
+        "manufacturer": {
+          "position": 10,
+          "points": 191
+        },
+        "independents": {
+          "position": 15,
+          "points": 111
+        },
+        "jackSears": {
+          "position": 2,
+          "points": 58
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_3",
+        "name": "Track Limits, Optional",
+        "position": 4,
+        "points": 5378
+      },
+      "pitStopPot": {
+        "totalWon": 10.3,
+        "earningsRank": 15,
+        "payoutRounds": 9,
+        "biggestPayouts": [
+          {
+            "roundNumber": 30,
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "amount": 1.7
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "daniel": {
+      "name": "Daniel",
+      "fantasyTeamName": null,
+      "championship": {
+        "position": 2,
+        "points": 2030,
+        "gapToChampion": 63,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 1,
+        "eventPodiums": 3,
+        "top6Finishes": 7,
+        "averageEventScore": 203,
+        "averageEventPosition": 5.5,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 238
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "score": 141
+          }
+        ],
+        "longestTop6Streak": 3,
+        "longestPodiumStreak": 2
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 1,
+        "bestPosition": 1,
+        "lowestPosition": 2,
+        "biggestPositionGain": {
+          "positions": 0,
+          "transitions": []
+        },
+        "biggestPositionLoss": {
+          "positions": 1,
+          "transitions": [
+            {
+              "fromEventNumber": 6,
+              "toEventNumber": 7,
+              "fromPosition": 1,
+              "toPosition": 2,
+              "positions": 1
+            }
+          ]
+        },
+        "finalPosition": 2,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 1
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 1
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 1
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 1
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 1
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 1
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 2
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 2
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 2
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 2
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 57,
+          "race1": 689,
+          "race2": 662,
+          "race3": 622
+        },
+        "averages": {
+          "qualifying": 5.7,
+          "race1": 68.9,
+          "race2": 66.2,
+          "race3": 62.2
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 0,
+          "race1": 1,
+          "race2": 1,
+          "race3": 3
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race3",
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 88
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 54,
+        "differentDriversUsed": 20,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "dan-cammish",
+            "driverName": "Dan Cammish",
+            "selections": 5
+          },
+          {
+            "driverId": "mikey-doble",
+            "driverName": "Mikey Doble",
+            "selections": 5
+          },
+          {
+            "driverId": "ricky-collard",
+            "driverName": "Ricky Collard",
+            "selections": 5
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "dan-cammish",
+            "driverName": "Dan Cammish",
+            "points": 251
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "adam-morgan",
+            "driverName": "Adam Morgan",
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "points": 71
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "dan-cammish",
+              "driverName": "Dan Cammish",
+              "selections": 5
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "ricky-collard",
+              "driverName": "Ricky Collard",
+              "selections": 3
+            }
+          ],
+          "low": [
+            {
+              "driverId": "daniel-lloyd",
+              "driverName": "Daniel Lloyd",
+              "selections": 3
+            }
+          ]
+        },
+        "averageTeamSize": 5.4,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 6
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 6,
+          "totalPoints": 170,
+          "averagePoints": 28.33,
+          "bestSelections": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 65
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 0,
+          "totalPoints": 0,
+          "averagePoints": null,
+          "bestSelections": []
+        },
+        "totalSelections": 6
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 10.31,
+        "highestBaseBudget": 10.55,
+        "lowestBaseBudget": 10,
+        "overallBaseBudgetChange": 0.31,
+        "averageTeamSpend": 10.1,
+        "averageUnusedBudget": 0.22,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "unusedBudget": 0
+          }
+        ],
+        "exactBudgetEvents": 1,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.27,
+          "events": [
+            {
+              "eventNumber": 1,
+              "eventName": "Donington Park (National)",
+              "entered": true,
+              "startingBudget": 10,
+              "budgetAfterEvent": 10.27,
+              "change": 0.27
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.34,
+          "events": [
+            {
+              "eventNumber": 7,
+              "eventName": "Donington Park (GP)",
+              "entered": true,
+              "startingBudget": 10.49,
+              "budgetAfterEvent": 10.15,
+              "change": -0.34
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 206.5,
+        "eventScoreRange": 97,
+        "populationStandardDeviation": 24.36
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 1,
+          "points": 663
+        },
+        "race1": {
+          "position": 6,
+          "points": 74
+        },
+        "race2": {
+          "position": 10,
+          "points": 71
+        },
+        "race3": {
+          "position": 8,
+          "points": 56
+        },
+        "manufacturer": {
+          "position": 6,
+          "points": 196
+        },
+        "independents": {
+          "position": 2,
+          "points": 158
+        },
+        "jackSears": {
+          "position": 12,
+          "points": 35
+        }
+      },
+      "fantasyTeam": null,
+      "pitStopPot": {
+        "totalWon": 20.55,
+        "earningsRank": 3,
+        "payoutRounds": 13,
+        "biggestPayouts": [
+          {
+            "roundNumber": 30,
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "amount": 2.4
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "ellie-c": {
+      "name": "Ellie C",
+      "fantasyTeamName": "Reverse Drawn",
+      "championship": {
+        "position": 11,
+        "points": 1802,
+        "gapToChampion": 291,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 0,
+        "eventPodiums": 1,
+        "top6Finishes": 2,
+        "averageEventScore": 180.2,
+        "averageEventPosition": 10.5,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 241
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "score": 113
+          }
+        ],
+        "longestTop6Streak": 1,
+        "longestPodiumStreak": 1
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 19,
+        "bestPosition": 11,
+        "lowestPosition": 19,
+        "biggestPositionGain": {
+          "positions": 6,
+          "transitions": [
+            {
+              "fromEventNumber": 3,
+              "toEventNumber": 4,
+              "fromPosition": 19,
+              "toPosition": 13,
+              "positions": 6
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 5,
+          "transitions": [
+            {
+              "fromEventNumber": 2,
+              "toEventNumber": 3,
+              "fromPosition": 14,
+              "toPosition": 19,
+              "positions": 5
+            }
+          ]
+        },
+        "finalPosition": 11,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 19
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 14
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 19
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 13
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 16
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 15
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 17
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 17
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 13
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 11
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 44,
+          "race1": 555,
+          "race2": 599,
+          "race3": 604
+        },
+        "averages": {
+          "qualifying": 4.4,
+          "race1": 55.5,
+          "race2": 59.9,
+          "race3": 60.4
+        },
+        "strongestSessions": [
+          "race3"
+        ],
+        "wins": {
+          "qualifying": 0,
+          "race1": 0,
+          "race2": 0,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race3",
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 84
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 50,
+        "differentDriversUsed": 20,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "adam-morgan",
+            "driverName": "Adam Morgan",
+            "selections": 6
+          },
+          {
+            "driverId": "aiden-moffatt",
+            "driverName": "Aiden Moffatt",
+            "selections": 6
+          },
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "selections": 6
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "points": 371
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "adam-morgan",
+            "driverName": "Adam Morgan",
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "points": 71
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "selections": 6
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "selections": 4
+            },
+            {
+              "driverId": "aron-taylorsmith",
+              "driverName": "Aron Taylor-Smith",
+              "selections": 4
+            }
+          ],
+          "low": [
+            {
+              "driverId": "lewis-gilbert",
+              "driverName": "Lewis Gilbert",
+              "selections": 4
+            }
+          ]
+        },
+        "averageTeamSize": 5,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 8
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 6,
+          "totalPoints": 224,
+          "averagePoints": 37.33,
+          "bestSelections": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 65
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 6,
+          "totalPoints": 371,
+          "averagePoints": 61.83,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 69
+            },
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 5,
+              "eventName": "Thruxton",
+              "points": 69
+            }
+          ]
+        },
+        "totalSelections": 12
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.81,
+        "highestBaseBudget": 10,
+        "lowestBaseBudget": 9.58,
+        "overallBaseBudgetChange": -0.19,
+        "averageTeamSpend": 9.47,
+        "averageUnusedBudget": 0.43,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "unusedBudget": 0.01
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.2,
+          "events": [
+            {
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "entered": true,
+              "startingBudget": 9.58,
+              "budgetAfterEvent": 9.78,
+              "change": 0.2
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.26,
+          "events": [
+            {
+              "eventNumber": 1,
+              "eventName": "Donington Park (National)",
+              "entered": true,
+              "startingBudget": 10,
+              "budgetAfterEvent": 9.74,
+              "change": -0.26
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 182.5,
+        "eventScoreRange": 128,
+        "populationStandardDeviation": 32.33
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 17,
+          "points": 528
+        },
+        "race1": {
+          "position": 13,
+          "points": 58
+        },
+        "race2": {
+          "position": 16,
+          "points": 56
+        },
+        "race3": {
+          "position": 3,
+          "points": 82
+        },
+        "manufacturer": {
+          "position": 9,
+          "points": 192
+        },
+        "independents": {
+          "position": 11,
+          "points": 117
+        },
+        "jackSears": {
+          "position": 9,
+          "points": 41
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_6",
+        "name": "Reverse Drawn",
+        "position": 1,
+        "points": 5734
+      },
+      "pitStopPot": {
+        "totalWon": 13.8,
+        "earningsRank": 7,
+        "payoutRounds": 8,
+        "biggestPayouts": [
+          {
+            "roundNumber": 30,
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "amount": 4
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "ellie-m": {
+      "name": "Ellie M",
+      "fantasyTeamName": "Yellow Flagged It",
+      "championship": {
+        "position": 5,
+        "points": 1874,
+        "gapToChampion": 219,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 1,
+        "eventPodiums": 2,
+        "top6Finishes": 4,
+        "averageEventScore": 187.4,
+        "averageEventPosition": 8.4,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "score": 214
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "score": 148
+          }
+        ],
+        "longestTop6Streak": 3,
+        "longestPodiumStreak": 1
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 8,
+        "bestPosition": 2,
+        "lowestPosition": 8,
+        "biggestPositionGain": {
+          "positions": 4,
+          "transitions": [
+            {
+              "fromEventNumber": 1,
+              "toEventNumber": 2,
+              "fromPosition": 8,
+              "toPosition": 4,
+              "positions": 4
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 3,
+          "transitions": [
+            {
+              "fromEventNumber": 6,
+              "toEventNumber": 7,
+              "fromPosition": 3,
+              "toPosition": 6,
+              "positions": 3
+            }
+          ]
+        },
+        "finalPosition": 5,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 8
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 4
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 3
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 2
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 3
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 3
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 6
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 4
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 4
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 5
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 63,
+          "race1": 641,
+          "race2": 605,
+          "race3": 565
+        },
+        "averages": {
+          "qualifying": 6.3,
+          "race1": 64.1,
+          "race2": 60.5,
+          "race3": 56.5
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 2,
+          "race1": 1,
+          "race2": 0,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race1",
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "score": 82
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 51,
+        "differentDriversUsed": 21,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "dan-cammish",
+            "driverName": "Dan Cammish",
+            "selections": 5
+          },
+          {
+            "driverId": "tom-ingram",
+            "driverName": "Tom Ingram",
+            "selections": 5
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "dan-cammish",
+            "driverName": "Dan Cammish",
+            "points": 251
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "dan-cammish",
+            "driverName": "Dan Cammish",
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "points": 65
+          },
+          {
+            "driverId": "dan-rowbottom",
+            "driverName": "Dan Rowbottom",
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "points": 65
+          },
+          {
+            "driverId": "aiden-moffatt",
+            "driverName": "Aiden Moffatt",
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "points": 65
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "dan-cammish",
+              "driverName": "Dan Cammish",
+              "selections": 5
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aron-taylorsmith",
+              "driverName": "Aron Taylor-Smith",
+              "selections": 3
+            }
+          ],
+          "low": [
+            {
+              "driverId": "james-dorlin",
+              "driverName": "James Dorlin",
+              "selections": 2
+            },
+            {
+              "driverId": "sam-osbourne",
+              "driverName": "Sam Osbourne",
+              "selections": 2
+            }
+          ]
+        },
+        "averageTeamSize": 5.1,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 9
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 9,
+          "totalPoints": 290,
+          "averagePoints": 32.22,
+          "bestSelections": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 65
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 0,
+          "totalPoints": 0,
+          "averagePoints": null,
+          "bestSelections": []
+        },
+        "totalSelections": 9
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.7,
+        "highestBaseBudget": 10.24,
+        "lowestBaseBudget": 9.69,
+        "overallBaseBudgetChange": -0.3,
+        "averageTeamSpend": 9.78,
+        "averageUnusedBudget": 0.24,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "unusedBudget": 0
+          }
+        ],
+        "exactBudgetEvents": 1,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.15,
+          "events": [
+            {
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "entered": true,
+              "startingBudget": 10.05,
+              "budgetAfterEvent": 10.2,
+              "change": 0.15
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.27,
+          "events": [
+            {
+              "eventNumber": 7,
+              "eventName": "Donington Park (GP)",
+              "entered": true,
+              "startingBudget": 9.96,
+              "budgetAfterEvent": 9.69,
+              "change": -0.27
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 187.5,
+        "eventScoreRange": 66,
+        "populationStandardDeviation": 18.43
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 2,
+          "points": 661
+        },
+        "race1": {
+          "position": 14,
+          "points": 55
+        },
+        "race2": {
+          "position": 11,
+          "points": 71
+        },
+        "race3": {
+          "position": 7,
+          "points": 60
+        },
+        "manufacturer": {
+          "position": 6,
+          "points": 196
+        },
+        "independents": {
+          "position": 9,
+          "points": 122
+        },
+        "jackSears": {
+          "position": 8,
+          "points": 42
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_2",
+        "name": "Yellow Flagged It",
+        "position": 3,
+        "points": 5432
+      },
+      "pitStopPot": {
+        "totalWon": 11.4,
+        "earningsRank": 11,
+        "payoutRounds": 6,
+        "biggestPayouts": [
+          {
+            "roundNumber": 10,
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "amount": 3
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "ezra": {
+      "name": "Ezra",
+      "fantasyTeamName": "The Tyre Stackers",
+      "championship": {
+        "position": 14,
+        "points": 1780,
+        "gapToChampion": 313,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 0,
+        "eventPodiums": 1,
+        "top6Finishes": 4,
+        "averageEventScore": 178,
+        "averageEventPosition": 10.1,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 229
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 126
+          }
+        ],
+        "longestTop6Streak": 2,
+        "longestPodiumStreak": 1
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 4,
+        "bestPosition": 2,
+        "lowestPosition": 14,
+        "biggestPositionGain": {
+          "positions": 2,
+          "transitions": [
+            {
+              "fromEventNumber": 1,
+              "toEventNumber": 2,
+              "fromPosition": 4,
+              "toPosition": 2,
+              "positions": 2
+            },
+            {
+              "fromEventNumber": 8,
+              "toEventNumber": 9,
+              "fromPosition": 10,
+              "toPosition": 8,
+              "positions": 2
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 6,
+          "transitions": [
+            {
+              "fromEventNumber": 9,
+              "toEventNumber": 10,
+              "fromPosition": 8,
+              "toPosition": 14,
+              "positions": 6
+            }
+          ]
+        },
+        "finalPosition": 14,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 4
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 2
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 4
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 5
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 5
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 5
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 5
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 10
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 8
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 14
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 36,
+          "race1": 590,
+          "race2": 619,
+          "race3": 535
+        },
+        "averages": {
+          "qualifying": 3.6,
+          "race1": 59,
+          "race2": 61.9,
+          "race3": 53.5
+        },
+        "strongestSessions": [
+          "race2"
+        ],
+        "wins": {
+          "qualifying": 0,
+          "race1": 1,
+          "race2": 1,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race1",
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 87
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 50,
+        "differentDriversUsed": 20,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "aron-taylorsmith",
+            "driverName": "Aron Taylor-Smith",
+            "selections": 10
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "aron-taylorsmith",
+            "driverName": "Aron Taylor-Smith",
+            "points": 305
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "dan-cammish",
+            "driverName": "Dan Cammish",
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "points": 65
+          },
+          {
+            "driverId": "aiden-moffatt",
+            "driverName": "Aiden Moffatt",
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "points": 65
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "charles-rainford",
+              "driverName": "Charles Rainford",
+              "selections": 4
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aron-taylorsmith",
+              "driverName": "Aron Taylor-Smith",
+              "selections": 9
+            }
+          ],
+          "low": [
+            {
+              "driverId": "daniel-lloyd",
+              "driverName": "Daniel Lloyd",
+              "selections": 2
+            }
+          ]
+        },
+        "averageTeamSize": 5,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 10
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": {
+          "driverId": "aron-taylorsmith",
+          "driverName": "Aron Taylor-Smith"
+        },
+        "eventsUsed": 10,
+        "totalPoints": 305,
+        "averagePoints": 30.5,
+        "bestEvents": [
+          {
+            "driverId": "aron-taylorsmith",
+            "driverName": "Aron Taylor-Smith",
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "points": 55
+          }
+        ]
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 5,
+          "totalPoints": 208,
+          "averagePoints": 41.6,
+          "bestSelections": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 65
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 2,
+          "totalPoints": 111,
+          "averagePoints": 55.5,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 6,
+              "eventName": "Knockhill",
+              "points": 57
+            }
+          ]
+        },
+        "totalSelections": 7
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.62,
+        "highestBaseBudget": 10.25,
+        "lowestBaseBudget": 9.62,
+        "overallBaseBudgetChange": -0.38,
+        "averageTeamSpend": 9.83,
+        "averageUnusedBudget": 0.26,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "unusedBudget": 0.08
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.16,
+          "events": [
+            {
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "entered": true,
+              "startingBudget": 9.75,
+              "budgetAfterEvent": 9.91,
+              "change": 0.16
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.29,
+          "events": [
+            {
+              "eventNumber": 10,
+              "eventName": "Brands Hatch (GP)",
+              "entered": true,
+              "startingBudget": 9.91,
+              "budgetAfterEvent": 9.62,
+              "change": -0.29
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 173.5,
+        "eventScoreRange": 103,
+        "populationStandardDeviation": 29.89
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 9,
+          "points": 597
+        },
+        "race1": {
+          "position": 19,
+          "points": 34
+        },
+        "race2": {
+          "position": 17,
+          "points": 55
+        },
+        "race3": {
+          "position": 14,
+          "points": 37
+        },
+        "manufacturer": {
+          "position": 19,
+          "points": 138
+        },
+        "independents": {
+          "position": 1,
+          "points": 165
+        },
+        "jackSears": {
+          "position": 17,
+          "points": 27
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_5",
+        "name": "The Tyre Stackers",
+        "position": 6,
+        "points": 5146
+      },
+      "pitStopPot": {
+        "totalWon": 13.4,
+        "earningsRank": 9,
+        "payoutRounds": 9,
+        "biggestPayouts": [
+          {
+            "roundNumber": 20,
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "amount": 2.4
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "fliss": {
+      "name": "Fliss",
+      "fantasyTeamName": "The Kerb Crawlers",
+      "championship": {
+        "position": 8,
+        "points": 1843,
+        "gapToChampion": 250,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 0,
+        "eventPodiums": 3,
+        "top6Finishes": 3,
+        "averageEventScore": 184.3,
+        "averageEventPosition": 10.9,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 257
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "score": 106
+          }
+        ],
+        "longestTop6Streak": 1,
+        "longestPodiumStreak": 1
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 3,
+        "bestPosition": 3,
+        "lowestPosition": 17,
+        "biggestPositionGain": {
+          "positions": 6,
+          "transitions": [
+            {
+              "fromEventNumber": 9,
+              "toEventNumber": 10,
+              "fromPosition": 14,
+              "toPosition": 8,
+              "positions": 6
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 10,
+          "transitions": [
+            {
+              "fromEventNumber": 1,
+              "toEventNumber": 2,
+              "fromPosition": 3,
+              "toPosition": 13,
+              "positions": 10
+            }
+          ]
+        },
+        "finalPosition": 8,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 3
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 13
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 14
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 15
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 15
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 17
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 12
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 13
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 14
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 8
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 60,
+          "race1": 615,
+          "race2": 585,
+          "race3": 583
+        },
+        "averages": {
+          "qualifying": 6,
+          "race1": 61.5,
+          "race2": 58.5,
+          "race3": 58.3
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 1,
+          "race1": 0,
+          "race2": 1,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race2",
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 88
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 47,
+        "differentDriversUsed": 21,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "selections": 7
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "points": 441
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "points": 69
+          },
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "points": 69
+          },
+          {
+            "driverId": "adam-morgan",
+            "driverName": "Adam Morgan",
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "points": 69
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "selections": 6
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "adam-morgan",
+              "driverName": "Adam Morgan",
+              "selections": 3
+            },
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "selections": 3
+            },
+            {
+              "driverId": "chris-smiley",
+              "driverName": "Chris Smiley",
+              "selections": 3
+            }
+          ],
+          "low": [
+            {
+              "driverId": "lewis-gilbert",
+              "driverName": "Lewis Gilbert",
+              "selections": 3
+            }
+          ]
+        },
+        "averageTeamSize": 4.7,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 8
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 2,
+          "totalPoints": 39,
+          "averagePoints": 19.5,
+          "bestSelections": [
+            {
+              "driverId": "chris-smiley",
+              "driverName": "Chris Smiley",
+              "eventNumber": 7,
+              "eventName": "Donington Park (GP)",
+              "points": 22
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 6,
+          "totalPoints": 377,
+          "averagePoints": 62.83,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 69
+            },
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 5,
+              "eventName": "Thruxton",
+              "points": 69
+            }
+          ]
+        },
+        "totalSelections": 8
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 10.31,
+        "highestBaseBudget": 10.32,
+        "lowestBaseBudget": 10,
+        "overallBaseBudgetChange": 0.31,
+        "averageTeamSpend": 9.39,
+        "averageUnusedBudget": 0.92,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "unusedBudget": 0.01
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.31,
+          "events": [
+            {
+              "eventNumber": 1,
+              "eventName": "Donington Park (National)",
+              "entered": true,
+              "startingBudget": 10,
+              "budgetAfterEvent": 10.31,
+              "change": 0.31
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.23,
+          "events": [
+            {
+              "eventNumber": 6,
+              "eventName": "Knockhill",
+              "entered": true,
+              "startingBudget": 10.27,
+              "budgetAfterEvent": 10.04,
+              "change": -0.23
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 182.5,
+        "eventScoreRange": 151,
+        "populationStandardDeviation": 38.14
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 13,
+          "points": 588
+        },
+        "race1": {
+          "position": 3,
+          "points": 86
+        },
+        "race2": {
+          "position": 1,
+          "points": 88
+        },
+        "race3": {
+          "position": 4,
+          "points": 73
+        },
+        "manufacturer": {
+          "position": 12,
+          "points": 188
+        },
+        "independents": {
+          "position": 7,
+          "points": 128
+        },
+        "jackSears": {
+          "position": 6,
+          "points": 46
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_4",
+        "name": "The Kerb Crawlers",
+        "position": 5,
+        "points": 5305
+      },
+      "pitStopPot": {
+        "totalWon": 18.05,
+        "earningsRank": 5,
+        "payoutRounds": 11,
+        "biggestPayouts": [
+          {
+            "roundNumber": 20,
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "amount": 3.75
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "immie": {
+      "name": "Immie",
+      "fantasyTeamName": "Yellow Flagged It",
+      "championship": {
+        "position": 15,
+        "points": 1741,
+        "gapToChampion": 352,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 0,
+        "eventPodiums": 0,
+        "top6Finishes": 3,
+        "averageEventScore": 174.1,
+        "averageEventPosition": 11.8,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "score": 204
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "score": 141
+          }
+        ],
+        "longestTop6Streak": 2,
+        "longestPodiumStreak": 0
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 6,
+        "bestPosition": 6,
+        "lowestPosition": 16,
+        "biggestPositionGain": {
+          "positions": 1,
+          "transitions": [
+            {
+              "fromEventNumber": 5,
+              "toEventNumber": 6,
+              "fromPosition": 14,
+              "toPosition": 13,
+              "positions": 1
+            },
+            {
+              "fromEventNumber": 9,
+              "toEventNumber": 10,
+              "fromPosition": 16,
+              "toPosition": 15,
+              "positions": 1
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 4,
+          "transitions": [
+            {
+              "fromEventNumber": 4,
+              "toEventNumber": 5,
+              "fromPosition": 10,
+              "toPosition": 14,
+              "positions": 4
+            }
+          ]
+        },
+        "finalPosition": 15,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 6
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 7
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 9
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 10
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 14
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 13
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 14
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 14
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 16
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 15
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 47,
+          "race1": 577,
+          "race2": 570,
+          "race3": 547
+        },
+        "averages": {
+          "qualifying": 4.7,
+          "race1": 57.7,
+          "race2": 57,
+          "race3": 54.7
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 1,
+          "race1": 0,
+          "race2": 1,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race2",
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "score": 85
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 45,
+        "differentDriversUsed": 17,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "gordon-shedden",
+            "driverName": "Gordon Shedden",
+            "selections": 10
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "points": 433
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "adam-morgan",
+            "driverName": "Adam Morgan",
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "points": 71
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "selections": 6
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "gordon-shedden",
+              "driverName": "Gordon Shedden",
+              "selections": 7
+            }
+          ],
+          "low": [
+            {
+              "driverId": "sam-osbourne",
+              "driverName": "Sam Osbourne",
+              "selections": 4
+            }
+          ]
+        },
+        "averageTeamSize": 4.5,
+        "mostCommonTeamSizes": [
+          {
+            "size": 4,
+            "events": 5
+          },
+          {
+            "size": 5,
+            "events": 5
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": {
+          "driverId": "gordon-shedden",
+          "driverName": "Gordon Shedden"
+        },
+        "eventsUsed": 10,
+        "totalPoints": 385,
+        "averagePoints": 38.5,
+        "bestEvents": [
+          {
+            "driverId": "gordon-shedden",
+            "driverName": "Gordon Shedden",
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "points": 52
+          }
+        ]
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 5,
+          "totalPoints": 161,
+          "averagePoints": 32.2,
+          "bestSelections": [
+            {
+              "driverId": "tom-ingram",
+              "driverName": "Tom Ingram",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 60
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 6,
+          "totalPoints": 369,
+          "averagePoints": 61.5,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 69
+            },
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 5,
+              "eventName": "Thruxton",
+              "points": 69
+            }
+          ]
+        },
+        "totalSelections": 11
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.88,
+        "highestBaseBudget": 10.12,
+        "lowestBaseBudget": 9.88,
+        "overallBaseBudgetChange": -0.12,
+        "averageTeamSpend": 9.47,
+        "averageUnusedBudget": 0.68,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "unusedBudget": 0.01
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.1,
+          "events": [
+            {
+              "eventNumber": 1,
+              "eventName": "Donington Park (National)",
+              "entered": true,
+              "startingBudget": 10,
+              "budgetAfterEvent": 10.1,
+              "change": 0.1
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.12,
+          "events": [
+            {
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "entered": true,
+              "startingBudget": 10.03,
+              "budgetAfterEvent": 9.91,
+              "change": -0.12
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 176.5,
+        "eventScoreRange": 63,
+        "populationStandardDeviation": 15.9
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 16,
+          "points": 552
+        },
+        "race1": {
+          "position": 16,
+          "points": 44
+        },
+        "race2": {
+          "position": 18,
+          "points": 54
+        },
+        "race3": {
+          "position": 5,
+          "points": 72
+        },
+        "manufacturer": {
+          "position": 13,
+          "points": 187
+        },
+        "independents": {
+          "position": 13,
+          "points": 115
+        },
+        "jackSears": {
+          "position": 13,
+          "points": 34
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_2",
+        "name": "Yellow Flagged It",
+        "position": 3,
+        "points": 5432
+      },
+      "pitStopPot": {
+        "totalWon": 10.15,
+        "earningsRank": 16,
+        "payoutRounds": 6,
+        "biggestPayouts": [
+          {
+            "roundNumber": 30,
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "amount": 2.9
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "izzy": {
+      "name": "Izzy",
+      "fantasyTeamName": "The Kerb Crawlers",
+      "championship": {
+        "position": 18,
+        "points": 1543,
+        "gapToChampion": 550,
+        "eventsEntered": 8,
+        "eventsMissed": 2,
+        "eventWins": 1,
+        "eventPodiums": 2,
+        "top6Finishes": 5,
+        "averageEventScore": 192.88,
+        "averageEventPosition": 8.25,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 249
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "score": 150
+          }
+        ],
+        "longestTop6Streak": 2,
+        "longestPodiumStreak": 1
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 13,
+        "bestPosition": 9,
+        "lowestPosition": 19,
+        "biggestPositionGain": {
+          "positions": 3,
+          "transitions": [
+            {
+              "fromEventNumber": 1,
+              "toEventNumber": 2,
+              "fromPosition": 13,
+              "toPosition": 10,
+              "positions": 3
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 9,
+          "transitions": [
+            {
+              "fromEventNumber": 4,
+              "toEventNumber": 5,
+              "fromPosition": 9,
+              "toPosition": 18,
+              "positions": 9
+            }
+          ]
+        },
+        "finalPosition": 18,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 13
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 10
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 11
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 9
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 18
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 18
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 19
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 19
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 18
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 18
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 44,
+          "race1": 523,
+          "race2": 505,
+          "race3": 471
+        },
+        "averages": {
+          "qualifying": 5.5,
+          "race1": 65.38,
+          "race2": 63.13,
+          "race3": 58.88
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 0,
+          "race1": 1,
+          "race2": 1,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race1",
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "score": 87
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 40,
+        "differentDriversUsed": 21,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "aiden-moffatt",
+            "driverName": "Aiden Moffatt",
+            "selections": 4
+          },
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "selections": 4
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "points": 255
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "points": 69
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "selections": 3
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "selections": 4
+            }
+          ],
+          "low": [
+            {
+              "driverId": "max-buxton",
+              "driverName": "Max Buxton",
+              "selections": 2
+            },
+            {
+              "driverId": "ryan-bensley",
+              "driverName": "Ryan Bensley",
+              "selections": 2
+            }
+          ]
+        },
+        "averageTeamSize": 5,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 4
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 4,
+          "totalPoints": 148,
+          "averagePoints": 37,
+          "bestSelections": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 65
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 3,
+          "totalPoints": 191,
+          "averagePoints": 63.67,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 69
+            }
+          ]
+        },
+        "totalSelections": 7
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 10.39,
+        "highestBaseBudget": 10.39,
+        "lowestBaseBudget": 9.89,
+        "overallBaseBudgetChange": 0.39,
+        "averageTeamSpend": 9.47,
+        "averageUnusedBudget": 0.72,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "unusedBudget": 0
+          }
+        ],
+        "exactBudgetEvents": 1,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.21,
+          "events": [
+            {
+              "eventNumber": 8,
+              "eventName": "Croft",
+              "entered": true,
+              "startingBudget": 10.03,
+              "budgetAfterEvent": 10.24,
+              "change": 0.21
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.11,
+          "events": [
+            {
+              "eventNumber": 1,
+              "eventName": "Donington Park (National)",
+              "entered": true,
+              "startingBudget": 10,
+              "budgetAfterEvent": 9.89,
+              "change": -0.11
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 192.5,
+        "eventScoreRange": 99,
+        "populationStandardDeviation": 31.01
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 19,
+          "points": 486
+        },
+        "race1": {
+          "position": 9,
+          "points": 72
+        },
+        "race2": {
+          "position": 4,
+          "points": 77
+        },
+        "race3": {
+          "position": 9,
+          "points": 51
+        },
+        "manufacturer": {
+          "position": 18,
+          "points": 143
+        },
+        "independents": {
+          "position": 8,
+          "points": 127
+        },
+        "jackSears": {
+          "position": 4,
+          "points": 51
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_4",
+        "name": "The Kerb Crawlers",
+        "position": 5,
+        "points": 5305
+      },
+      "pitStopPot": {
+        "totalWon": 14.5,
+        "earningsRank": 6,
+        "payoutRounds": 8,
+        "biggestPayouts": [
+          {
+            "roundNumber": 10,
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "amount": 5
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "jake": {
+      "name": "Jake",
+      "fantasyTeamName": "The Tyre Stackers",
+      "championship": {
+        "position": 7,
+        "points": 1844,
+        "gapToChampion": 249,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 0,
+        "eventPodiums": 1,
+        "top6Finishes": 2,
+        "averageEventScore": 184.4,
+        "averageEventPosition": 9,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "score": 222
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 133
+          }
+        ],
+        "longestTop6Streak": 1,
+        "longestPodiumStreak": 1
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 2,
+        "bestPosition": 2,
+        "lowestPosition": 7,
+        "biggestPositionGain": {
+          "positions": 1,
+          "transitions": [
+            {
+              "fromEventNumber": 2,
+              "toEventNumber": 3,
+              "fromPosition": 3,
+              "toPosition": 2,
+              "positions": 1
+            },
+            {
+              "fromEventNumber": 7,
+              "toEventNumber": 8,
+              "fromPosition": 4,
+              "toPosition": 3,
+              "positions": 1
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 4,
+          "transitions": [
+            {
+              "fromEventNumber": 9,
+              "toEventNumber": 10,
+              "fromPosition": 3,
+              "toPosition": 7,
+              "positions": 4
+            }
+          ]
+        },
+        "finalPosition": 7,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 2
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 3
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 2
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 3
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 4
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 4
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 4
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 3
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 3
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 7
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 59,
+          "race1": 630,
+          "race2": 592,
+          "race3": 563
+        },
+        "averages": {
+          "qualifying": 5.9,
+          "race1": 63,
+          "race2": 59.2,
+          "race3": 56.3
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 2,
+          "race1": 2,
+          "race2": 0,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race1",
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "score": 80
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 50,
+        "differentDriversUsed": 18,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "charles-rainford",
+            "driverName": "Charles Rainford",
+            "selections": 10
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "charles-rainford",
+            "driverName": "Charles Rainford",
+            "points": 408
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "dan-cammish",
+            "driverName": "Dan Cammish",
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "points": 65
+          },
+          {
+            "driverId": "dan-rowbottom",
+            "driverName": "Dan Rowbottom",
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "points": 65
+          },
+          {
+            "driverId": "aiden-moffatt",
+            "driverName": "Aiden Moffatt",
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "points": 65
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "charles-rainford",
+              "driverName": "Charles Rainford",
+              "selections": 8
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aron-taylorsmith",
+              "driverName": "Aron Taylor-Smith",
+              "selections": 4
+            }
+          ],
+          "low": [
+            {
+              "driverId": "daniel-lloyd",
+              "driverName": "Daniel Lloyd",
+              "selections": 2
+            },
+            {
+              "driverId": "ryan-bensley",
+              "driverName": "Ryan Bensley",
+              "selections": 2
+            },
+            {
+              "driverId": "sam-osbourne",
+              "driverName": "Sam Osbourne",
+              "selections": 2
+            }
+          ]
+        },
+        "averageTeamSize": 5,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 10
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": {
+          "driverId": "charles-rainford",
+          "driverName": "Charles Rainford"
+        },
+        "eventsUsed": 10,
+        "totalPoints": 408,
+        "averagePoints": 40.8,
+        "bestEvents": [
+          {
+            "driverId": "charles-rainford",
+            "driverName": "Charles Rainford",
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "points": 60
+          }
+        ]
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 6,
+          "totalPoints": 194,
+          "averagePoints": 32.33,
+          "bestSelections": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 65
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 0,
+          "totalPoints": 0,
+          "averagePoints": null,
+          "bestSelections": []
+        },
+        "totalSelections": 6
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.93,
+        "highestBaseBudget": 10.32,
+        "lowestBaseBudget": 9.93,
+        "overallBaseBudgetChange": -0.07,
+        "averageTeamSpend": 9.75,
+        "averageUnusedBudget": 0.48,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "unusedBudget": 0.08
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.29,
+          "events": [
+            {
+              "eventNumber": 1,
+              "eventName": "Donington Park (National)",
+              "entered": true,
+              "startingBudget": 10,
+              "budgetAfterEvent": 10.29,
+              "change": 0.29
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.28,
+          "events": [
+            {
+              "eventNumber": 10,
+              "eventName": "Brands Hatch (GP)",
+              "entered": true,
+              "startingBudget": 10.21,
+              "budgetAfterEvent": 9.93,
+              "change": -0.28
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 187.5,
+        "eventScoreRange": 89,
+        "populationStandardDeviation": 26.17
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 3,
+          "points": 635
+        },
+        "race1": {
+          "position": 18,
+          "points": 37
+        },
+        "race2": {
+          "position": 19,
+          "points": 46
+        },
+        "race3": {
+          "position": 10,
+          "points": 50
+        },
+        "manufacturer": {
+          "position": 17,
+          "points": 154
+        },
+        "independents": {
+          "position": 3,
+          "points": 157
+        },
+        "jackSears": {
+          "position": 16,
+          "points": 30
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_5",
+        "name": "The Tyre Stackers",
+        "position": 6,
+        "points": 5146
+      },
+      "pitStopPot": {
+        "totalWon": 13.5,
+        "earningsRank": 8,
+        "payoutRounds": 8,
+        "biggestPayouts": [
+          {
+            "roundNumber": 20,
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "amount": 2.8
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "kaitlin-rose": {
+      "name": "Kaitlin-Rose",
+      "fantasyTeamName": "The Kerb Crawlers",
+      "championship": {
+        "position": 3,
+        "points": 1919,
+        "gapToChampion": 174,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 1,
+        "eventPodiums": 3,
+        "top6Finishes": 4,
+        "averageEventScore": 191.9,
+        "averageEventPosition": 8.5,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 262
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "score": 137
+          }
+        ],
+        "longestTop6Streak": 3,
+        "longestPodiumStreak": 1
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 15,
+        "bestPosition": 3,
+        "lowestPosition": 19,
+        "biggestPositionGain": {
+          "positions": 5,
+          "transitions": [
+            {
+              "fromEventNumber": 3,
+              "toEventNumber": 4,
+              "fromPosition": 16,
+              "toPosition": 11,
+              "positions": 5
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 4,
+          "transitions": [
+            {
+              "fromEventNumber": 1,
+              "toEventNumber": 2,
+              "fromPosition": 15,
+              "toPosition": 19,
+              "positions": 4
+            }
+          ]
+        },
+        "finalPosition": 3,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 15
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 19
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 16
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 11
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 7
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 9
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 7
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 6
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 6
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 3
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 71,
+          "race1": 620,
+          "race2": 613,
+          "race3": 615
+        },
+        "averages": {
+          "qualifying": 7.1,
+          "race1": 62,
+          "race2": 61.3,
+          "race3": 61.5
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 0,
+          "race1": 1,
+          "race2": 1,
+          "race3": 1
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race3",
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 89
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 48,
+        "differentDriversUsed": 22,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "adam-morgan",
+            "driverName": "Adam Morgan",
+            "selections": 4
+          },
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "selections": 4
+          },
+          {
+            "driverId": "chris-smiley",
+            "driverName": "Chris Smiley",
+            "selections": 4
+          },
+          {
+            "driverId": "dan-rowbottom",
+            "driverName": "Dan Rowbottom",
+            "selections": 4
+          },
+          {
+            "driverId": "josh-cook",
+            "driverName": "Josh Cook",
+            "selections": 4
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "points": 265
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "points": 69
+          },
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "points": 69
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "selections": 3
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aron-taylorsmith",
+              "driverName": "Aron Taylor-Smith",
+              "selections": 3
+            },
+            {
+              "driverId": "chris-smiley",
+              "driverName": "Chris Smiley",
+              "selections": 3
+            },
+            {
+              "driverId": "josh-cook",
+              "driverName": "Josh Cook",
+              "selections": 3
+            }
+          ],
+          "low": [
+            {
+              "driverId": "sam-osbourne",
+              "driverName": "Sam Osbourne",
+              "selections": 2
+            }
+          ]
+        },
+        "averageTeamSize": 4.8,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 8
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 3,
+          "totalPoints": 90,
+          "averagePoints": 30,
+          "bestSelections": [
+            {
+              "driverId": "adam-morgan",
+              "driverName": "Adam Morgan",
+              "eventNumber": 3,
+              "eventName": "Snetterton 300",
+              "points": 44
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 3,
+          "totalPoints": 201,
+          "averagePoints": 67,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 69
+            },
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 5,
+              "eventName": "Thruxton",
+              "points": 69
+            }
+          ]
+        },
+        "totalSelections": 6
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 10.22,
+        "highestBaseBudget": 10.22,
+        "lowestBaseBudget": 9.69,
+        "overallBaseBudgetChange": 0.22,
+        "averageTeamSpend": 9.74,
+        "averageUnusedBudget": 0.25,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "unusedBudget": 0
+          }
+        ],
+        "exactBudgetEvents": 1,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.3,
+          "events": [
+            {
+              "eventNumber": 10,
+              "eventName": "Brands Hatch (GP)",
+              "entered": true,
+              "startingBudget": 9.92,
+              "budgetAfterEvent": 10.22,
+              "change": 0.3
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.16,
+          "events": [
+            {
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "entered": true,
+              "startingBudget": 9.85,
+              "budgetAfterEvent": 9.69,
+              "change": -0.16
+            },
+            {
+              "eventNumber": 7,
+              "eventName": "Donington Park (GP)",
+              "entered": true,
+              "startingBudget": 10,
+              "budgetAfterEvent": 9.84,
+              "change": -0.16
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 192,
+        "eventScoreRange": 125,
+        "populationStandardDeviation": 35.53
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 6,
+          "points": 621
+        },
+        "race1": {
+          "position": 4,
+          "points": 84
+        },
+        "race2": {
+          "position": 3,
+          "points": 79
+        },
+        "race3": {
+          "position": 1,
+          "points": 89
+        },
+        "manufacturer": {
+          "position": 13,
+          "points": 187
+        },
+        "independents": {
+          "position": 6,
+          "points": 134
+        },
+        "jackSears": {
+          "position": 14,
+          "points": 32
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_4",
+        "name": "The Kerb Crawlers",
+        "position": 5,
+        "points": 5305
+      },
+      "pitStopPot": {
+        "totalWon": 31.1,
+        "earningsRank": 2,
+        "payoutRounds": 10,
+        "biggestPayouts": [
+          {
+            "roundNumber": 30,
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "amount": 10
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "kelsey": {
+      "name": "Kelsey",
+      "fantasyTeamName": "The Gravel Traps",
+      "championship": {
+        "position": 4,
+        "points": 1915,
+        "gapToChampion": 178,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 0,
+        "eventPodiums": 2,
+        "top6Finishes": 4,
+        "averageEventScore": 191.5,
+        "averageEventPosition": 8.7,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 257
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "score": 135
+          }
+        ],
+        "longestTop6Streak": 1,
+        "longestPodiumStreak": 1
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 5,
+        "bestPosition": 3,
+        "lowestPosition": 13,
+        "biggestPositionGain": {
+          "positions": 5,
+          "transitions": [
+            {
+              "fromEventNumber": 3,
+              "toEventNumber": 4,
+              "fromPosition": 13,
+              "toPosition": 8,
+              "positions": 5
+            },
+            {
+              "fromEventNumber": 6,
+              "toEventNumber": 7,
+              "fromPosition": 8,
+              "toPosition": 3,
+              "positions": 5
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 8,
+          "transitions": [
+            {
+              "fromEventNumber": 2,
+              "toEventNumber": 3,
+              "fromPosition": 5,
+              "toPosition": 13,
+              "positions": 8
+            }
+          ]
+        },
+        "finalPosition": 4,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 5
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 5
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 13
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 8
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 6
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 8
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 3
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 5
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 5
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 4
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 57,
+          "race1": 669,
+          "race2": 581,
+          "race3": 608
+        },
+        "averages": {
+          "qualifying": 5.7,
+          "race1": 66.9,
+          "race2": 58.1,
+          "race3": 60.8
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 0,
+          "race1": 0,
+          "race2": 0,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race1",
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 87
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 49,
+        "differentDriversUsed": 24,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "adam-morgan",
+            "driverName": "Adam Morgan",
+            "selections": 6
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "points": 300
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "points": 69
+          },
+          {
+            "driverId": "adam-morgan",
+            "driverName": "Adam Morgan",
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "points": 69
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "selections": 4
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "selections": 3
+            },
+            {
+              "driverId": "aron-taylorsmith",
+              "driverName": "Aron Taylor-Smith",
+              "selections": 3
+            }
+          ],
+          "low": [
+            {
+              "driverId": "daniel-lloyd",
+              "driverName": "Daniel Lloyd",
+              "selections": 2
+            },
+            {
+              "driverId": "james-dorlin",
+              "driverName": "James Dorlin",
+              "selections": 2
+            },
+            {
+              "driverId": "lewis-selby",
+              "driverName": "Lewis Selby",
+              "selections": 2
+            },
+            {
+              "driverId": "nicholas-hamilton",
+              "driverName": "Nicholas Hamilton",
+              "selections": 2
+            }
+          ]
+        },
+        "averageTeamSize": 4.9,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 7
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 2,
+          "totalPoints": 77,
+          "averagePoints": 38.5,
+          "bestSelections": [
+            {
+              "driverId": "tom-ingram",
+              "driverName": "Tom Ingram",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 60
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 4,
+          "totalPoints": 236,
+          "averagePoints": 59,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 69
+            }
+          ]
+        },
+        "totalSelections": 6
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 10.26,
+        "highestBaseBudget": 10.26,
+        "lowestBaseBudget": 9.97,
+        "overallBaseBudgetChange": 0.26,
+        "averageTeamSpend": 9.7,
+        "averageUnusedBudget": 0.42,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "unusedBudget": 0.01
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.29,
+          "events": [
+            {
+              "eventNumber": 10,
+              "eventName": "Brands Hatch (GP)",
+              "entered": true,
+              "startingBudget": 9.97,
+              "budgetAfterEvent": 10.26,
+              "change": 0.29
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.11,
+          "events": [
+            {
+              "eventNumber": 6,
+              "eventName": "Knockhill",
+              "entered": true,
+              "startingBudget": 10.12,
+              "budgetAfterEvent": 10.01,
+              "change": -0.11
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 186.5,
+        "eventScoreRange": 122,
+        "populationStandardDeviation": 30.79
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 11,
+          "points": 590
+        },
+        "race1": {
+          "position": 2,
+          "points": 87
+        },
+        "race2": {
+          "position": 8,
+          "points": 73
+        },
+        "race3": {
+          "position": 2,
+          "points": 86
+        },
+        "manufacturer": {
+          "position": 4,
+          "points": 205
+        },
+        "independents": {
+          "position": 9,
+          "points": 122
+        },
+        "jackSears": {
+          "position": 10,
+          "points": 40
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_1",
+        "name": "The Gravel Traps",
+        "position": 2,
+        "points": 5441
+      },
+      "pitStopPot": {
+        "totalWon": 20.05,
+        "earningsRank": 4,
+        "payoutRounds": 12,
+        "biggestPayouts": [
+          {
+            "roundNumber": 30,
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "amount": 5
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "maddie": {
+      "name": "Maddie",
+      "fantasyTeamName": "Track Limits, Optional",
+      "championship": {
+        "position": 6,
+        "points": 1847,
+        "gapToChampion": 246,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 2,
+        "eventPodiums": 2,
+        "top6Finishes": 4,
+        "averageEventScore": 184.7,
+        "averageEventPosition": 9.4,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 250
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "score": 147
+          }
+        ],
+        "longestTop6Streak": 2,
+        "longestPodiumStreak": 2
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 10,
+        "bestPosition": 6,
+        "lowestPosition": 13,
+        "biggestPositionGain": {
+          "positions": 6,
+          "transitions": [
+            {
+              "fromEventNumber": 8,
+              "toEventNumber": 9,
+              "fromPosition": 12,
+              "toPosition": 6,
+              "positions": 6
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 4,
+          "transitions": [
+            {
+              "fromEventNumber": 4,
+              "toEventNumber": 5,
+              "fromPosition": 6,
+              "toPosition": 10,
+              "positions": 4
+            }
+          ]
+        },
+        "finalPosition": 6,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 10
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 6
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 6
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 6
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 10
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 10
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 13
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 12
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 6
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 6
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 66,
+          "race1": 642,
+          "race2": 583,
+          "race3": 556
+        },
+        "averages": {
+          "qualifying": 6.6,
+          "race1": 64.2,
+          "race2": 58.3,
+          "race3": 55.6
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 1,
+          "race1": 1,
+          "race2": 0,
+          "race3": 1
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race1",
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 94
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 51,
+        "differentDriversUsed": 21,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "daryl-deleon",
+            "driverName": "Daryl DeLeon",
+            "selections": 5
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "daryl-deleon",
+            "driverName": "Daryl DeLeon",
+            "points": 217
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "points": 69
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "charles-rainford",
+              "driverName": "Charles Rainford",
+              "selections": 4
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "selections": 4
+            }
+          ],
+          "low": [
+            {
+              "driverId": "sam-osbourne",
+              "driverName": "Sam Osbourne",
+              "selections": 3
+            }
+          ]
+        },
+        "averageTeamSize": 5.1,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 7
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 5,
+          "totalPoints": 186,
+          "averagePoints": 37.2,
+          "bestSelections": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 65
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 1,
+          "totalPoints": 69,
+          "averagePoints": 69,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 5,
+              "eventName": "Thruxton",
+              "points": 69
+            }
+          ]
+        },
+        "totalSelections": 6
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.78,
+        "highestBaseBudget": 10.09,
+        "lowestBaseBudget": 9.51,
+        "overallBaseBudgetChange": -0.22,
+        "averageTeamSpend": 9.71,
+        "averageUnusedBudget": 0.25,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "unusedBudget": 0.02
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.22,
+          "events": [
+            {
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "entered": true,
+              "startingBudget": 9.61,
+              "budgetAfterEvent": 9.83,
+              "change": 0.22
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.22,
+          "events": [
+            {
+              "eventNumber": 6,
+              "eventName": "Knockhill",
+              "entered": true,
+              "startingBudget": 9.92,
+              "budgetAfterEvent": 9.7,
+              "change": -0.22
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 184.5,
+        "eventScoreRange": 103,
+        "populationStandardDeviation": 30.21
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 5,
+          "points": 622
+        },
+        "race1": {
+          "position": 8,
+          "points": 73
+        },
+        "race2": {
+          "position": 5,
+          "points": 76
+        },
+        "race3": {
+          "position": 15,
+          "points": 35
+        },
+        "manufacturer": {
+          "position": 16,
+          "points": 180
+        },
+        "independents": {
+          "position": 5,
+          "points": 141
+        },
+        "jackSears": {
+          "position": 3,
+          "points": 57
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_3",
+        "name": "Track Limits, Optional",
+        "position": 4,
+        "points": 5378
+      },
+      "pitStopPot": {
+        "totalWon": 11.25,
+        "earningsRank": 13,
+        "payoutRounds": 8,
+        "biggestPayouts": [
+          {
+            "roundNumber": 10,
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "amount": 2.8
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "olly": {
+      "name": "Olly",
+      "fantasyTeamName": "Reverse Drawn",
+      "championship": {
+        "position": 9,
+        "points": 1839,
+        "gapToChampion": 254,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 1,
+        "eventPodiums": 1,
+        "top6Finishes": 1,
+        "averageEventScore": 183.9,
+        "averageEventPosition": 10.1,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "score": 250
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "score": 124
+          }
+        ],
+        "longestTop6Streak": 1,
+        "longestPodiumStreak": 1
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 18,
+        "bestPosition": 5,
+        "lowestPosition": 18,
+        "biggestPositionGain": {
+          "positions": 10,
+          "transitions": [
+            {
+              "fromEventNumber": 2,
+              "toEventNumber": 3,
+              "fromPosition": 15,
+              "toPosition": 5,
+              "positions": 10
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 4,
+          "transitions": [
+            {
+              "fromEventNumber": 8,
+              "toEventNumber": 9,
+              "fromPosition": 7,
+              "toPosition": 11,
+              "positions": 4
+            }
+          ]
+        },
+        "finalPosition": 9,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 18
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 15
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 5
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 7
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 7
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 6
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 9
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 7
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 11
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 9
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 67,
+          "race1": 634,
+          "race2": 600,
+          "race3": 538
+        },
+        "averages": {
+          "qualifying": 6.7,
+          "race1": 63.4,
+          "race2": 60,
+          "race3": 53.8
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 0,
+          "race1": 1,
+          "race2": 1,
+          "race3": 1
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race1",
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "score": 83
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 48,
+        "differentDriversUsed": 19,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "tom-chilton",
+            "driverName": "Tom Chilton",
+            "selections": 10
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "tom-chilton",
+            "driverName": "Tom Chilton",
+            "points": 346
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "points": 63
+          },
+          {
+            "driverId": "aiden-moffatt",
+            "driverName": "Aiden Moffatt",
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "points": 63
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "charles-rainford",
+              "driverName": "Charles Rainford",
+              "selections": 3
+            },
+            {
+              "driverId": "mikey-doble",
+              "driverName": "Mikey Doble",
+              "selections": 3
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "tom-chilton",
+              "driverName": "Tom Chilton",
+              "selections": 7
+            }
+          ],
+          "low": [
+            {
+              "driverId": "sam-osbourne",
+              "driverName": "Sam Osbourne",
+              "selections": 3
+            }
+          ]
+        },
+        "averageTeamSize": 4.8,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 8
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": {
+          "driverId": "tom-chilton",
+          "driverName": "Tom Chilton"
+        },
+        "eventsUsed": 10,
+        "totalPoints": 346,
+        "averagePoints": 34.6,
+        "bestEvents": [
+          {
+            "driverId": "tom-chilton",
+            "driverName": "Tom Chilton",
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "points": 56
+          }
+        ]
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 4,
+          "totalPoints": 137,
+          "averagePoints": 34.25,
+          "bestSelections": [
+            {
+              "driverId": "tom-ingram",
+              "driverName": "Tom Ingram",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 60
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 2,
+          "totalPoints": 113,
+          "averagePoints": 56.5,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 7,
+              "eventName": "Donington Park (GP)",
+              "points": 63
+            }
+          ]
+        },
+        "totalSelections": 6
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.88,
+        "highestBaseBudget": 10.21,
+        "lowestBaseBudget": 9.83,
+        "overallBaseBudgetChange": -0.12,
+        "averageTeamSpend": 9.83,
+        "averageUnusedBudget": 0.22,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "unusedBudget": 0.01
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.38,
+          "events": [
+            {
+              "eventNumber": 3,
+              "eventName": "Snetterton 300",
+              "entered": true,
+              "startingBudget": 9.83,
+              "budgetAfterEvent": 10.21,
+              "change": 0.38
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.19,
+          "events": [
+            {
+              "eventNumber": 7,
+              "eventName": "Donington Park (GP)",
+              "entered": true,
+              "startingBudget": 10.09,
+              "budgetAfterEvent": 9.9,
+              "change": -0.19
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 188,
+        "eventScoreRange": 126,
+        "populationStandardDeviation": 32.49
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 7,
+          "points": 616
+        },
+        "race1": {
+          "position": 5,
+          "points": 77
+        },
+        "race2": {
+          "position": 9,
+          "points": 72
+        },
+        "race3": {
+          "position": 11,
+          "points": 48
+        },
+        "manufacturer": {
+          "position": 6,
+          "points": 196
+        },
+        "independents": {
+          "position": 11,
+          "points": 117
+        },
+        "jackSears": {
+          "position": 14,
+          "points": 32
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_6",
+        "name": "Reverse Drawn",
+        "position": 1,
+        "points": 5734
+      },
+      "pitStopPot": {
+        "totalWon": 13,
+        "earningsRank": 10,
+        "payoutRounds": 8,
+        "biggestPayouts": [
+          {
+            "roundNumber": 10,
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "amount": 2.4
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "rhys": {
+      "name": "Rhys",
+      "fantasyTeamName": "The Tyre Stackers",
+      "championship": {
+        "position": 19,
+        "points": 1522,
+        "gapToChampion": 571,
+        "eventsEntered": 9,
+        "eventsMissed": 1,
+        "eventWins": 0,
+        "eventPodiums": 0,
+        "top6Finishes": 0,
+        "averageEventScore": 169.11,
+        "averageEventPosition": 13.56,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 194
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "score": 114
+          }
+        ],
+        "longestTop6Streak": 0,
+        "longestPodiumStreak": 0
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 12,
+        "bestPosition": 11,
+        "lowestPosition": 19,
+        "biggestPositionGain": {
+          "positions": 1,
+          "transitions": [
+            {
+              "fromEventNumber": 1,
+              "toEventNumber": 2,
+              "fromPosition": 12,
+              "toPosition": 11,
+              "positions": 1
+            },
+            {
+              "fromEventNumber": 6,
+              "toEventNumber": 7,
+              "fromPosition": 19,
+              "toPosition": 18,
+              "positions": 1
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 8,
+          "transitions": [
+            {
+              "fromEventNumber": 3,
+              "toEventNumber": 4,
+              "fromPosition": 11,
+              "toPosition": 19,
+              "positions": 8
+            }
+          ]
+        },
+        "finalPosition": 19,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 12
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 11
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 11
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 19
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 19
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 19
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 18
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 18
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 19
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 19
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 50,
+          "race1": 556,
+          "race2": 466,
+          "race3": 450
+        },
+        "averages": {
+          "qualifying": 5.56,
+          "race1": 61.78,
+          "race2": 51.78,
+          "race3": 50
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 1,
+          "race1": 0,
+          "race2": 0,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race1",
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "score": 77
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 41,
+        "differentDriversUsed": 19,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "tom-ingram",
+            "driverName": "Tom Ingram",
+            "selections": 9
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "tom-ingram",
+            "driverName": "Tom Ingram",
+            "points": 399
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "points": 64
+          },
+          {
+            "driverId": "tom-ingram",
+            "driverName": "Tom Ingram",
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "points": 64
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "tom-ingram",
+              "driverName": "Tom Ingram",
+              "selections": 7
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "selections": 3
+            },
+            {
+              "driverId": "ricky-collard",
+              "driverName": "Ricky Collard",
+              "selections": 3
+            }
+          ],
+          "low": [
+            {
+              "driverId": "daniel-lloyd",
+              "driverName": "Daniel Lloyd",
+              "selections": 2
+            }
+          ]
+        },
+        "averageTeamSize": 4.56,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 5
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": {
+          "driverId": "tom-ingram",
+          "driverName": "Tom Ingram"
+        },
+        "eventsUsed": 7,
+        "totalPoints": 313,
+        "averagePoints": 44.71,
+        "bestEvents": [
+          {
+            "driverId": "tom-ingram",
+            "driverName": "Tom Ingram",
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "points": 64
+          }
+        ]
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 6,
+          "totalPoints": 179,
+          "averagePoints": 29.83,
+          "bestSelections": [
+            {
+              "driverId": "tom-ingram",
+              "driverName": "Tom Ingram",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 60
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 1,
+          "totalPoints": 58,
+          "averagePoints": 58,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 58
+            }
+          ]
+        },
+        "totalSelections": 7
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.45,
+        "highestBaseBudget": 10,
+        "lowestBaseBudget": 9.41,
+        "overallBaseBudgetChange": -0.55,
+        "averageTeamSpend": 9.57,
+        "averageUnusedBudget": 0.39,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "unusedBudget": 0.01
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.05,
+          "events": [
+            {
+              "eventNumber": 3,
+              "eventName": "Snetterton 300",
+              "entered": true,
+              "startingBudget": 9.92,
+              "budgetAfterEvent": 9.97,
+              "change": 0.05
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.27,
+          "events": [
+            {
+              "eventNumber": 7,
+              "eventName": "Donington Park (GP)",
+              "entered": true,
+              "startingBudget": 9.81,
+              "budgetAfterEvent": 9.54,
+              "change": -0.27
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 173,
+        "eventScoreRange": 80,
+        "populationStandardDeviation": 22.24
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 18,
+          "points": 524
+        },
+        "race1": {
+          "position": 10,
+          "points": 70
+        },
+        "race2": {
+          "position": 6,
+          "points": 76
+        },
+        "race3": {
+          "position": 17,
+          "points": 34
+        },
+        "manufacturer": {
+          "position": 15,
+          "points": 185
+        },
+        "independents": {
+          "position": 17,
+          "points": 75
+        },
+        "jackSears": {
+          "position": 19,
+          "points": 15
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_5",
+        "name": "The Tyre Stackers",
+        "position": 6,
+        "points": 5146
+      },
+      "pitStopPot": {
+        "totalWon": 7.45,
+        "earningsRank": 19,
+        "payoutRounds": 7,
+        "biggestPayouts": [
+          {
+            "roundNumber": 16,
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "amount": 1.3
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "steve": {
+      "name": "Steve",
+      "fantasyTeamName": "Reverse Drawn",
+      "championship": {
+        "position": 1,
+        "points": 2093,
+        "gapToChampion": 0,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 3,
+        "eventPodiums": 5,
+        "top6Finishes": 7,
+        "averageEventScore": 209.3,
+        "averageEventPosition": 6.5,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 253
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "score": 164
+          }
+        ],
+        "longestTop6Streak": 5,
+        "longestPodiumStreak": 5
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 6,
+        "bestPosition": 1,
+        "lowestPosition": 8,
+        "biggestPositionGain": {
+          "positions": 4,
+          "transitions": [
+            {
+              "fromEventNumber": 3,
+              "toEventNumber": 4,
+              "fromPosition": 8,
+              "toPosition": 4,
+              "positions": 4
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 2,
+          "transitions": [
+            {
+              "fromEventNumber": 1,
+              "toEventNumber": 2,
+              "fromPosition": 6,
+              "toPosition": 8,
+              "positions": 2
+            }
+          ]
+        },
+        "finalPosition": 1,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 6
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 8
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 8
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 4
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 2
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 2
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 1
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 1
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 1
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 1
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 59,
+          "race1": 656,
+          "race2": 675,
+          "race3": 703
+        },
+        "averages": {
+          "qualifying": 5.9,
+          "race1": 65.6,
+          "race2": 67.5,
+          "race3": 70.3
+        },
+        "strongestSessions": [
+          "race3"
+        ],
+        "wins": {
+          "qualifying": 1,
+          "race1": 2,
+          "race2": 3,
+          "race3": 3
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race1",
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 92
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 53,
+        "differentDriversUsed": 20,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "adam-morgan",
+            "driverName": "Adam Morgan",
+            "selections": 6
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "tom-ingram",
+            "driverName": "Tom Ingram",
+            "points": 263
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "adam-morgan",
+            "driverName": "Adam Morgan",
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "points": 69
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "charles-rainford",
+              "driverName": "Charles Rainford",
+              "selections": 4
+            },
+            {
+              "driverId": "dan-cammish",
+              "driverName": "Dan Cammish",
+              "selections": 4
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "adam-morgan",
+              "driverName": "Adam Morgan",
+              "selections": 3
+            },
+            {
+              "driverId": "aron-taylorsmith",
+              "driverName": "Aron Taylor-Smith",
+              "selections": 3
+            },
+            {
+              "driverId": "dexter-patterson",
+              "driverName": "Dexter Patterson",
+              "selections": 3
+            },
+            {
+              "driverId": "ricky-collard",
+              "driverName": "Ricky Collard",
+              "selections": 3
+            }
+          ],
+          "low": [
+            {
+              "driverId": "lewis-gilbert",
+              "driverName": "Lewis Gilbert",
+              "selections": 2
+            },
+            {
+              "driverId": "sam-osbourne",
+              "driverName": "Sam Osbourne",
+              "selections": 2
+            }
+          ]
+        },
+        "averageTeamSize": 5.3,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 7
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 5,
+          "totalPoints": 181,
+          "averagePoints": 36.2,
+          "bestSelections": [
+            {
+              "driverId": "tom-ingram",
+              "driverName": "Tom Ingram",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 60
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 1,
+          "totalPoints": 54,
+          "averagePoints": 54,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 3,
+              "eventName": "Snetterton 300",
+              "points": 54
+            }
+          ]
+        },
+        "totalSelections": 6
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 10.58,
+        "highestBaseBudget": 10.58,
+        "lowestBaseBudget": 9.88,
+        "overallBaseBudgetChange": 0.58,
+        "averageTeamSpend": 10.09,
+        "averageUnusedBudget": 0.15,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "unusedBudget": 0.01
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.25,
+          "events": [
+            {
+              "eventNumber": 4,
+              "eventName": "Oulton Park",
+              "entered": true,
+              "startingBudget": 9.88,
+              "budgetAfterEvent": 10.13,
+              "change": 0.25
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.16,
+          "events": [
+            {
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "entered": true,
+              "startingBudget": 10.52,
+              "budgetAfterEvent": 10.36,
+              "change": -0.16
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 210,
+        "eventScoreRange": 89,
+        "populationStandardDeviation": 31.12
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 4,
+          "points": 634
+        },
+        "race1": {
+          "position": 1,
+          "points": 92
+        },
+        "race2": {
+          "position": 7,
+          "points": 76
+        },
+        "race3": {
+          "position": 6,
+          "points": 72
+        },
+        "manufacturer": {
+          "position": 3,
+          "points": 206
+        },
+        "independents": {
+          "position": 4,
+          "points": 150
+        },
+        "jackSears": {
+          "position": 1,
+          "points": 62
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_6",
+        "name": "Reverse Drawn",
+        "position": 1,
+        "points": 5734
+      },
+      "pitStopPot": {
+        "totalWon": 35.65,
+        "earningsRank": 1,
+        "payoutRounds": 14,
+        "biggestPayouts": [
+          {
+            "roundNumber": 10,
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "amount": 10
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "sue": {
+      "name": "Sue",
+      "fantasyTeamName": "Track Limits, Optional",
+      "championship": {
+        "position": 16,
+        "points": 1740,
+        "gapToChampion": 353,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 0,
+        "eventPodiums": 1,
+        "top6Finishes": 2,
+        "averageEventScore": 174,
+        "averageEventPosition": 11.4,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "score": 241
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "score": 127
+          }
+        ],
+        "longestTop6Streak": 2,
+        "longestPodiumStreak": 1
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 17,
+        "bestPosition": 6,
+        "lowestPosition": 17,
+        "biggestPositionGain": {
+          "positions": 7,
+          "transitions": [
+            {
+              "fromEventNumber": 4,
+              "toEventNumber": 5,
+              "fromPosition": 16,
+              "toPosition": 9,
+              "positions": 7
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 4,
+          "transitions": [
+            {
+              "fromEventNumber": 9,
+              "toEventNumber": 10,
+              "fromPosition": 12,
+              "toPosition": 16,
+              "positions": 4
+            }
+          ]
+        },
+        "finalPosition": 16,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 17
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 17
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 17
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 16
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 9
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 6
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 8
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 11
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 12
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 16
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 54,
+          "race1": 544,
+          "race2": 626,
+          "race3": 516
+        },
+        "averages": {
+          "qualifying": 5.4,
+          "race1": 54.4,
+          "race2": 62.6,
+          "race3": 51.6
+        },
+        "strongestSessions": [
+          "race2"
+        ],
+        "wins": {
+          "qualifying": 1,
+          "race1": 0,
+          "race2": 1,
+          "race3": 1
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race3",
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "score": 91
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 47,
+        "differentDriversUsed": 17,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "tom-ingram",
+            "driverName": "Tom Ingram",
+            "selections": 6
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "tom-ingram",
+            "driverName": "Tom Ingram",
+            "points": 314
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "tom-ingram",
+            "driverName": "Tom Ingram",
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "points": 64
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "selections": 5
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aron-taylorsmith",
+              "driverName": "Aron Taylor-Smith",
+              "selections": 3
+            },
+            {
+              "driverId": "tom-chilton",
+              "driverName": "Tom Chilton",
+              "selections": 3
+            }
+          ],
+          "low": [
+            {
+              "driverId": "sam-osbourne",
+              "driverName": "Sam Osbourne",
+              "selections": 3
+            }
+          ]
+        },
+        "averageTeamSize": 4.7,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 7
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 7,
+          "totalPoints": 203,
+          "averagePoints": 29,
+          "bestSelections": [
+            {
+              "driverId": "tom-ingram",
+              "driverName": "Tom Ingram",
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "points": 60
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 5,
+          "totalPoints": 273,
+          "averagePoints": 54.6,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 58
+            }
+          ]
+        },
+        "totalSelections": 12
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.31,
+        "highestBaseBudget": 10.04,
+        "lowestBaseBudget": 9.31,
+        "overallBaseBudgetChange": -0.69,
+        "averageTeamSpend": 9.64,
+        "averageUnusedBudget": 0.29,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "unusedBudget": 0.01
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.26,
+          "events": [
+            {
+              "eventNumber": 5,
+              "eventName": "Thruxton",
+              "entered": true,
+              "startingBudget": 9.78,
+              "budgetAfterEvent": 10.04,
+              "change": 0.26
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.27,
+          "events": [
+            {
+              "eventNumber": 10,
+              "eventName": "Brands Hatch (GP)",
+              "entered": true,
+              "startingBudget": 9.58,
+              "budgetAfterEvent": 9.31,
+              "change": -0.27
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 172,
+        "eventScoreRange": 114,
+        "populationStandardDeviation": 32.51
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 15,
+          "points": 573
+        },
+        "race1": {
+          "position": 17,
+          "points": 42
+        },
+        "race2": {
+          "position": 14,
+          "points": 63
+        },
+        "race3": {
+          "position": 19,
+          "points": 25
+        },
+        "manufacturer": {
+          "position": 2,
+          "points": 259
+        },
+        "independents": {
+          "position": 19,
+          "points": 51
+        },
+        "jackSears": {
+          "position": 4,
+          "points": 51
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_3",
+        "name": "Track Limits, Optional",
+        "position": 4,
+        "points": 5378
+      },
+      "pitStopPot": {
+        "totalWon": 9.9,
+        "earningsRank": 17,
+        "payoutRounds": 7,
+        "biggestPayouts": [
+          {
+            "roundNumber": 20,
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "amount": 2
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "tegan-aurora": {
+      "name": "Tegan-Aurora",
+      "fantasyTeamName": "Yellow Flagged It",
+      "championship": {
+        "position": 10,
+        "points": 1817,
+        "gapToChampion": 276,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 0,
+        "eventPodiums": 2,
+        "top6Finishes": 2,
+        "averageEventScore": 181.7,
+        "averageEventPosition": 9.4,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "score": 231
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "score": 111
+          }
+        ],
+        "longestTop6Streak": 2,
+        "longestPodiumStreak": 2
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 9,
+        "bestPosition": 8,
+        "lowestPosition": 18,
+        "biggestPositionGain": {
+          "positions": 6,
+          "transitions": [
+            {
+              "fromEventNumber": 6,
+              "toEventNumber": 7,
+              "fromPosition": 16,
+              "toPosition": 10,
+              "positions": 6
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 6,
+          "transitions": [
+            {
+              "fromEventNumber": 1,
+              "toEventNumber": 2,
+              "fromPosition": 9,
+              "toPosition": 15,
+              "positions": 6
+            }
+          ]
+        },
+        "finalPosition": 10,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 9
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 15
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 15
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 18
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 17
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 16
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 10
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 8
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 10
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 10
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 58,
+          "race1": 615,
+          "race2": 613,
+          "race3": 531
+        },
+        "averages": {
+          "qualifying": 5.8,
+          "race1": 61.5,
+          "race2": 61.3,
+          "race3": 53.1
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 2,
+          "race1": 1,
+          "race2": 0,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race1",
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "score": 84
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 48,
+        "differentDriversUsed": 21,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "dan-rowbottom",
+            "driverName": "Dan Rowbottom",
+            "selections": 10
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "dan-rowbottom",
+            "driverName": "Dan Rowbottom",
+            "points": 412
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "ash-sutton",
+            "driverName": "Ash Sutton",
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "points": 69
+          },
+          {
+            "driverId": "adam-morgan",
+            "driverName": "Adam Morgan",
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "points": 69
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "dan-rowbottom",
+              "driverName": "Dan Rowbottom",
+              "selections": 4
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "dan-rowbottom",
+              "driverName": "Dan Rowbottom",
+              "selections": 4
+            }
+          ],
+          "low": [
+            {
+              "driverId": "lewis-selby",
+              "driverName": "Lewis Selby",
+              "selections": 2
+            }
+          ]
+        },
+        "averageTeamSize": 4.8,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 8
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": {
+          "driverId": "dan-rowbottom",
+          "driverName": "Dan Rowbottom"
+        },
+        "eventsUsed": 10,
+        "totalPoints": 412,
+        "averagePoints": 41.2,
+        "bestEvents": [
+          {
+            "driverId": "dan-rowbottom",
+            "driverName": "Dan Rowbottom",
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "points": 65
+          }
+        ]
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 3,
+          "totalPoints": 88,
+          "averagePoints": 29.33,
+          "bestSelections": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 65
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 3,
+          "totalPoints": 187,
+          "averagePoints": 62.33,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 5,
+              "eventName": "Thruxton",
+              "points": 69
+            }
+          ]
+        },
+        "totalSelections": 6
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 10.03,
+        "highestBaseBudget": 10.16,
+        "lowestBaseBudget": 9.71,
+        "overallBaseBudgetChange": 0.03,
+        "averageTeamSpend": 9.7,
+        "averageUnusedBudget": 0.35,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "unusedBudget": 0.04
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.22,
+          "events": [
+            {
+              "eventNumber": 7,
+              "eventName": "Donington Park (GP)",
+              "entered": true,
+              "startingBudget": 9.81,
+              "budgetAfterEvent": 10.03,
+              "change": 0.22
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.18,
+          "events": [
+            {
+              "eventNumber": 2,
+              "eventName": "Brands Hatch (Indy)",
+              "entered": true,
+              "startingBudget": 9.98,
+              "budgetAfterEvent": 9.8,
+              "change": -0.18
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 187.5,
+        "eventScoreRange": 120,
+        "populationStandardDeviation": 35.07
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 10,
+          "points": 597
+        },
+        "race1": {
+          "position": 12,
+          "points": 59
+        },
+        "race2": {
+          "position": 12,
+          "points": 68
+        },
+        "race3": {
+          "position": 13,
+          "points": 39
+        },
+        "manufacturer": {
+          "position": 5,
+          "points": 203
+        },
+        "independents": {
+          "position": 15,
+          "points": 111
+        },
+        "jackSears": {
+          "position": 17,
+          "points": 27
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_2",
+        "name": "Yellow Flagged It",
+        "position": 3,
+        "points": 5432
+      },
+      "pitStopPot": {
+        "totalWon": 11.2,
+        "earningsRank": 14,
+        "payoutRounds": 8,
+        "biggestPayouts": [
+          {
+            "roundNumber": 20,
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "amount": 3
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "vicky": {
+      "name": "Vicky",
+      "fantasyTeamName": "The Gravel Traps",
+      "championship": {
+        "position": 12,
+        "points": 1796,
+        "gapToChampion": 297,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 0,
+        "eventPodiums": 0,
+        "top6Finishes": 3,
+        "averageEventScore": 179.6,
+        "averageEventPosition": 10.5,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 224
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "score": 145
+          }
+        ],
+        "longestTop6Streak": 3,
+        "longestPodiumStreak": 0
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 11,
+        "bestPosition": 7,
+        "lowestPosition": 12,
+        "biggestPositionGain": {
+          "positions": 2,
+          "transitions": [
+            {
+              "fromEventNumber": 1,
+              "toEventNumber": 2,
+              "fromPosition": 11,
+              "toPosition": 9,
+              "positions": 2
+            },
+            {
+              "fromEventNumber": 2,
+              "toEventNumber": 3,
+              "fromPosition": 9,
+              "toPosition": 7,
+              "positions": 2
+            },
+            {
+              "fromEventNumber": 7,
+              "toEventNumber": 8,
+              "fromPosition": 11,
+              "toPosition": 9,
+              "positions": 2
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 5,
+          "transitions": [
+            {
+              "fromEventNumber": 3,
+              "toEventNumber": 4,
+              "fromPosition": 7,
+              "toPosition": 12,
+              "positions": 5
+            }
+          ]
+        },
+        "finalPosition": 12,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 11
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 9
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 7
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 12
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 12
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 11
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 11
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 9
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 9
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 12
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 53,
+          "race1": 593,
+          "race2": 597,
+          "race3": 553
+        },
+        "averages": {
+          "qualifying": 5.3,
+          "race1": 59.3,
+          "race2": 59.7,
+          "race3": 55.3
+        },
+        "strongestSessions": [
+          "race2"
+        ],
+        "wins": {
+          "qualifying": 0,
+          "race1": 0,
+          "race2": 0,
+          "race3": 0
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race3",
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "score": 80
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 49,
+        "differentDriversUsed": 18,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "dan-rowbottom",
+            "driverName": "Dan Rowbottom",
+            "selections": 10
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "dan-rowbottom",
+            "driverName": "Dan Rowbottom",
+            "points": 412
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "dan-rowbottom",
+            "driverName": "Dan Rowbottom",
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "points": 65
+          },
+          {
+            "driverId": "aiden-moffatt",
+            "driverName": "Aiden Moffatt",
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "points": 65
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "selections": 4
+            },
+            {
+              "driverId": "dan-rowbottom",
+              "driverName": "Dan Rowbottom",
+              "selections": 4
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "dan-rowbottom",
+              "driverName": "Dan Rowbottom",
+              "selections": 4
+            }
+          ],
+          "low": [
+            {
+              "driverId": "lewis-selby",
+              "driverName": "Lewis Selby",
+              "selections": 3
+            },
+            {
+              "driverId": "sam-osbourne",
+              "driverName": "Sam Osbourne",
+              "selections": 3
+            }
+          ]
+        },
+        "averageTeamSize": 4.9,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 9
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": {
+          "driverId": "dan-rowbottom",
+          "driverName": "Dan Rowbottom"
+        },
+        "eventsUsed": 10,
+        "totalPoints": 412,
+        "averagePoints": 41.2,
+        "bestEvents": [
+          {
+            "driverId": "dan-rowbottom",
+            "driverName": "Dan Rowbottom",
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "points": 65
+          }
+        ]
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 9,
+          "totalPoints": 290,
+          "averagePoints": 32.22,
+          "bestSelections": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 65
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 4,
+          "totalPoints": 238,
+          "averagePoints": 59.5,
+          "bestSelections": [
+            {
+              "driverId": "ash-sutton",
+              "driverName": "Ash Sutton",
+              "eventNumber": 10,
+              "eventName": "Brands Hatch (GP)",
+              "points": 64
+            }
+          ]
+        },
+        "totalSelections": 13
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.58,
+        "highestBaseBudget": 10,
+        "lowestBaseBudget": 9.55,
+        "overallBaseBudgetChange": -0.42,
+        "averageTeamSpend": 9.72,
+        "averageUnusedBudget": 0.13,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "unusedBudget": 0.04
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "unusedBudget": 0.04
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.11,
+          "events": [
+            {
+              "eventNumber": 8,
+              "eventName": "Croft",
+              "entered": true,
+              "startingBudget": 9.55,
+              "budgetAfterEvent": 9.66,
+              "change": 0.11
+            },
+            {
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "entered": true,
+              "startingBudget": 9.66,
+              "budgetAfterEvent": 9.77,
+              "change": 0.11
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.19,
+          "events": [
+            {
+              "eventNumber": 10,
+              "eventName": "Brands Hatch (GP)",
+              "entered": true,
+              "startingBudget": 9.77,
+              "budgetAfterEvent": 9.58,
+              "change": -0.19
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 180,
+        "eventScoreRange": 79,
+        "populationStandardDeviation": 22.73
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 14,
+          "points": 582
+        },
+        "race1": {
+          "position": 15,
+          "points": 48
+        },
+        "race2": {
+          "position": 15,
+          "points": 63
+        },
+        "race3": {
+          "position": 18,
+          "points": 34
+        },
+        "manufacturer": {
+          "position": 1,
+          "points": 263
+        },
+        "independents": {
+          "position": 18,
+          "points": 56
+        },
+        "jackSears": {
+          "position": 7,
+          "points": 45
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_1",
+        "name": "The Gravel Traps",
+        "position": 2,
+        "points": 5441
+      },
+      "pitStopPot": {
+        "totalWon": 8.4,
+        "earningsRank": 18,
+        "payoutRounds": 5,
+        "biggestPayouts": [
+          {
+            "roundNumber": 20,
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "amount": 3.75
+          }
+        ],
+        "fullPotWins": 0
+      }
+    },
+    "yvonne": {
+      "name": "Yvonne",
+      "fantasyTeamName": "The Gravel Traps",
+      "championship": {
+        "position": 17,
+        "points": 1730,
+        "gapToChampion": 363,
+        "eventsEntered": 10,
+        "eventsMissed": 0,
+        "eventWins": 0,
+        "eventPodiums": 0,
+        "top6Finishes": 2,
+        "averageEventScore": 173,
+        "averageEventPosition": 11.8,
+        "highestScoringEvents": [
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "score": 201
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "score": 201
+          }
+        ],
+        "lowestScoringEnteredEvents": [
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "score": 137
+          }
+        ],
+        "longestTop6Streak": 1,
+        "longestPodiumStreak": 0
+      },
+      "championshipJourney": {
+        "positionAfterEvent1": 14,
+        "bestPosition": 10,
+        "lowestPosition": 17,
+        "biggestPositionGain": {
+          "positions": 3,
+          "transitions": [
+            {
+              "fromEventNumber": 4,
+              "toEventNumber": 5,
+              "fromPosition": 14,
+              "toPosition": 11,
+              "positions": 3
+            }
+          ]
+        },
+        "biggestPositionLoss": {
+          "positions": 5,
+          "transitions": [
+            {
+              "fromEventNumber": 6,
+              "toEventNumber": 7,
+              "fromPosition": 11,
+              "toPosition": 16,
+              "positions": 5
+            }
+          ]
+        },
+        "finalPosition": 17,
+        "positions": [
+          {
+            "eventNumber": 1,
+            "eventName": "Donington Park (National)",
+            "position": 14
+          },
+          {
+            "eventNumber": 2,
+            "eventName": "Brands Hatch (Indy)",
+            "position": 12
+          },
+          {
+            "eventNumber": 3,
+            "eventName": "Snetterton 300",
+            "position": 10
+          },
+          {
+            "eventNumber": 4,
+            "eventName": "Oulton Park",
+            "position": 14
+          },
+          {
+            "eventNumber": 5,
+            "eventName": "Thruxton",
+            "position": 11
+          },
+          {
+            "eventNumber": 6,
+            "eventName": "Knockhill",
+            "position": 11
+          },
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "position": 16
+          },
+          {
+            "eventNumber": 8,
+            "eventName": "Croft",
+            "position": 15
+          },
+          {
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "position": 17
+          },
+          {
+            "eventNumber": 10,
+            "eventName": "Brands Hatch (GP)",
+            "position": 17
+          }
+        ]
+      },
+      "sessions": {
+        "totals": {
+          "qualifying": 44,
+          "race1": 574,
+          "race2": 552,
+          "race3": 560
+        },
+        "averages": {
+          "qualifying": 4.4,
+          "race1": 57.4,
+          "race2": 55.2,
+          "race3": 56
+        },
+        "strongestSessions": [
+          "race1"
+        ],
+        "wins": {
+          "qualifying": 0,
+          "race1": 1,
+          "race2": 0,
+          "race3": 1
+        },
+        "highestSingleSessionScores": [
+          {
+            "session": "race3",
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "score": 83
+          }
+        ]
+      },
+      "driverSelections": {
+        "totalSelections": 50,
+        "differentDriversUsed": 19,
+        "mostSelectedDrivers": [
+          {
+            "driverId": "dan-cammish",
+            "driverName": "Dan Cammish",
+            "selections": 5
+          },
+          {
+            "driverId": "tom-ingram",
+            "driverName": "Tom Ingram",
+            "selections": 5
+          }
+        ],
+        "highestScoringDrivers": [
+          {
+            "driverId": "tom-ingram",
+            "driverName": "Tom Ingram",
+            "points": 250
+          }
+        ],
+        "highestScoringSingleSelections": [
+          {
+            "driverId": "aiden-moffatt",
+            "driverName": "Aiden Moffatt",
+            "eventNumber": 9,
+            "eventName": "Silverstone",
+            "points": 65
+          }
+        ],
+        "mostSelectedByTier": {
+          "high": [
+            {
+              "driverId": "dan-cammish",
+              "driverName": "Dan Cammish",
+              "selections": 4
+            }
+          ],
+          "middle": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "selections": 3
+            },
+            {
+              "driverId": "aron-taylorsmith",
+              "driverName": "Aron Taylor-Smith",
+              "selections": 3
+            }
+          ],
+          "low": [
+            {
+              "driverId": "lewis-gilbert",
+              "driverName": "Lewis Gilbert",
+              "selections": 4
+            }
+          ]
+        },
+        "averageTeamSize": 5,
+        "mostCommonTeamSizes": [
+          {
+            "size": 5,
+            "events": 8
+          }
+        ]
+      },
+      "seasonLongDriver": {
+        "driver": null,
+        "eventsUsed": 0,
+        "totalPoints": 0,
+        "averagePoints": null,
+        "bestEvents": []
+      },
+      "starDrivers": {
+        "underdog": {
+          "selections": 7,
+          "totalPoints": 268,
+          "averagePoints": 38.29,
+          "bestSelections": [
+            {
+              "driverId": "aiden-moffatt",
+              "driverName": "Aiden Moffatt",
+              "eventNumber": 9,
+              "eventName": "Silverstone",
+              "points": 65
+            }
+          ]
+        },
+        "formDriver": {
+          "selections": 0,
+          "totalPoints": 0,
+          "averagePoints": null,
+          "bestSelections": []
+        },
+        "totalSelections": 7
+      },
+      "budget": {
+        "startingBaseBudget": 10,
+        "finalBaseBudget": 9.27,
+        "highestBaseBudget": 10,
+        "lowestBaseBudget": 9.27,
+        "overallBaseBudgetChange": -0.73,
+        "averageTeamSpend": 9.59,
+        "averageUnusedBudget": 0.26,
+        "closestToFullSpend": [
+          {
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "unusedBudget": 0.01
+          }
+        ],
+        "exactBudgetEvents": 0,
+        "biggestBaseBudgetIncrease": {
+          "change": 0.08,
+          "events": [
+            {
+              "eventNumber": 5,
+              "eventName": "Thruxton",
+              "entered": true,
+              "startingBudget": 9.73,
+              "budgetAfterEvent": 9.81,
+              "change": 0.08
+            }
+          ]
+        },
+        "biggestBaseBudgetDecrease": {
+          "change": -0.28,
+          "events": [
+            {
+              "eventNumber": 7,
+              "eventName": "Donington Park (GP)",
+              "entered": true,
+              "startingBudget": 9.67,
+              "budgetAfterEvent": 9.39,
+              "change": -0.28
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "medianEventScore": 175.5,
+        "eventScoreRange": 64,
+        "populationStandardDeviation": 22.53
+      },
+      "specialistChampionships": {
+        "wingfoot": {
+          "position": 12,
+          "points": 589
+        },
+        "race1": {
+          "position": 11,
+          "points": 63
+        },
+        "race2": {
+          "position": 13,
+          "points": 65
+        },
+        "race3": {
+          "position": 16,
+          "points": 35
+        },
+        "manufacturer": {
+          "position": 10,
+          "points": 191
+        },
+        "independents": {
+          "position": 13,
+          "points": 115
+        },
+        "jackSears": {
+          "position": 11,
+          "points": 37
+        }
+      },
+      "fantasyTeam": {
+        "teamId": "team_1",
+        "name": "The Gravel Traps",
+        "position": 2,
+        "points": 5441
+      },
+      "pitStopPot": {
+        "totalWon": 11.35,
+        "earningsRank": 12,
+        "payoutRounds": 8,
+        "biggestPayouts": [
+          {
+            "roundNumber": 20,
+            "eventNumber": 7,
+            "eventName": "Donington Park (GP)",
+            "amount": 2
+          }
+        ],
+        "fullPotWins": 0
+      }
+    }
+  }
+}

@@ -142,6 +142,7 @@ async function loadRouteData(route) {
     results: () => window.loadResults?.(),
     news: () => window.loadNews?.(),
     pitstop: () => window.loadPitStop?.(),
+    "season-stats": () => window.loadSeasonStats?.(),
     admin: () => window.loadAdmin?.(),
   };
 
@@ -172,8 +173,9 @@ function setActiveTab(route) {
 
 function getRouteFromHash() {
   const raw = (window.location.hash || "#home").replace("#", "").trim().toLowerCase();
- const allowed = new Set(["home", "submit", "tables", "drivers", "results", "news", "pitstop", "admin"]);
-  return allowed.has(raw) ? raw : "home";
+  const route = raw.split("/")[0];
+  const allowed = new Set(["home", "submit", "tables", "season-stats", "drivers", "results", "news", "pitstop", "admin"]);
+  return allowed.has(route) ? route : "home";
 }
 
 // ---------- Firebase Status UI ----------

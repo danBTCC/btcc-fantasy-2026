@@ -54,6 +54,7 @@
     <a class="tab" href="#submit" data-route="submit">Submit</a>
     <a class="tab" href="#drivers" data-route="drivers">Drivers</a>
     <a class="tab" href="#tables" data-route="tables">Standings</a>
+    <a class="tab" href="#season-stats" data-route="season-stats">Season Stats</a>
     <a class="tab" href="#results" data-route="results">Results</a>
     <a class="tab" href="#news" data-route="news">News</a>
     <a class="tab" href="#pitstop" data-route="pitstop">Pit Stop Pot</a>
@@ -236,6 +237,13 @@
       </div>
     </section>
 
+    <!-- SEASON STATS -->
+    <section class="view" id="view-season-stats" data-view="season-stats" hidden>
+      <div id="season-stats-root">
+        <div class="card seasonStatsStatus" role="status">Loading Season Stats…</div>
+      </div>
+    </section>
+
     <!-- DRIVERS -->
     <section class="view" id="view-drivers" data-view="drivers" hidden>
       <div class="card">
@@ -293,6 +301,7 @@
   <script src="./js/pages/results.js"></script>
   <script src="./js/pages/news.js"></script>
   <script src="js/pages/pitstop.js"></script>
+  <script src="./js/pages/season-stats.js"></script>
 
   <!-- Admin core (order matters) -->
   <script src="./js/admin/events.js"></script>

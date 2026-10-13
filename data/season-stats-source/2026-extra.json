@@ -1,0 +1,281 @@
+{
+  "season": 2026,
+  "sourceNotes": {
+    "historyExport": "BTCC_2026_Full_History_2026-10-13.json",
+    "specialistStandings": "Firestore season_2026 standings collections",
+    "teamStandings": "Derived using the existing standings-page fallback: final player championship points grouped by final team assignment.",
+    "categoryPositionRule": "Manufacturer, Independents and Jack Sears documents store points but not positions; positions use competition ranking so equal points share a position.",
+    "specialistValueFormat": "Each value is [position, points]."
+  },
+  "publicPlayerSlugs": {
+    "Amy": "amy",
+    "Daniel": "daniel",
+    "Ellie C": "ellie-c",
+    "Ellie M": "ellie-m",
+    "Ezra": "ezra",
+    "Fliss": "fliss",
+    "Immie": "immie",
+    "Izzy": "izzy",
+    "Jake": "jake",
+    "Kaitlin-Rose": "kaitlin-rose",
+    "Kelsey": "kelsey",
+    "Maddie": "maddie",
+    "Olly": "olly",
+    "Rhys": "rhys",
+    "Steve": "steve",
+    "Sue": "sue",
+    "Tegan-Aurora": "tegan-aurora",
+    "Vicky": "vicky",
+    "Yvonne": "yvonne"
+  },
+  "historicalDriverTiers": {
+    "manualOverrides": [
+      {
+        "eventNumber": 5,
+        "driverId": "lewis-gilbert",
+        "driverName": "Lewis Gilbert",
+        "tier": "low",
+        "affectedSelections": 3,
+        "sourceType": "authoritativeManualFirestoreAssignment"
+      },
+      {
+        "eventNumber": 5,
+        "driverId": "ryan-bensley",
+        "driverName": "Ryan Bensley",
+        "tier": "low",
+        "affectedSelections": 5,
+        "sourceType": "authoritativeManualFirestoreAssignment"
+      },
+      {
+        "eventNumber": 5,
+        "driverId": "senna-proctor",
+        "driverName": "Senna Proctor",
+        "tier": "low",
+        "affectedSelections": 3,
+        "sourceType": "authoritativeManualFirestoreAssignment"
+      },
+      {
+        "eventNumber": 6,
+        "driverId": "nick-halstead",
+        "driverName": "Nick Halstead",
+        "tier": "low",
+        "affectedSelections": 2,
+        "sourceType": "authoritativeManualFirestoreAssignment"
+      },
+      {
+        "eventNumber": 6,
+        "driverId": "sam-osbourne",
+        "driverName": "Sam Osbourne",
+        "tier": "low",
+        "affectedSelections": 3,
+        "sourceType": "authoritativeManualFirestoreAssignment"
+      },
+      {
+        "eventNumber": 7,
+        "driverId": "daniel-lloyd",
+        "driverName": "Daniel Lloyd",
+        "tier": "low",
+        "affectedSelections": 9,
+        "sourceType": "authoritativeManualFirestoreAssignment"
+      },
+      {
+        "eventNumber": 9,
+        "driverId": "osamu-kawashima",
+        "driverName": "Osamu Kawashima",
+        "tier": "low",
+        "affectedSelections": 5,
+        "sourceType": "authoritativeManualFirestoreAssignment"
+      },
+      {
+        "eventNumber": 10,
+        "driverId": "ricky-collard",
+        "driverName": "Ricky Collard",
+        "tier": "middle",
+        "affectedSelections": 3,
+        "sourceType": "authoritativeManualFirestoreAssignment"
+      }
+    ],
+    "unrecoverable": []
+  },
+  "specialistChampionships": {
+    "wingfoot": {
+      "daniel": [1, 663],
+      "ellie-m": [2, 661],
+      "jake": [3, 635],
+      "steve": [4, 634],
+      "maddie": [5, 622],
+      "kaitlin-rose": [6, 621],
+      "olly": [7, 616],
+      "amy": [8, 607],
+      "ezra": [9, 597],
+      "tegan-aurora": [10, 597],
+      "kelsey": [11, 590],
+      "yvonne": [12, 589],
+      "fliss": [13, 588],
+      "vicky": [14, 582],
+      "sue": [15, 573],
+      "immie": [16, 552],
+      "ellie-c": [17, 528],
+      "rhys": [18, 524],
+      "izzy": [19, 486]
+    },
+    "race1": {
+      "steve": [1, 92],
+      "kelsey": [2, 87],
+      "fliss": [3, 86],
+      "kaitlin-rose": [4, 84],
+      "olly": [5, 77],
+      "daniel": [6, 74],
+      "amy": [7, 73],
+      "maddie": [8, 73],
+      "izzy": [9, 72],
+      "rhys": [10, 70],
+      "yvonne": [11, 63],
+      "tegan-aurora": [12, 59],
+      "ellie-c": [13, 58],
+      "ellie-m": [14, 55],
+      "vicky": [15, 48],
+      "immie": [16, 44],
+      "sue": [17, 42],
+      "jake": [18, 37],
+      "ezra": [19, 34]
+    },
+    "race2": {
+      "fliss": [1, 88],
+      "amy": [2, 85],
+      "kaitlin-rose": [3, 79],
+      "izzy": [4, 77],
+      "maddie": [5, 76],
+      "rhys": [6, 76],
+      "steve": [7, 76],
+      "kelsey": [8, 73],
+      "olly": [9, 72],
+      "daniel": [10, 71],
+      "ellie-m": [11, 71],
+      "tegan-aurora": [12, 68],
+      "yvonne": [13, 65],
+      "sue": [14, 63],
+      "vicky": [15, 63],
+      "ellie-c": [16, 56],
+      "ezra": [17, 55],
+      "immie": [18, 54],
+      "jake": [19, 46]
+    },
+    "race3": {
+      "kaitlin-rose": [1, 89],
+      "kelsey": [2, 86],
+      "ellie-c": [3, 82],
+      "fliss": [4, 73],
+      "immie": [5, 72],
+      "steve": [6, 72],
+      "ellie-m": [7, 60],
+      "daniel": [8, 56],
+      "izzy": [9, 51],
+      "jake": [10, 50],
+      "olly": [11, 48],
+      "amy": [12, 43],
+      "tegan-aurora": [13, 39],
+      "ezra": [14, 37],
+      "maddie": [15, 35],
+      "yvonne": [16, 35],
+      "rhys": [17, 34],
+      "vicky": [18, 34],
+      "sue": [19, 25]
+    },
+    "manufacturer": {
+      "vicky": [1, 263],
+      "sue": [2, 259],
+      "steve": [3, 206],
+      "kelsey": [4, 205],
+      "tegan-aurora": [5, 203],
+      "daniel": [6, 196],
+      "ellie-m": [6, 196],
+      "olly": [6, 196],
+      "ellie-c": [9, 192],
+      "amy": [10, 191],
+      "yvonne": [10, 191],
+      "fliss": [12, 188],
+      "immie": [13, 187],
+      "kaitlin-rose": [13, 187],
+      "rhys": [15, 185],
+      "maddie": [16, 180],
+      "jake": [17, 154],
+      "izzy": [18, 143],
+      "ezra": [19, 138]
+    },
+    "independents": {
+      "ezra": [1, 165],
+      "daniel": [2, 158],
+      "jake": [3, 157],
+      "steve": [4, 150],
+      "maddie": [5, 141],
+      "kaitlin-rose": [6, 134],
+      "fliss": [7, 128],
+      "izzy": [8, 127],
+      "ellie-m": [9, 122],
+      "kelsey": [9, 122],
+      "ellie-c": [11, 117],
+      "olly": [11, 117],
+      "immie": [13, 115],
+      "yvonne": [13, 115],
+      "amy": [15, 111],
+      "tegan-aurora": [15, 111],
+      "rhys": [17, 75],
+      "vicky": [18, 56],
+      "sue": [19, 51]
+    },
+    "jackSears": {
+      "steve": [1, 62],
+      "amy": [2, 58],
+      "maddie": [3, 57],
+      "izzy": [4, 51],
+      "sue": [4, 51],
+      "fliss": [6, 46],
+      "vicky": [7, 45],
+      "ellie-m": [8, 42],
+      "ellie-c": [9, 41],
+      "kelsey": [10, 40],
+      "yvonne": [11, 37],
+      "daniel": [12, 35],
+      "immie": [13, 34],
+      "kaitlin-rose": [14, 32],
+      "olly": [14, 32],
+      "jake": [16, 30],
+      "ezra": [17, 27],
+      "tegan-aurora": [17, 27],
+      "rhys": [19, 15]
+    }
+  },
+  "fantasyTeams": {
+    "team_6": {
+      "name": "Reverse Drawn",
+      "position": 1,
+      "points": 5734
+    },
+    "team_1": {
+      "name": "The Gravel Traps",
+      "position": 2,
+      "points": 5441
+    },
+    "team_2": {
+      "name": "Yellow Flagged It",
+      "position": 3,
+      "points": 5432
+    },
+    "team_3": {
+      "name": "Track Limits, Optional",
+      "position": 4,
+      "points": 5378
+    },
+    "team_4": {
+      "name": "The Kerb Crawlers",
+      "position": 5,
+      "points": 5305
+    },
+    "team_5": {
+      "name": "The Tyre Stackers",
+      "position": 6,
+      "points": 5146
+    }
+  }
+}
