@@ -1764,3 +1764,384 @@ th {
 @media (prefers-reduced-motion: reduce) {
   .seasonStatsSpinner { animation: none; }
 }
+
+/* --- 2026 Championship reveal --- */
+#view-home,
+#championship-reveal-root {
+  min-width: 0;
+  width: 100%;
+}
+
+.championshipReveal {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border-color: rgba(142, 188, 255, .25);
+  background:
+    radial-gradient(circle at 84% -8%, rgba(245, 202, 97, .2), transparent 34%),
+    radial-gradient(circle at 5% 22%, rgba(29, 103, 230, .3), transparent 37%),
+    linear-gradient(155deg, #07152a 0%, #0d2b57 54%, #061225 100%);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, .24);
+}
+
+.championshipReveal--intro {
+  display: grid;
+  min-height: min(680px, calc(100dvh - 150px));
+  place-items: center;
+  align-content: center;
+  padding: clamp(44px, 10vw, 90px) clamp(20px, 7vw, 70px);
+  text-align: center;
+}
+
+.championshipReveal__flag {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 9px;
+  background-color: #f4f4f4;
+  background-image:
+    linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%),
+    linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%);
+  background-position: 0 0, 9px 9px;
+  background-size: 18px 18px;
+}
+
+.championshipReveal__eyebrow {
+  margin: 0 0 10px;
+  color: #f2cf70;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.championshipReveal__trophy {
+  margin-bottom: 16px;
+  font-size: clamp(48px, 15vw, 78px);
+  line-height: 1;
+  filter: drop-shadow(0 12px 24px rgba(245, 202, 97, .26));
+}
+
+.championshipReveal--intro h1 {
+  max-width: 620px;
+  margin: 0;
+  font-size: clamp(34px, 9vw, 62px);
+  line-height: .98;
+  letter-spacing: -.04em;
+}
+
+.championshipReveal__lead {
+  margin: 20px 0 0;
+  color: #d2def1;
+  font-size: clamp(16px, 4vw, 20px);
+}
+
+.championshipReveal__hint {
+  max-width: 420px;
+  margin: 14px 0 0;
+  color: #8fa3c2;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.championshipRevealButton {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.championshipRevealButton--primary {
+  margin-top: 28px;
+  color: #071121;
+  background: linear-gradient(135deg, #ffe7a6, #d8a93e);
+  box-shadow: 0 12px 30px rgba(216, 169, 62, .22);
+}
+
+.championshipRevealButton--secondary {
+  color: #d7e7ff;
+  border-color: rgba(160, 199, 255, .25);
+  background: rgba(19, 62, 124, .3);
+}
+
+.championshipRevealButton:hover {
+  filter: brightness(1.08);
+}
+
+.championshipRevealButton:focus-visible {
+  outline: 3px solid #8ec1ff;
+  outline-offset: 3px;
+}
+
+.championshipReveal--stage {
+  padding: clamp(18px, 5vw, 34px);
+}
+
+.championshipReveal__stageHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.championshipReveal__stageHeader h1 {
+  margin: 0;
+  font-size: clamp(27px, 7vw, 42px);
+  line-height: 1;
+}
+
+.championshipReveal__counter {
+  flex: 0 0 auto;
+  color: #b9cae4;
+  font-size: 12px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.championshipReveal__progress {
+  height: 5px;
+  margin: 18px 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .09);
+}
+
+.championshipReveal__progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4e9aff, #f3cf70);
+  transition: width .35s ease;
+}
+
+.championshipReveal__live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.championshipRevealResults {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.championshipRevealResult {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 9px 11px;
+  color: #eaf1ff;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 11px;
+  background: rgba(3, 13, 29, .54);
+  font-variant-numeric: tabular-nums;
+}
+
+.championshipRevealResult--current {
+  animation: championshipResultIn .48s cubic-bezier(.2, .8, .2, 1) both;
+  border-color: rgba(126, 186, 255, .5);
+  box-shadow: 0 9px 26px rgba(0, 0, 0, .2);
+}
+
+.championshipRevealResult__position {
+  color: #8fc1ff;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.championshipRevealResult__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.championshipRevealResult__points {
+  color: #b9cae4;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.championshipRevealResult--bronze {
+  min-height: 66px;
+  border-color: rgba(213, 139, 83, .55);
+  background: linear-gradient(90deg, rgba(135, 72, 37, .33), rgba(3, 13, 29, .62));
+}
+
+.championshipRevealResult--bronze .championshipRevealResult__position {
+  color: #eca76d;
+}
+
+.championshipRevealResult--silver {
+  min-height: 72px;
+  border-color: rgba(202, 216, 235, .6);
+  background: linear-gradient(90deg, rgba(155, 176, 204, .26), rgba(3, 13, 29, .65));
+}
+
+.championshipRevealResult--silver .championshipRevealResult__position {
+  color: #e1ecf9;
+}
+
+.championshipRevealResult--champion {
+  min-height: 82px;
+  border-color: rgba(246, 207, 112, .72);
+  background:
+    radial-gradient(circle at 85% 0%, rgba(255, 229, 151, .2), transparent 38%),
+    linear-gradient(90deg, rgba(153, 107, 21, .4), rgba(3, 13, 29, .66));
+  box-shadow: inset 4px 0 0 #f3cf70;
+}
+
+.championshipRevealResult--champion .championshipRevealResult__position,
+.championshipRevealResult--champion .championshipRevealResult__points {
+  color: #ffe79d;
+}
+
+.championshipRevealResult--champion .championshipRevealResult__name {
+  font-size: 18px;
+}
+
+.championshipRevealChampion {
+  display: grid;
+  justify-items: center;
+  margin-top: 22px;
+  padding: clamp(26px, 7vw, 48px) clamp(16px, 5vw, 34px);
+  text-align: center;
+  border: 1px solid rgba(246, 207, 112, .44);
+  border-radius: 17px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 226, 138, .2), transparent 45%),
+    rgba(4, 14, 31, .68);
+  animation: championshipChampionIn .7s ease both;
+}
+
+.championshipRevealChampion__crown {
+  font-size: 52px;
+  filter: drop-shadow(0 12px 22px rgba(245, 202, 97, .25));
+}
+
+.championshipRevealChampion h2 {
+  max-width: 640px;
+  margin: 3px 0 13px;
+  font-size: clamp(28px, 8vw, 48px);
+  line-height: 1.02;
+  letter-spacing: -.035em;
+}
+
+.championshipRevealChampion p {
+  margin: 4px 0;
+  color: #d5e1f2;
+  font-size: 16px;
+}
+
+.championshipRevealChampion p strong {
+  color: #ffe79d;
+  font-size: 22px;
+}
+
+.championshipRevealActions {
+  display: grid;
+  width: min(100%, 360px);
+  gap: 9px;
+  margin-top: 17px;
+}
+
+.championshipRevealActions .championshipRevealButton {
+  width: 100%;
+  margin-top: 0;
+}
+
+.championshipReveal--loading,
+.championshipReveal--error {
+  display: grid;
+  min-height: 340px;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 28px;
+  text-align: center;
+}
+
+.championshipReveal--error p {
+  color: var(--muted);
+}
+
+.championshipRevealSpinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, .15);
+  border-top-color: #f3cf70;
+  border-radius: 50%;
+  animation: championshipSpinner .8s linear infinite;
+}
+
+@keyframes championshipResultIn {
+  from { opacity: 0; transform: translateY(-14px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes championshipChampionIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes championshipSpinner {
+  to { transform: rotate(360deg); }
+}
+
+@media (min-width: 680px) {
+  .championshipReveal--stage {
+    padding: 32px 44px 44px;
+  }
+
+  .championshipRevealResult {
+    grid-template-columns: 64px minmax(0, 1fr) 110px;
+    padding-inline: 17px;
+  }
+
+  .championshipRevealActions {
+    grid-template-columns: 1fr 1fr;
+    width: min(100%, 520px);
+  }
+}
+
+@media (max-width: 430px) {
+  .championshipRevealResult {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: 7px;
+  }
+
+  .championshipRevealResult__points {
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .championshipRevealResult--current,
+  .championshipRevealChampion,
+  .championshipRevealSpinner {
+    animation: none;
+  }
+
+  .championshipReveal__progress span {
+    transition: none;
+  }
+}

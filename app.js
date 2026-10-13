@@ -2,76 +2,6 @@ console.log("BTCC Fantasy League 2026 loaded");
 
 const loadedRoutes = new Set();
 const SHOW_CROFT_RESULTS_WARNING = false;
-// Set this to false after the WhatsApp announcement to reopen the public site.
-const FINAL_RESULTS_HOLDING_SCREEN = true;
-
-let applicationStarted = false;
-
-function setFinalResultsGateLocked(locked) {
-  const gate = document.getElementById("final-results-gate");
-  const appShell = document.getElementById("app-shell");
-
-  document.body.classList.toggle("final-results-lock", locked);
-  if (gate) gate.hidden = !locked;
-  if (appShell) appShell.inert = locked;
-}
-
-function setupFinalResultsGate(onAdminAccess) {
-  const gate = document.getElementById("final-results-gate");
-  const toggle = document.getElementById("final-results-admin-toggle");
-  const panel = document.getElementById("final-results-admin-panel");
-  const form = document.getElementById("final-results-admin-form");
-  const status = document.getElementById("final-results-admin-status");
-  const emailInput = document.getElementById("final-results-admin-email");
-  const passwordInput = document.getElementById("final-results-admin-password");
-
-  if (!FINAL_RESULTS_HOLDING_SCREEN || !gate) {
-    setFinalResultsGateLocked(false);
-    onAdminAccess();
-    return;
-  }
-
-  setFinalResultsGateLocked(true);
-
-  toggle?.addEventListener("click", () => {
-    const opening = panel?.hidden ?? false;
-    if (panel) panel.hidden = !opening;
-    toggle.setAttribute("aria-expanded", String(opening));
-    if (opening) emailInput?.focus();
-  });
-
-  if (typeof firebase === "undefined" || typeof firebase.auth !== "function") {
-    if (status) status.textContent = "Admin sign-in is temporarily unavailable.";
-    return;
-  }
-
-  const auth = firebase.auth();
-  auth.onAuthStateChanged((user) => {
-    const isAdmin = Boolean(user?.email && window.isBtccAdminEmail?.(user.email));
-    setFinalResultsGateLocked(!isAdmin);
-
-    if (isAdmin) {
-      if (status) status.textContent = "Admin access confirmed.";
-      onAdminAccess();
-    } else if (user && status) {
-      status.textContent = "This account does not have league admin access.";
-    }
-  });
-
-  form?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (status) status.textContent = "Checking admin access…";
-
-    try {
-      await auth.signInWithEmailAndPassword(
-        emailInput?.value.trim() || "",
-        passwordInput?.value || ""
-      );
-    } catch (error) {
-      if (status) status.textContent = error?.message || "Admin sign-in failed.";
-    }
-  });
-}
 
 function showCroftResultsWarning() {
   const modal = document.createElement("div");
@@ -129,13 +59,7 @@ async function loadRouteData(route) {
   if (!route || loadedRoutes.has(route)) return;
 
   const loaders = {
-    home: async () => {
-      await Promise.all([
-        loadNextEventCountdown(),
-        loadHomeNewsSnippets(),
-        loadFinaleFeature(),
-      ]);
-    },
+    home: () => window.loadChampionshipReveal?.(),
     submit: () => window.loadSubmit?.(),
     drivers: () => window.loadDrivers?.(),
     tables: () => window.loadStandings?.(),
@@ -173,8 +97,17 @@ function setActiveTab(route) {
 
 function getRouteFromHash() {
   const raw = (window.location.hash || "#home").replace("#", "").trim().toLowerCase();
-  const route = raw.split("/")[0];
+  const requestedRoute = raw.split("/")[0];
+  const route = requestedRoute === "standings" ? "tables" : requestedRoute;
   const allowed = new Set(["home", "submit", "tables", "season-stats", "drivers", "results", "news", "pitstop", "admin"]);
+
+  if (route === "tables" && !window.isChampionshipRevealUnlocked?.()) {
+    if (window.location.hash !== "#home") {
+      window.history.replaceState(null, "", "#home");
+    }
+    return "home";
+  }
+
   return allowed.has(route) ? route : "home";
 }
 
@@ -464,9 +397,6 @@ async function loadNextEventCountdown() {
 
 // ---------- App Boot ----------
 function startApplication() {
-  if (applicationStarted) return;
-  applicationStarted = true;
-
   if (SHOW_CROFT_RESULTS_WARNING) {
     showCroftResultsWarning();
   }
@@ -489,6 +419,4 @@ function startApplication() {
   checkFirebaseAndReadMeta();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  setupFinalResultsGate(startApplication);
-});
+document.addEventListener("DOMContentLoaded", startApplication);

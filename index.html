@@ -13,38 +13,7 @@
 </head>
 
 
-<body class="final-results-lock">
-  <section class="finalResultsGate" id="final-results-gate" aria-labelledby="final-results-title">
-    <div class="finalResultsGate__lights" aria-hidden="true"></div>
-    <div class="finalResultsGate__card">
-      <div class="finalResultsGate__flag" aria-hidden="true"></div>
-      <div class="finalResultsGate__eyebrow">2026 SEASON FINALE</div>
-      <div class="finalResultsGate__trophy" aria-hidden="true">🏆</div>
-      <h1 id="final-results-title">Final results are being entered</h1>
-      <p class="finalResultsGate__lead">The chequered flag has fallen. The last points, prizes and championship positions are now being confirmed.</p>
-      <div class="finalResultsGate__notice">
-        <span class="finalResultsGate__noticeIcon" aria-hidden="true">📣</span>
-        <span>Please wait for the WhatsApp announcement before returning.</span>
-      </div>
-      <div class="finalResultsGate__rule" aria-hidden="true"><span></span></div>
-      <p class="finalResultsGate__footnote">Dan's Family &amp; Friends BTCC Fantasy League</p>
-
-      <button class="finalResultsGate__adminToggle" id="final-results-admin-toggle" type="button" aria-expanded="false" aria-controls="final-results-admin-panel">
-        League admin access
-      </button>
-      <div class="finalResultsGate__adminPanel" id="final-results-admin-panel" hidden>
-        <form id="final-results-admin-form">
-          <label for="final-results-admin-email">Email</label>
-          <input id="final-results-admin-email" type="email" autocomplete="email" required>
-          <label for="final-results-admin-password">Password</label>
-          <input id="final-results-admin-password" type="password" autocomplete="current-password" required>
-          <button type="submit">Open admin site</button>
-          <div class="finalResultsGate__adminStatus" id="final-results-admin-status" role="status" aria-live="polite"></div>
-        </form>
-      </div>
-    </div>
-  </section>
-
+<body>
   <div id="app-shell">
 
   <div class="raceBanner"></div>
@@ -53,7 +22,6 @@
     <a class="tab" href="#home" data-route="home">Home</a>
     <a class="tab" href="#submit" data-route="submit">Submit</a>
     <a class="tab" href="#drivers" data-route="drivers">Drivers</a>
-    <a class="tab" href="#tables" data-route="tables">Standings</a>
     <a class="tab" href="#season-stats" data-route="season-stats">Season Stats</a>
     <a class="tab" href="#results" data-route="results">Results</a>
     <a class="tab" href="#news" data-route="news">News</a>
@@ -64,53 +32,11 @@
   <main class="container">
     <!-- HOME -->
     <section class="view" id="view-home" data-view="home">
-      <section class="card finaleFeature" id="finale-feature" aria-labelledby="finale-title" hidden>
-        <div class="finaleFeature__intro">
-          <div class="finaleFeature__eyebrow">THE FINAL STRETCH</div>
-          <h1 id="finale-title">Every point matters now.</h1>
-          <p id="finale-remaining">Loading the championship battles…</p>
-        </div>
-        <div class="finaleFeature__grid" id="finale-battles"></div>
-        <a class="finaleFeature__link" href="#tables">See the full standings <span aria-hidden="true">→</span></a>
-      </section>
-
-      <div class="card" id="home-intro-fallback">
-        <h1>The 2026 Championship Battle Continues</h1>
-        <p class="muted">Submit your drivers, follow the league tables, and keep up with the latest results, budgets, driver values and news.</p>
+      <div id="championship-reveal-root">
+        <section class="card championshipReveal championshipReveal--loading" role="status">
+          Loading the 2026 Championship…
+        </section>
       </div>
-
-<div id="home-message" class="card" style="margin-top:10px;">
-<p>🏆 Vicky (2023) • Olly (2024) • Steve (2025)</p>
-</div>
-
-
-      <div class="card" id="next-event-card" style="margin-top:10px;">
-        <h2 style="margin-top:0;">Next event</h2>
-        <div class="tiny muted" id="next-event-name">Loading…</div>
-        <div style="margin-top:10px;">
-          <div class="muted" style="font-weight:600;">Submission deadline in</div>
-          <div id="next-event-countdown" style="font-size:24px; font-weight:600; letter-spacing:0.5px; margin-top:4px;">—</div>
-          <div class="tiny muted" id="next-event-status" style="margin-top:6px;">—</div>
-          <div class="tiny muted" id="next-event-lockout">—</div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:12px;">
-  <h2 style="margin-top:0;">Latest News</h2>
-  <div class="homeNewsGrid">
-
-  <div class="note homeNewsItem" style="margin-top:10px;">
-    <strong>Latest event news</strong>
-    <div id="home-news-latest" class="tiny muted homeNewsText" style="margin-top:6px;">Loading…</div>
-  </div>
-
-  <div class="note homeNewsItem" style="margin-top:10px;">
-    <strong>Previous event news</strong>
-    <div id="home-news-previous" class="tiny muted homeNewsText" style="margin-top:6px;">Loading…</div>
-  </div>
-</div>
-</div>
-
     </section>
 
     <!-- SUBMIT -->
@@ -302,6 +228,7 @@
   <script src="./js/pages/news.js"></script>
   <script src="js/pages/pitstop.js"></script>
   <script src="./js/pages/season-stats.js"></script>
+  <script src="./js/pages/championship-reveal.js"></script>
 
   <!-- Admin core (order matters) -->
   <script src="./js/admin/events.js"></script>
