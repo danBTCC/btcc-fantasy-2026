@@ -915,7 +915,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
   Loading profile…
 </div>
 
-<div class="card" style="margin-top:12px;">
+<div class="card" id="submit-driver-submission" style="margin-top:12px;" hidden>
   <h2 style="margin:0 0 6px 0;">Driver Submission</h2>
   <div class="tiny muted" style="margin-bottom:8px;">
     Need help? <a href="#" id="submit-help-link" style="color:#60a5fa; text-decoration:underline;">Click here to see How to Play →</a>
@@ -967,6 +967,7 @@ root.__lockoutTimer = setInterval(updateCountdown, 30000);
 
 <div id="driver-picker" class="list" style="margin-top:10px;">
   Loading drivers…
+</div>
 </div>
 
       <button id="submit-logout" class="tile" style="margin-top:12px;">Logout</button>
