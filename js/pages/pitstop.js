@@ -657,6 +657,32 @@
       : "";
 
     root.innerHTML = `
+      <section class="card pitstopWaiting" aria-labelledby="pitstop-waiting-title">
+        <div class="pitstopWaiting__flag" aria-hidden="true"></div>
+        <div class="pitstopWaiting__content">
+          <div class="pitstopWaiting__badge">2027 • Coming next season</div>
+          <p class="pitstopWaiting__eyebrow">PIT STOP POT</p>
+          <h1 id="pitstop-waiting-title">Waiting for the 2027 season</h1>
+          <p class="pitstopWaiting__lead">
+            The 2026 competition is complete and safely archived below. We hope to make the next Pit Stop Pot even better, with more chances to win, improved prizes and plenty more race-weekend drama.
+          </p>
+        </div>
+        <div class="pitstopWaiting__lights" aria-hidden="true"><span></span><span></span><span></span></div>
+      </section>
+
+      <details class="pitstopSeasonArchive">
+        <summary class="pitstopSeasonArchive__summary">
+          <span class="pitstopSeasonArchive__year">2026</span>
+          <span class="pitstopSeasonArchive__label">
+            <strong>2026 Season Archive</strong>
+            <small>${rounds.length} rounds • final results, payouts and winnings</small>
+          </span>
+          <span class="pitstopSeasonArchive__action">
+            <span>View results</span>
+            <span class="pitstopSeasonArchive__chevron" aria-hidden="true">⌄</span>
+          </span>
+        </summary>
+        <div class="pitstopSeasonArchive__content">
       <div class="card" style="position:relative; overflow:hidden; background:linear-gradient(145deg, rgba(15,35,65,.98), rgba(9,26,50,.98)); border-color:rgba(96,165,250,.25);">
         <div style="position:absolute; top:-35px; right:-25px; width:130px; height:130px; border-radius:50%; background:rgba(37,99,235,.13);"></div>
         <div style="position:relative;">
@@ -761,6 +787,9 @@
       </div>
 
     ${adminFormHtml}
+
+        </div>
+      </details>
 
     `;
 
