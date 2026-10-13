@@ -107,6 +107,14 @@
     const sortedRounds = rounds
       .slice()
       .sort((a, b) => Number(a.roundNo || 0) - Number(b.roundNo || 0));
+    const completedRoundNumbers = new Set(
+      sortedRounds
+        .filter((round) => isStoredNormalRound(round) || isSharedPayoutRound(round))
+        .map((round) => Number(round.roundNo || 0))
+        .filter((roundNo) => roundNo >= 1 && roundNo <= 30)
+    );
+    const seasonComplete = Array.from({ length: 30 }, (_, index) => index + 1)
+      .every((roundNo) => completedRoundNumbers.has(roundNo));
 
     let rollover = 0;
     let lastCompletedRound = null;
@@ -133,8 +141,10 @@
       totalPlayers,
       entryPot,
       calculatedRollover: rollover,
-      calculatedNextPot: entryPot + rollover,
+      calculatedNextPot: seasonComplete ? 0 : entryPot + rollover,
       lastCompletedRound,
+      completedRoundCount: completedRoundNumbers.size,
+      seasonComplete,
     };
   }
 
@@ -455,6 +465,21 @@
     const pitstopTotals = calculatePitStopTotals(data, rounds);
     const calculatedRounds = buildRoundCalculations(data, rounds);
     const eventRolloverSummary = buildEventRolloverSummary(calculatedRounds);
+    const pitStopStatus = pitstopTotals.seasonComplete
+      ? {
+          eyebrow: "2026 Competition Complete",
+          colour: "#facc15",
+          glow: "rgba(250,204,21,.72)",
+          message: "All 30 rounds are complete. All winnings have been accounted for.",
+          nextPotNote: "Season complete — no further rounds remain",
+        }
+      : {
+          eyebrow: "BTCC Fantasy League",
+          colour: "#22c55e",
+          glow: "rgba(34,197,94,.7)",
+          message: "All draws are screen recorded and shared in the WhatsApp group",
+          nextPotNote: `Includes the ${fmtMoney(pitstopTotals.entryPot)} entry pot`,
+        };
 
     const roundRows = calculatedRounds.length
       ? calculatedRounds
@@ -635,11 +660,11 @@
       <div class="card" style="position:relative; overflow:hidden; background:linear-gradient(145deg, rgba(15,35,65,.98), rgba(9,26,50,.98)); border-color:rgba(96,165,250,.25);">
         <div style="position:absolute; top:-35px; right:-25px; width:130px; height:130px; border-radius:50%; background:rgba(37,99,235,.13);"></div>
         <div style="position:relative;">
-          <div class="tiny" style="text-transform:uppercase; letter-spacing:.12em; color:#60a5fa; font-weight:900;">BTCC Fantasy League</div>
+          <div class="tiny" style="text-transform:uppercase; letter-spacing:.12em; color:${pitstopTotals.seasonComplete ? "#facc15" : "#60a5fa"}; font-weight:900;">${pitStopStatus.eyebrow}</div>
           <h1 style="margin:5px 0 8px;">Pit Stop Pot</h1>
           <p class="muted" style="margin:0; line-height:1.55;">
-            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 10px rgba(34,197,94,.7); margin-right:7px;"></span>
-            All draws are screen recorded and shared in the WhatsApp group
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${pitStopStatus.colour}; box-shadow:0 0 10px ${pitStopStatus.glow}; margin-right:7px;"></span>
+            ${pitStopStatus.message}
           </p>
         </div>
       </div>
@@ -663,15 +688,23 @@
             <div class="tiny" style="text-transform:uppercase; letter-spacing:.09em; color:#bfdbfe; font-weight:850;">Next Normal-Round Pot</div>
             <div style="font-size:30px; line-height:1.1; font-weight:950; color:#fff; margin-top:5px;">${fmtMoney(pitstopTotals.calculatedNextPot)}</div>
             <div class="tiny" style="color:#dbeafe; margin-top:9px; line-height:1.5;">
-              Includes the ${fmtMoney(pitstopTotals.entryPot)} entry pot
+              ${pitStopStatus.nextPotNote}
             </div>
           </div>
         </div>
 
         <div class="tiny" style="position:relative; display:flex; flex-wrap:wrap; gap:7px 14px; padding:10px 18px; color:#dbeafe; background:rgba(3,15,36,.26); border-top:1px solid rgba(219,234,254,.16);">
-          <span><strong style="color:#fff;">£0.50</strong> per player</span>
-          <span><strong style="color:#fff;">${pitstopTotals.totalPlayers}</strong> players</span>
-          <span>Shared checkpoint payouts reset the rollover</span>
+          ${pitstopTotals.seasonComplete
+            ? `
+              <span><strong style="color:#fff;">30 of 30</strong> rounds complete</span>
+              <span>All recorded winnings are included below</span>
+              <span>Final checkpoint payout completed</span>
+            `
+            : `
+              <span><strong style="color:#fff;">£0.50</strong> per player</span>
+              <span><strong style="color:#fff;">${pitstopTotals.totalPlayers}</strong> players</span>
+              <span>Shared checkpoint payouts reset the rollover</span>
+            `}
         </div>
       </div>
 
