@@ -26,6 +26,7 @@
     <a class="tab" href="#results" data-route="results">Results</a>
     <a class="tab" href="#news" data-route="news">News</a>
     <a class="tab" href="#pitstop" data-route="pitstop">Pit Stop Pot</a>
+    <a class="tab" href="#questionnaire" data-route="questionnaire">Questionnaire</a>
     <a class="tab" href="#admin" data-route="admin">Admin</a>
   </nav>
 
@@ -200,6 +201,13 @@
       <div id="pitstop-root">Loading Pit Stop Pot…</div>
     </section>
 
+    <!-- QUESTIONNAIRE -->
+    <section class="view" id="view-questionnaire" data-view="questionnaire" hidden>
+      <div id="questionnaire-root">
+        <div class="card"><div class="tiny muted">Loading questionnaire…</div></div>
+      </div>
+    </section>
+
     <!-- ADMIN -->
     <section class="view" id="view-admin" data-view="admin" hidden>
       <div class="card">
@@ -229,6 +237,7 @@
   <script src="js/pages/pitstop.js"></script>
   <script src="./js/pages/season-stats.js"></script>
   <script src="./js/pages/championship-reveal.js"></script>
+  <script src="./js/pages/questionnaire.js"></script>
 
   <!-- Admin core (order matters) -->
   <script src="./js/admin/events.js"></script>
@@ -242,6 +251,7 @@
   <script src="./js/admin/player-manager.js"></script>
   <script src="./js/admin/driver-manager.js"></script>
   <script src="./js/admin/data-export.js"></script>
+  <script src="./js/admin/questionnaire-admin.js"></script>
   <script src="./js/admin/trophy-tracker.js"></script>
 
   <!-- Page controllers -->

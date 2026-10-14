@@ -735,9 +735,51 @@
     };
   }
 
+  async function loadQuestionnaireExportData() {
+    const questionnaireRef = window.btccDb.collection("questionnaires").doc("2026-end-of-season");
+    const [configSnapshot, responsesSnapshot] = await Promise.all([
+      questionnaireRef.get(),
+      questionnaireRef.collection("responses").get(),
+    ]);
+    const labels = window.btccQuestionnaireFieldLabels || {};
+    const displayAnswer = window.btccQuestionnaireDisplayAnswer || ((_field, value) => value);
+    return {
+      questionnaireId: "2026-end-of-season",
+      configuration: configSnapshot.exists ? configSnapshot.data() : null,
+      responses: responsesSnapshot.docs.map((doc) => {
+        const response = doc.data() || {};
+        const readableAnswers = {};
+        Object.entries(response.answers || {}).forEach(([field, value]) => {
+          readableAnswers[field] = {
+            question: labels[field] || field,
+            value,
+            answer: displayAnswer(field, value),
+          };
+        });
+        return {
+          responseId: doc.id,
+          uid: response.uid || doc.id,
+          playerName: response.playerName || "",
+          questionnaireVersion: response.questionnaireVersion || "",
+          status: response.status || "",
+          currentQuestion: response.currentQuestion ?? null,
+          reachedQuestion: response.reachedQuestion ?? null,
+          startedAt: response.startedAt || null,
+          updatedAt: response.updatedAt || null,
+          submittedAt: response.submittedAt || null,
+          answers: response.answers || {},
+          readableAnswers,
+        };
+      }).sort((a, b) => a.playerName.localeCompare(b.playerName)),
+    };
+  }
+
   async function exportFullLeagueHistory(adminEmail) {
     assertAdmin(adminEmail);
-    const data = await loadLeagueExportData();
+    const [data, questionnaire] = await Promise.all([
+      loadLeagueExportData(),
+      loadQuestionnaireExportData(),
+    ]);
     const latestEvent = getLatestProcessedEvent(data.events);
     const summariesResult = buildPlayerEventSummaries(data);
     const selectionsResult = buildPlayerDriverSelections(data);
@@ -760,6 +802,7 @@
       events: data.events.map(eventMetadata),
       pitStopRounds: pitStopResult.pitStopRounds,
       pitStopPlayerTotals: pitStopResult.pitStopPlayerTotals,
+      questionnaire,
       exportWarnings,
     };
     downloadJsonFile(`BTCC_2026_Full_History_${dateStamp()}.json`, output);
@@ -821,12 +864,25 @@
     return output;
   }
 
+  async function exportQuestionnaireResponses(adminEmail) {
+    assertAdmin(adminEmail);
+    const questionnaire = await loadQuestionnaireExportData();
+    const output = {
+      ...exportHeader(),
+      ...questionnaire,
+      exportWarnings: [],
+    };
+    downloadJsonFile(`BTCC_2026_Questionnaire_Responses_${dateStamp()}.json`, output);
+    return output;
+  }
+
   function setupAdminDataExport(root, adminEmail) {
     const buttons = [
       { element: root.querySelector("#admin-export-full-history"), label: "Full league history", run: exportFullLeagueHistory },
       { element: root.querySelector("#admin-export-latest-event"), label: "Latest event", run: exportLatestEvent },
       { element: root.querySelector("#admin-export-current-drivers"), label: "Current drivers", run: exportCurrentDrivers },
       { element: root.querySelector("#admin-export-current-players"), label: "Current players", run: exportCurrentPlayers },
+      { element: root.querySelector("#admin-export-questionnaire"), label: "Questionnaire responses", run: exportQuestionnaireResponses },
     ];
     const message = root.querySelector("#admin-data-export-msg");
     if (buttons.some((button) => !button.element) || !message) return;
@@ -844,7 +900,7 @@
           setBusy(true);
           message.textContent = "Preparing export…";
           const output = await run(adminEmail);
-          const rowCount = output.playerEventSummaries?.length ?? output.drivers?.length ?? output.players?.length ?? 0;
+          const rowCount = output.playerEventSummaries?.length ?? output.drivers?.length ?? output.players?.length ?? output.responses?.length ?? 0;
           message.textContent = rowCount > 0
             ? `Export complete — ${label} downloaded.`
             : "No data found.";
