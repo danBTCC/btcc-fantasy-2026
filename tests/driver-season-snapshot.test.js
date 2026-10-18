@@ -20,6 +20,11 @@ describe("driver season snapshot", () => {
     assert.match(container.textContent, /602/);
     assert.equal(container.querySelectorAll("tbody tr").length, 27);
     assert.equal(container.querySelector("tbody tr strong").textContent, "Ash Sutton");
+    assert.doesNotMatch(container.textContent, /£\d+(?:\.\d+)?m\b/);
+    const dorlinRow = [...container.querySelectorAll("tbody tr")]
+      .find((row) => row.textContent.includes("James Dorlin"));
+    assert.ok(dorlinRow);
+    assert.match(dorlinRow.textContent, /low/i);
     dom.window.close();
   });
 

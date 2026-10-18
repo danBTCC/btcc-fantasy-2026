@@ -261,7 +261,7 @@
   }
 
   function formatMoney(value) {
-    return `£${Number(value || 0).toFixed(2)}m`;
+    return `£${Number(value || 0).toFixed(2)}`;
   }
 
   function formatCategories(categories) {
@@ -356,7 +356,7 @@
       <div class="driverSeasonHighlights">
         <article><span>Top scorer</span><strong>${escapeHtml(champion.name)}</strong><em>${escapeHtml(champion.points)} pts</em></article>
         <article><span>Most selected</span><strong>${escapeHtml(mostSelected.name)}</strong><em>${escapeHtml(mostSelected.selections)} picks</em></article>
-        <article><span>Biggest value rise</span><strong>${escapeHtml(biggestRiser.name)}</strong><em>+${escapeHtml((biggestRiser.closingValue - biggestRiser.openingValue).toFixed(2))}m</em></article>
+        <article><span>Biggest value rise</span><strong>${escapeHtml(biggestRiser.name)}</strong><em>+£${escapeHtml((biggestRiser.closingValue - biggestRiser.openingValue).toFixed(2))}</em></article>
       </div>
 
       <div class="driverSeasonTableWrap">
