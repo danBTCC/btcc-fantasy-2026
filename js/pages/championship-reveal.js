@@ -3,13 +3,16 @@
 
   const DATA_URL = "./data/season-stats/2026.json";
   const UNLOCK_KEY = "btccFantasy:2026ChampionshipRevealed";
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const SEASON_START = new Date("2027-04-10T14:00:00+01:00");
   const pointsFormatter = new Intl.NumberFormat("en-GB");
+  const moneyFormatter = new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+  });
 
   let statsData = null;
   let loadPromise = null;
-  let memoryUnlocked = false;
-  let revealRun = 0;
+  let countdownTimer = null;
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -29,187 +32,158 @@
     return `${number}${suffix}`;
   }
 
-  function isUnlocked() {
-    try {
-      return window.localStorage.getItem(UNLOCK_KEY) === "true" || memoryUnlocked;
-    } catch (_) {
-      return memoryUnlocked;
-    }
-  }
-
-  function unlockStandings() {
-    memoryUnlocked = true;
+  function unlockFinalStandings() {
     try {
       window.localStorage.setItem(UNLOCK_KEY, "true");
     } catch (_) {
-      // The current page session remains unlocked if storage is unavailable.
+      // The public post-season hub still renders if storage is unavailable.
     }
   }
 
-  function entrants() {
+  function championshipTopThree() {
     return statsData.playerOrder
-      .map((slug) => ({ slug, ...statsData.players[slug] }))
-      .filter((player) => player.championship)
-      .sort((a, b) => b.championship.position - a.championship.position);
+      .map((slug) => statsData.players[slug])
+      .filter((player) => player?.championship?.position <= 3)
+      .sort((a, b) => a.championship.position - b.championship.position);
   }
 
-  function podiumClass(position) {
-    if (position === 1) return " championshipRevealResult--champion";
-    if (position === 2) return " championshipRevealResult--silver";
-    if (position === 3) return " championshipRevealResult--bronze";
-    return "";
+  function teamChampion() {
+    return statsData.playerOrder
+      .map((slug) => statsData.players[slug]?.fantasyTeam)
+      .find((team) => team?.position === 1) || null;
   }
 
-  function resultRow(player, current = false) {
-    const position = player.championship.position;
-    return `<li class="championshipRevealResult${podiumClass(position)}${current ? " championshipRevealResult--current" : ""}" data-position="${position}">
-      <span class="championshipRevealResult__position">${ordinal(position)}</span>
-      <strong class="championshipRevealResult__name">${escapeHtml(player.name)}</strong>
-      <span class="championshipRevealResult__points">${pointsFormatter.format(player.championship.points)} pts</span>
-    </li>`;
+  function pitStopWinner() {
+    return statsData.playerOrder
+      .map((slug) => statsData.players[slug])
+      .find((player) => player?.pitStopPot?.earningsRank === 1) || null;
   }
 
-  function introMarkup() {
-    return `<section class="card championshipReveal championshipReveal--intro" aria-labelledby="championship-reveal-title">
-      <div class="championshipReveal__flag" aria-hidden="true"></div>
-      <p class="championshipReveal__eyebrow">2026 SEASON FINALE</p>
-      <div class="championshipReveal__trophy" aria-hidden="true">🏆</div>
-      <h1 id="championship-reveal-title">The championship is decided.</h1>
-      <p class="championshipReveal__lead">Nineteen players. Ten events. One final table.</p>
-      <button class="championshipRevealButton championshipRevealButton--primary" id="championship-reveal-start" type="button">
-        Reveal the 2026 Championship
-      </button>
-      <p class="championshipReveal__hint">The standings will be revealed from 19th place to the 2026 Champion.</p>
-    </section>`;
+  function finalEventWinner() {
+    const eventTenScores = statsData.playerOrder.flatMap((slug) => {
+      const player = statsData.players[slug];
+      return (player?.championship?.highestScoringEvents || [])
+        .filter((event) => event.eventNumber === 10)
+        .map((event) => ({ name: player.name, ...event }));
+    });
+    return eventTenScores.sort((a, b) => b.score - a.score)[0] || null;
   }
 
-  function stageMarkup() {
-    return `<section class="card championshipReveal championshipReveal--stage" aria-labelledby="championship-reveal-stage-title">
-      <div class="championshipReveal__stageHeader">
-        <div>
-          <p class="championshipReveal__eyebrow">FINAL OVERALL CHAMPIONSHIP</p>
-          <h1 id="championship-reveal-stage-title">The final standings</h1>
+  function podiumMarkup(players) {
+    return players.map((player) => `
+      <li class="postSeasonPodium__row postSeasonPodium__row--${player.championship.position}">
+        <span>${ordinal(player.championship.position)}</span>
+        <strong>${escapeHtml(player.name)}</strong>
+        <em>${pointsFormatter.format(player.championship.points)} pts</em>
+      </li>
+    `).join("");
+  }
+
+  function hubMarkup() {
+    const topThree = championshipTopThree();
+    const champion = topThree[0];
+    const winningTeam = teamChampion();
+    const pitStop = pitStopWinner();
+    const finaleWinner = finalEventWinner();
+
+    return `<section class="postSeasonHub" aria-labelledby="post-season-title">
+      <div class="postSeasonHero card">
+        <div class="postSeasonHero__flag" aria-hidden="true"></div>
+        <p class="postSeasonHero__eyebrow">2026 season complete</p>
+        <h1 id="post-season-title">2026 Season Complete</h1>
+        <p class="postSeasonHero__lead">The chequered flag has fallen on 2026. The results are final, the trophies are decided, and work now begins on the next chapter.</p>
+
+        <div class="postSeasonCountdown" role="timer" aria-label="Countdown to the 2027 season">
+          ${["days", "hours", "minutes", "seconds"].map((unit) => `
+            <div class="postSeasonCountdown__unit">
+              <strong data-countdown-unit="${unit}">0</strong>
+              <span>${unit[0].toUpperCase()}${unit.slice(1)}</span>
+            </div>
+          `).join("")}
         </div>
-        <span class="championshipReveal__counter" id="championship-reveal-counter">0 / 19</span>
+        <p class="postSeasonCountdown__date" id="post-season-countdown-date">Saturday 10 April 2027 <span aria-hidden="true">•</span> 2:00pm</p>
+
+        <div class="postSeasonHero__actions">
+          <a class="championshipRevealButton championshipRevealButton--primary" href="#standings">Final standings</a>
+          <a class="championshipRevealButton championshipRevealButton--secondary" href="#season-stats">Season review</a>
+          <a class="championshipRevealButton championshipRevealButton--secondary" href="#news">Latest news</a>
+        </div>
       </div>
-      <div class="championshipReveal__progress" aria-hidden="true"><span id="championship-reveal-progress"></span></div>
-      <div class="championshipReveal__live" id="championship-reveal-live" aria-live="polite"></div>
-      <ol class="championshipRevealResults" id="championship-reveal-results" aria-label="Revealed championship positions"></ol>
-      <div id="championship-reveal-finish"></div>
+
+      <div class="postSeasonSummary">
+        <article class="card postSeasonChampion">
+          <p class="postSeasonSummary__eyebrow">2026 champion</p>
+          <div class="postSeasonChampion__trophy" aria-hidden="true">🏆</div>
+          <h2>${escapeHtml(champion.name)}</h2>
+          <strong>${pointsFormatter.format(champion.championship.points)} points</strong>
+          <ol class="postSeasonPodium" aria-label="2026 championship top three">${podiumMarkup(topThree)}</ol>
+          <a href="#standings">View the final table <span aria-hidden="true">→</span></a>
+        </article>
+
+        <div class="postSeasonHonours">
+          ${winningTeam ? `<article class="card postSeasonHonour">
+            <span>Team champions</span>
+            <strong>${escapeHtml(winningTeam.name)}</strong>
+            <em>${pointsFormatter.format(winningTeam.points)} pts</em>
+          </article>` : ""}
+          ${pitStop ? `<article class="card postSeasonHonour">
+            <span>Pit Stop Pot winner</span>
+            <strong>${escapeHtml(pitStop.name)}</strong>
+            <em>${moneyFormatter.format(pitStop.pitStopPot.totalWon)} won</em>
+            <a href="#pitstop">View the 2026 pot <span aria-hidden="true">→</span></a>
+          </article>` : ""}
+          ${finaleWinner ? `<article class="card postSeasonHonour">
+            <span>Final event winner</span>
+            <strong>${escapeHtml(finaleWinner.name)}</strong>
+            <em>${pointsFormatter.format(finaleWinner.score)} pts · ${escapeHtml(finaleWinner.eventName)}</em>
+          </article>` : ""}
+          <article class="card postSeasonHonour postSeasonHonour--review">
+            <span>Relive the season</span>
+            <strong>Every result and story</strong>
+            <div class="postSeasonHonour__links">
+              <a href="#season-stats">Season review</a>
+              <a href="#news">News archive</a>
+            </div>
+          </article>
+        </div>
+      </div>
     </section>`;
   }
 
-  function championMarkup() {
-    const champion = statsData.players.steve;
-    const runnerUp = statsData.players.daniel;
-    const lead = runnerUp.championship.gapToChampion;
+  function updateCountdown() {
+    const remaining = Math.max(0, SEASON_START.getTime() - Date.now());
+    const totalSeconds = Math.floor(remaining / 1000);
+    const values = {
+      days: Math.floor(totalSeconds / 86400),
+      hours: Math.floor((totalSeconds % 86400) / 3600),
+      minutes: Math.floor((totalSeconds % 3600) / 60),
+      seconds: totalSeconds % 60,
+    };
 
-    return `<div class="championshipRevealChampion" aria-labelledby="championship-reveal-champion-title">
-      <div class="championshipRevealChampion__crown" aria-hidden="true">🏆</div>
-      <p class="championshipReveal__eyebrow">YOUR 2026 CHAMPION</p>
-      <h2 id="championship-reveal-champion-title">Steve is the 2026 BTCC Fantasy League Champion!</h2>
-      <p><strong>${pointsFormatter.format(champion.championship.points)} points</strong></p>
-      <p>${pointsFormatter.format(lead)} points ahead of Daniel.</p>
-      <div class="championshipRevealActions">
-        <a class="championshipRevealButton championshipRevealButton--primary" href="#standings">View Full 2026 Standings</a>
-        <button class="championshipRevealButton championshipRevealButton--secondary" id="championship-reveal-replay" type="button">Replay Reveal</button>
-      </div>
-    </div>`;
-  }
+    Object.entries(values).forEach(([unit, value]) => {
+      const element = document.querySelector(`[data-countdown-unit="${unit}"]`);
+      if (element) element.textContent = String(value).padStart(2, "0");
+    });
 
-  function delayFor(position) {
-    if (position === 1) return 3200;
-    if (position === 2) return 2600;
-    if (position === 3) return 2100;
-    if (position <= 6) return 1250;
-    if (position <= 10) return 950;
-    return 750;
-  }
-
-  function wait(milliseconds) {
-    return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
-  }
-
-  function updateStage(player, revealed, total) {
-    const results = document.getElementById("championship-reveal-results");
-    const live = document.getElementById("championship-reveal-live");
-    const counter = document.getElementById("championship-reveal-counter");
-    const progress = document.getElementById("championship-reveal-progress");
-    if (!results || !live || !counter || !progress) return;
-
-    results.querySelector(".championshipRevealResult--current")?.classList.remove("championshipRevealResult--current");
-    results.insertAdjacentHTML("afterbegin", resultRow(player, true));
-    live.textContent = `${ordinal(player.championship.position)} place: ${player.name}, ${pointsFormatter.format(player.championship.points)} points`;
-    counter.textContent = `${revealed} / ${total}`;
-    progress.style.width = `${(revealed / total) * 100}%`;
-  }
-
-  function finishReveal() {
-    unlockStandings();
-    document.getElementById("championship-reveal-results")
-      ?.querySelector(".championshipRevealResult--current")
-      ?.classList.remove("championshipRevealResult--current");
-    const finish = document.getElementById("championship-reveal-finish");
-    if (finish) {
-      finish.innerHTML = championMarkup();
-      finish.scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth", block: "nearest" });
-      bindReplay();
+    if (remaining === 0) {
+      const date = document.getElementById("post-season-countdown-date");
+      if (date) date.textContent = "The 2027 season is underway";
+      window.clearInterval(countdownTimer);
+      countdownTimer = null;
     }
   }
 
-  async function startReveal() {
-    const root = document.getElementById("championship-reveal-root");
-    if (!root || !statsData) return;
-
-    const run = ++revealRun;
-    const players = entrants();
-    root.innerHTML = stageMarkup();
-
-    if (reducedMotion.matches) {
-      players.forEach((player, index) => updateStage(player, index + 1, players.length));
-      finishReveal();
-      return;
-    }
-
-    await wait(350);
-    for (let index = 0; index < players.length; index += 1) {
-      if (run !== revealRun) return;
-      const player = players[index];
-      updateStage(player, index + 1, players.length);
-      await wait(delayFor(player.championship.position));
-    }
-
-    if (run === revealRun) finishReveal();
-  }
-
-  function bindReplay() {
-    document.getElementById("championship-reveal-replay")?.addEventListener("click", startReveal);
-  }
-
-  function renderCompleted(root) {
-    const players = entrants();
-    root.innerHTML = stageMarkup();
-    const results = document.getElementById("championship-reveal-results");
-    const counter = document.getElementById("championship-reveal-counter");
-    const progress = document.getElementById("championship-reveal-progress");
-    if (results) results.innerHTML = players.slice().reverse().map((player) => resultRow(player)).join("");
-    if (counter) counter.textContent = `${players.length} / ${players.length}`;
-    if (progress) progress.style.width = "100%";
-    const finish = document.getElementById("championship-reveal-finish");
-    if (finish) finish.innerHTML = championMarkup();
-    bindReplay();
-  }
-
-  function renderIntro(root) {
-    root.innerHTML = introMarkup();
-    root.querySelector("#championship-reveal-start")?.addEventListener("click", startReveal);
+  function startCountdown() {
+    if (countdownTimer) window.clearInterval(countdownTimer);
+    updateCountdown();
+    countdownTimer = window.setInterval(updateCountdown, 1000);
   }
 
   async function fetchStats() {
     const response = await fetch(DATA_URL, { cache: "no-cache" });
     if (!response.ok) throw new Error(`Championship data returned ${response.status}`);
     const data = await response.json();
-    if (!data.players?.steve || !data.players?.daniel || data.playerOrder?.length !== 19) {
+    if (!data.players?.steve || !data.playerOrder?.length) {
       throw new Error("Championship data is incomplete");
     }
     return data;
@@ -219,30 +193,25 @@
     const root = document.getElementById("championship-reveal-root");
     if (!root) return;
 
-    if (statsData) {
-      if (!root.querySelector(".championshipReveal")) {
-        isUnlocked() ? renderCompleted(root) : renderIntro(root);
-      }
-      return;
-    }
-
-    root.innerHTML = `<section class="card championshipReveal championshipReveal--loading" role="status"><span class="championshipRevealSpinner" aria-hidden="true"></span>Preparing the final standings…</section>`;
+    root.innerHTML = `<section class="card championshipReveal championshipReveal--loading" role="status"><span class="championshipRevealSpinner" aria-hidden="true"></span>Preparing the post-season hub…</section>`;
     try {
       loadPromise ||= fetchStats();
       statsData = await loadPromise;
-      isUnlocked() ? renderCompleted(root) : renderIntro(root);
+      unlockFinalStandings();
+      root.innerHTML = hubMarkup();
+      startCountdown();
     } catch (error) {
-      console.error("Championship reveal failed to load", error);
+      console.error("Post-season hub failed to load", error);
       loadPromise = null;
       root.innerHTML = `<section class="card championshipReveal championshipReveal--error" role="alert">
-        <h1>The championship reveal is unavailable</h1>
-        <p>We could not load the final 2026 standings. Please try again.</p>
+        <h1>The post-season hub is unavailable</h1>
+        <p>We could not load the final 2026 season data. Please try again.</p>
         <button class="championshipRevealButton championshipRevealButton--primary" id="championship-reveal-retry" type="button">Try again</button>
       </section>`;
       root.querySelector("#championship-reveal-retry")?.addEventListener("click", loadChampionshipReveal);
     }
   }
 
-  window.isChampionshipRevealUnlocked = isUnlocked;
+  window.isChampionshipRevealUnlocked = () => true;
   window.loadChampionshipReveal = loadChampionshipReveal;
 })();
