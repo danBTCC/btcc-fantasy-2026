@@ -924,6 +924,227 @@ th {
   margin-top: 12px;
 }
 
+.driverSeasonToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 0 12px;
+}
+
+.driverSeasonPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.driverSeasonButton {
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.035);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.driverSeasonButton span {
+  margin-left: 4px;
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.driverSeasonButton.is-active {
+  border-color: rgba(96, 165, 250, 0.55);
+  color: #dbeafe;
+  background: rgba(37, 99, 235, 0.2);
+}
+
+.driverSeasonStamp {
+  color: var(--muted);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.driverSeasonHero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: clamp(18px, 4vw, 28px);
+  overflow: hidden;
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 90% 15%, rgba(59, 130, 246, 0.24), transparent 36%),
+    linear-gradient(135deg, rgba(30, 64, 175, 0.2), rgba(15, 23, 42, 0.1));
+}
+
+.driverSeasonEyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: #93c5fd;
+  font-size: 0.69rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.driverSeasonHero h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 4vw, 2rem);
+}
+
+.driverSeasonHero p {
+  max-width: 670px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.driverSeasonFinalBadge {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border: 1px solid rgba(134, 239, 172, 0.3);
+  border-radius: 999px;
+  color: #bbf7d0;
+  background: rgba(22, 163, 74, 0.13);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.driverSeasonHighlights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.driverSeasonHighlights article {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.driverSeasonHighlights span,
+.driverSeasonHighlights em {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-style: normal;
+}
+
+.driverSeasonHighlights strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.driverSeasonHighlights em {
+  color: #93c5fd;
+  font-weight: 800;
+}
+
+.driverSeasonTableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+}
+
+.driverSeasonTable {
+  width: 100%;
+  min-width: 920px;
+  margin: 0;
+}
+
+.driverSeasonTable th,
+.driverSeasonTable td {
+  padding: 11px 10px;
+  vertical-align: middle;
+}
+
+.driverSeasonTable th button {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.driverSeasonRank {
+  color: #93c5fd;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.driverSeasonCategory,
+.driverSeasonSubcell {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.driverSeasonValue {
+  white-space: nowrap;
+}
+
+.driverSeasonDelta {
+  display: inline-block;
+  min-width: 42px;
+  margin-left: 6px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.driverSeasonDelta--up { color: #86efac; background: rgba(34, 197, 94, 0.13); }
+.driverSeasonDelta--down { color: #fda4af; background: rgba(244, 63, 94, 0.12); }
+.driverSeasonDelta--same { color: var(--muted); background: rgba(255, 255, 255, 0.06); }
+
+.driverSeasonTier {
+  display: inline-block;
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.driverSeasonTier--high { color: #fecaca; background: rgba(220, 38, 38, 0.11); }
+.driverSeasonTier--middle { color: #fde68a; background: rgba(217, 119, 6, 0.11); }
+.driverSeasonTier--low { color: #bbf7d0; background: rgba(22, 163, 74, 0.11); }
+
+.driverSeasonFootnote {
+  margin: 11px 2px 0;
+  color: var(--muted);
+  font-size: 0.73rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 680px) {
+  .driverSeasonToolbar { align-items: flex-start; }
+  .driverSeasonStamp { white-space: normal; text-align: right; }
+  .driverSeasonHighlights { grid-template-columns: 1fr; }
+  .driverSeasonHero { gap: 12px; }
+}
+
 .driverList {
   list-style: none;
   padding: 0;

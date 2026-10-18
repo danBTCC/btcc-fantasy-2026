@@ -260,6 +260,148 @@
     return `${value}${suffix}`;
   }
 
+  function formatMoney(value) {
+    return `£${Number(value || 0).toFixed(2)}m`;
+  }
+
+  function formatCategories(categories) {
+    const labels = { M: "Manufacturer", I: "Independent", JS: "Jack Sears" };
+    return (Array.isArray(categories) ? categories : [])
+      .map((category) => labels[category] || category)
+      .join(" · ");
+  }
+
+  function getDriverSeasonSnapshots() {
+    return Object.values(window.BTCC_DRIVER_SEASONS || {})
+      .filter((season) => season && Array.isArray(season.drivers))
+      .sort((a, b) => Number(b.season) - Number(a.season));
+  }
+
+  function renderArchivedSeason(container, seasonSnapshot) {
+    const snapshots = getDriverSeasonSnapshots();
+    const champion = [...seasonSnapshot.drivers].sort((a, b) => a.rank - b.rank)[0];
+    const mostSelected = [...seasonSnapshot.drivers].sort((a, b) => b.selections - a.selections)[0];
+    const biggestRiser = [...seasonSnapshot.drivers].sort((a, b) =>
+      (b.closingValue - b.openingValue) - (a.closingValue - a.openingValue)
+    )[0];
+
+    let sortKey = "rank";
+    let sortDir = "asc";
+
+    const seasonButtons = snapshots
+      .map((snapshot) => `
+        <button class="driverSeasonButton${snapshot.season === seasonSnapshot.season ? " is-active" : ""}"
+          type="button" data-driver-season="${escapeHtml(snapshot.season)}"
+          aria-pressed="${snapshot.season === seasonSnapshot.season}">
+          ${escapeHtml(snapshot.season)} <span>${snapshot.status === "final" ? "Final" : "Live"}</span>
+        </button>
+      `)
+      .join("");
+
+    const getSortedRows = () => [...seasonSnapshot.drivers].sort((a, b) => {
+      const dir = sortDir === "asc" ? 1 : -1;
+      if (sortKey === "name" || sortKey === "closingTier") {
+        return dir * String(a[sortKey] || "").localeCompare(String(b[sortKey] || ""));
+      }
+      if (sortKey === "pointsPerRound") {
+        return dir * ((a.points / Math.max(a.rounds, 1)) - (b.points / Math.max(b.rounds, 1)));
+      }
+      if (sortKey === "valueChange") {
+        return dir * ((a.closingValue - a.openingValue) - (b.closingValue - b.openingValue));
+      }
+      return dir * (Number(a[sortKey] || 0) - Number(b[sortKey] || 0));
+    });
+
+    const renderRows = () => getSortedRows().map((driver) => {
+      const valueChange = Number(driver.closingValue) - Number(driver.openingValue);
+      const valueClass = valueChange > 0 ? "up" : valueChange < 0 ? "down" : "same";
+      const valueLabel = `${valueChange > 0 ? "+" : ""}${valueChange.toFixed(2)}`;
+      const categoryLabel = formatCategories(driver.categories);
+
+      return `
+        <tr>
+          <td class="driverSeasonRank">${escapeHtml(driver.rank)}</td>
+          <td>
+            <strong>${escapeHtml(driver.name)}</strong>
+            ${categoryLabel ? `<span class="driverSeasonCategory">${escapeHtml(categoryLabel)}</span>` : ""}
+          </td>
+          <td><strong>${escapeHtml(driver.points)}</strong></td>
+          <td>${escapeHtml((driver.points / Math.max(driver.rounds, 1)).toFixed(1))}</td>
+          <td><strong>${escapeHtml(driver.bestRoundPoints)}</strong><span class="driverSeasonSubcell">${escapeHtml(driver.bestRound)}</span></td>
+          <td>${escapeHtml(driver.selections)}</td>
+          <td>
+            <span class="driverSeasonValue">${escapeHtml(formatMoney(driver.openingValue))} → ${escapeHtml(formatMoney(driver.closingValue))}</span>
+            <span class="driverSeasonDelta driverSeasonDelta--${valueClass}">${escapeHtml(valueLabel)}</span>
+          </td>
+          <td><span class="driverSeasonTier driverSeasonTier--${escapeHtml(driver.closingTier)}">${escapeHtml(driver.closingTier)}</span></td>
+        </tr>
+      `;
+    }).join("");
+
+    container.innerHTML = `
+      <div class="driverSeasonToolbar" aria-label="Driver season">
+        <div class="driverSeasonPicker">${seasonButtons}</div>
+        <span class="driverSeasonStamp">Preserved ${new Date(seasonSnapshot.generatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+      </div>
+
+      <section class="driverSeasonHero" aria-labelledby="driver-season-title">
+        <div>
+          <span class="driverSeasonEyebrow">Season snapshot · ${escapeHtml(seasonSnapshot.rounds)} rounds</span>
+          <h2 id="driver-season-title">${escapeHtml(seasonSnapshot.season)} final performance</h2>
+          <p>Use points per round to compare output, picks to judge popularity, and value movement to spot who rewarded their price.</p>
+        </div>
+        <span class="driverSeasonFinalBadge">Final</span>
+      </section>
+
+      <div class="driverSeasonHighlights">
+        <article><span>Top scorer</span><strong>${escapeHtml(champion.name)}</strong><em>${escapeHtml(champion.points)} pts</em></article>
+        <article><span>Most selected</span><strong>${escapeHtml(mostSelected.name)}</strong><em>${escapeHtml(mostSelected.selections)} picks</em></article>
+        <article><span>Biggest value rise</span><strong>${escapeHtml(biggestRiser.name)}</strong><em>+${escapeHtml((biggestRiser.closingValue - biggestRiser.openingValue).toFixed(2))}m</em></article>
+      </div>
+
+      <div class="driverSeasonTableWrap">
+        <table class="table driverSeasonTable">
+          <thead><tr>
+            <th><button type="button" data-archive-sort="rank">Rank ↑</button></th>
+            <th><button type="button" data-archive-sort="name">Driver ⇅</button></th>
+            <th><button type="button" data-archive-sort="points">Fantasy pts ⇅</button></th>
+            <th><button type="button" data-archive-sort="pointsPerRound">Pts / round ⇅</button></th>
+            <th><button type="button" data-archive-sort="bestRoundPoints">Best round ⇅</button></th>
+            <th><button type="button" data-archive-sort="selections">Picks ⇅</button></th>
+            <th><button type="button" data-archive-sort="valueChange">Value open → close ⇅</button></th>
+            <th><button type="button" data-archive-sort="closingTier">Final tier ⇅</button></th>
+          </tr></thead>
+          <tbody>${renderRows()}</tbody>
+        </table>
+      </div>
+      <p class="driverSeasonFootnote">Picks are total selections across the season. Prices and tiers are frozen at season close, so later grid changes cannot rewrite this record.</p>
+    `;
+
+    container.querySelectorAll("[data-driver-season]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const next = snapshots.find((snapshot) => String(snapshot.season) === button.dataset.driverSeason);
+        if (next) renderArchivedSeason(container, next);
+      });
+    });
+
+    container.querySelectorAll("[data-archive-sort]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const nextKey = button.dataset.archiveSort;
+        if (sortKey === nextKey) sortDir = sortDir === "asc" ? "desc" : "asc";
+        else {
+          sortKey = nextKey;
+          sortDir = ["rank", "name", "closingTier"].includes(nextKey) ? "asc" : "desc";
+        }
+
+        container.querySelector("tbody").innerHTML = renderRows();
+        container.querySelectorAll("[data-archive-sort]").forEach((header) => {
+          const label = header.textContent.replace(/[⇅↑↓]/g, "").trim();
+          header.textContent = `${label} ${header.dataset.archiveSort === sortKey ? (sortDir === "asc" ? "↑" : "↓") : "⇅"}`;
+        });
+      });
+    });
+  }
+
 
   function renderStatsTable(title, columns, rows, emptyMessage) {
     const head = columns.map((col) => `<th>${col}</th>`).join("");
@@ -294,6 +436,13 @@
     if (!container) return;
 
     container.textContent = "Loading drivers...";
+
+    const archivedSeasons = getDriverSeasonSnapshots();
+    const latestArchive = archivedSeasons[0];
+    if (latestArchive && latestArchive.status === "final") {
+      renderArchivedSeason(container, latestArchive);
+      return;
+    }
 
     try {
       if (!window.btccDb) throw new Error("btccDb is not defined (Firestore not ready)");
