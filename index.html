@@ -26,7 +26,7 @@
     <a class="tab" href="#results" data-route="results">Results</a>
     <a class="tab" href="#news" data-route="news">News</a>
     <a class="tab" href="#pitstop" data-route="pitstop">Pit Stop Pot</a>
-    <a class="tab" href="#questionnaire" data-route="questionnaire">Questionnaire</a>
+    <a class="tab" href="#vote" data-route="vote">2027 Player Vote</a>
     <a class="tab" href="#admin" data-route="admin">Admin</a>
   </nav>
 
@@ -211,10 +211,10 @@
       <div id="pitstop-root">Loading Pit Stop Pot…</div>
     </section>
 
-    <!-- QUESTIONNAIRE -->
-    <section class="view" id="view-questionnaire" data-view="questionnaire" hidden>
-      <div id="questionnaire-root">
-        <div class="card"><div class="tiny muted">Loading questionnaire…</div></div>
+    <!-- 2027 PLAYER VOTE -->
+    <section class="view" id="view-vote" data-view="vote" hidden>
+      <div id="player-vote-root">
+        <div class="card"><div class="tiny muted">Loading the 2027 Player Vote…</div></div>
       </div>
     </section>
 
@@ -248,7 +248,9 @@
   <script src="js/pages/pitstop.js"></script>
   <script src="./js/pages/season-stats.js"></script>
   <script src="./js/pages/championship-reveal.js"></script>
+  <!-- Retained for the archived 2026 questionnaire answer labels used by Admin/export. -->
   <script src="./js/pages/questionnaire.js"></script>
+  <script src="./js/pages/player-vote.js"></script>
 
   <!-- Admin core (order matters) -->
   <script src="./js/admin/events.js"></script>
@@ -263,6 +265,7 @@
   <script src="./js/admin/driver-manager.js"></script>
   <script src="./js/admin/data-export.js"></script>
   <script src="./js/admin/questionnaire-admin.js"></script>
+  <script src="./js/admin/player-vote-admin.js"></script>
   <script src="./js/admin/trophy-tracker.js"></script>
 
   <!-- Page controllers -->

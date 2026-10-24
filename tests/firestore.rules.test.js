@@ -6,6 +6,7 @@ const { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } = require("f
 
 const PROJECT_ID = "btcc-fantasy-2026-rules-test";
 const QUESTIONNAIRE_ID = "2026-end-of-season";
+const PLAYER_VOTE_ID = "2027-player-vote";
 let testEnvironment;
 
 const responsePayload = (uid, name, extra = {}) => ({
@@ -19,6 +20,18 @@ const responsePayload = (uid, name, extra = {}) => ({
   startedAt: serverTimestamp(),
   updatedAt: serverTimestamp(),
   submittedAt: null,
+  ...extra,
+});
+
+const votePayload = (uid, name, extra = {}) => ({
+  uid,
+  playerName: name,
+  voteVersion: "2027.1",
+  status: "submitted",
+  answers: {},
+  startedAt: serverTimestamp(),
+  updatedAt: serverTimestamp(),
+  submittedAt: serverTimestamp(),
   ...extra,
 });
 
@@ -39,6 +52,7 @@ async function seed(enabled = true) {
       setDoc(doc(db, "submissions", "event_10", "entries", "player-a"), { uid: "player-a", driverIds: ["driver_1"] }),
       setDoc(doc(db, "entries", "event_10", "entries", "player-a"), { uid: "player-a", driverIds: ["driver_1"] }),
       setDoc(doc(db, "questionnaires", QUESTIONNAIRE_ID), { enabled, version: "2026.1" }),
+      setDoc(doc(db, "questionnaires", PLAYER_VOTE_ID), { enabled, version: "2027.1" }),
     ]);
   });
 }
@@ -194,5 +208,102 @@ describe("questionnaire Firestore rules", function () {
       submittedAt: snapshot.data().submittedAt,
     })));
     assert.equal((await getDocs(collection(testEnvironment.authenticatedContext("admin", { admin: true }).firestore(), "questionnaires", QUESTIONNAIRE_ID, "responses"))).size, 1);
+  });
+
+  it("keeps archived 2026 responses private and blocks owner edits when disabled", async () => {
+    await seed(false);
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "questionnaires", QUESTIONNAIRE_ID, "responses", "player-a"), {
+        ...responsePayload("player-a", "Player A"),
+        status: "submitted",
+      });
+    });
+    const playerA = testEnvironment.authenticatedContext("player-a").firestore();
+    const playerB = testEnvironment.authenticatedContext("player-b").firestore();
+    const admin = testEnvironment.authenticatedContext("admin", { admin: true }).firestore();
+    const targetA = doc(playerA, "questionnaires", QUESTIONNAIRE_ID, "responses", "player-a");
+    const stored = await assertSucceeds(getDoc(targetA));
+    await assertFails(getDoc(doc(playerB, "questionnaires", QUESTIONNAIRE_ID, "responses", "player-a")));
+    await assertFails(getDoc(doc(testEnvironment.unauthenticatedContext().firestore(), "questionnaires", QUESTIONNAIRE_ID, "responses", "player-a")));
+    await assertSucceeds(getDoc(doc(admin, "questionnaires", QUESTIONNAIRE_ID, "responses", "player-a")));
+    await assertFails(setDoc(targetA, responsePayload("player-a", "Player A", {
+      startedAt: stored.data().startedAt,
+      answers: { q1_return: "2" },
+    })));
+  });
+
+  it("allows an enabled Player Vote owner to submit and edit one UID document", async () => {
+    await seed();
+    const player = testEnvironment.authenticatedContext("player-a").firestore();
+    const target = doc(player, "questionnaires", PLAYER_VOTE_ID, "responses", "player-a");
+    await assertSucceeds(setDoc(target, votePayload("player-a", "Player A", {
+      answers: {
+        p1_minimum_budget: "1",
+        p9_extra_competitions: ["1", "3"],
+      },
+    })));
+    const stored = await getDoc(target);
+    await assertSucceeds(setDoc(target, votePayload("player-a", "Player A", {
+      startedAt: stored.data().startedAt,
+      submittedAt: stored.data().submittedAt,
+      answers: {
+        p1_minimum_budget: "2",
+        p9_extra_competitions: ["4"],
+      },
+    })));
+    const responses = await getDocs(collection(testEnvironment.authenticatedContext("admin", { admin: true }).firestore(), "questionnaires", PLAYER_VOTE_ID, "responses"));
+    assert.equal(responses.size, 1);
+  });
+
+  it("rejects a Player Vote response that combines None with another extra competition", async () => {
+    await seed();
+    const player = testEnvironment.authenticatedContext("player-a").firestore();
+    await assertFails(setDoc(doc(player, "questionnaires", PLAYER_VOTE_ID, "responses", "player-a"), votePayload("player-a", "Player A", {
+      answers: { p9_extra_competitions: ["1", "4"] },
+    })));
+  });
+
+  it("keeps Player Vote responses private between anonymous, players and Admin", async () => {
+    await seed();
+    const playerA = testEnvironment.authenticatedContext("player-a").firestore();
+    const playerB = testEnvironment.authenticatedContext("player-b").firestore();
+    const anonymous = testEnvironment.unauthenticatedContext().firestore();
+    const admin = testEnvironment.authenticatedContext("admin", { admin: true }).firestore();
+    const targetA = doc(playerA, "questionnaires", PLAYER_VOTE_ID, "responses", "player-a");
+    await setDoc(targetA, votePayload("player-a", "Player A"));
+    await assertSucceeds(getDoc(targetA));
+    await assertFails(getDoc(doc(playerB, "questionnaires", PLAYER_VOTE_ID, "responses", "player-a")));
+    await assertFails(getDoc(doc(anonymous, "questionnaires", PLAYER_VOTE_ID, "responses", "player-a")));
+    await assertFails(setDoc(doc(playerB, "questionnaires", PLAYER_VOTE_ID, "responses", "player-a"), votePayload("player-a", "Player A")));
+    await assertSucceeds(getDocs(collection(admin, "questionnaires", PLAYER_VOTE_ID, "responses")));
+  });
+
+  it("blocks Player Vote creates and updates while disabled", async () => {
+    await seed();
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "questionnaires", PLAYER_VOTE_ID), { enabled: false, version: "2027.1" });
+      await setDoc(doc(context.firestore(), "questionnaires", PLAYER_VOTE_ID, "responses", "player-b"), {
+        ...votePayload("player-b", "Player B"),
+      });
+    });
+    const playerA = testEnvironment.authenticatedContext("player-a").firestore();
+    const playerB = testEnvironment.authenticatedContext("player-b").firestore();
+    await assertFails(setDoc(doc(playerA, "questionnaires", PLAYER_VOTE_ID, "responses", "player-a"), votePayload("player-a", "Player A")));
+    const targetB = doc(playerB, "questionnaires", PLAYER_VOTE_ID, "responses", "player-b");
+    const existing = await getDoc(targetB);
+    await assertFails(setDoc(targetB, votePayload("player-b", "Player B", {
+      startedAt: existing.data().startedAt,
+      submittedAt: existing.data().submittedAt,
+      answers: { p1_minimum_budget: "2" },
+    })));
+  });
+
+  it("blocks Player Vote writes when its configuration document does not exist", async () => {
+    await seed();
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "questionnaires", PLAYER_VOTE_ID), {});
+    });
+    const player = testEnvironment.authenticatedContext("player-a").firestore();
+    await assertFails(setDoc(doc(player, "questionnaires", PLAYER_VOTE_ID, "responses", "player-a"), votePayload("player-a", "Player A")));
   });
 });

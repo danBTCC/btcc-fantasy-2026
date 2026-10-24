@@ -774,11 +774,49 @@
     };
   }
 
+  async function loadPlayerVoteExportData() {
+    const voteRef = window.btccDb.collection("questionnaires").doc("2027-player-vote");
+    const [configSnapshot, responsesSnapshot] = await Promise.all([
+      voteRef.get(),
+      voteRef.collection("responses").get(),
+    ]);
+    const labels = window.btccPlayerVoteFieldLabels || {};
+    const displayAnswer = window.btccPlayerVoteDisplayAnswer || ((_field, value) => value);
+    return {
+      voteId: "2027-player-vote",
+      configuration: configSnapshot.exists ? configSnapshot.data() : null,
+      responses: responsesSnapshot.docs.map((doc) => {
+        const response = doc.data() || {};
+        const readableAnswers = {};
+        Object.entries(response.answers || {}).forEach(([field, value]) => {
+          readableAnswers[field] = {
+            proposal: labels[field] || field,
+            value,
+            answer: displayAnswer(field, value),
+          };
+        });
+        return {
+          responseId: doc.id,
+          uid: response.uid || doc.id,
+          playerName: response.playerName || "",
+          voteVersion: response.voteVersion || "",
+          status: response.status || "",
+          startedAt: response.startedAt || null,
+          updatedAt: response.updatedAt || null,
+          submittedAt: response.submittedAt || null,
+          answers: response.answers || {},
+          readableAnswers,
+        };
+      }).sort((a, b) => a.playerName.localeCompare(b.playerName)),
+    };
+  }
+
   async function exportFullLeagueHistory(adminEmail) {
     assertAdmin(adminEmail);
-    const [data, questionnaire] = await Promise.all([
+    const [data, questionnaire, playerVote] = await Promise.all([
       loadLeagueExportData(),
       loadQuestionnaireExportData(),
+      loadPlayerVoteExportData(),
     ]);
     const latestEvent = getLatestProcessedEvent(data.events);
     const summariesResult = buildPlayerEventSummaries(data);
@@ -803,6 +841,7 @@
       pitStopRounds: pitStopResult.pitStopRounds,
       pitStopPlayerTotals: pitStopResult.pitStopPlayerTotals,
       questionnaire,
+      playerVote,
       exportWarnings,
     };
     downloadJsonFile(`BTCC_2026_Full_History_${dateStamp()}.json`, output);
@@ -876,6 +915,18 @@
     return output;
   }
 
+  async function exportPlayerVoteResponses(adminEmail) {
+    assertAdmin(adminEmail);
+    const playerVote = await loadPlayerVoteExportData();
+    const output = {
+      ...exportHeader(),
+      ...playerVote,
+      exportWarnings: [],
+    };
+    downloadJsonFile(`BTCC_2027_Player_Votes_${dateStamp()}.json`, output);
+    return output;
+  }
+
   function setupAdminDataExport(root, adminEmail) {
     const buttons = [
       { element: root.querySelector("#admin-export-full-history"), label: "Full league history", run: exportFullLeagueHistory },
@@ -883,6 +934,7 @@
       { element: root.querySelector("#admin-export-current-drivers"), label: "Current drivers", run: exportCurrentDrivers },
       { element: root.querySelector("#admin-export-current-players"), label: "Current players", run: exportCurrentPlayers },
       { element: root.querySelector("#admin-export-questionnaire"), label: "Questionnaire responses", run: exportQuestionnaireResponses },
+      { element: root.querySelector("#admin-export-player-vote"), label: "2027 Player Votes", run: exportPlayerVoteResponses },
     ];
     const message = root.querySelector("#admin-data-export-msg");
     if (buttons.some((button) => !button.element) || !message) return;

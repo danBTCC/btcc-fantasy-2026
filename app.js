@@ -67,7 +67,7 @@ async function loadRouteData(route) {
     news: () => window.loadNews?.(),
     pitstop: () => window.loadPitStop?.(),
     "season-stats": () => window.loadSeasonStats?.(),
-    questionnaire: () => window.loadQuestionnaire?.(),
+    vote: () => window.loadPlayerVote?.(),
     admin: () => window.loadAdmin?.(),
   };
 
@@ -100,7 +100,7 @@ function getRouteFromHash() {
   const raw = (window.location.hash || "#home").replace("#", "").trim().toLowerCase();
   const requestedRoute = raw.split("/")[0];
   const route = requestedRoute === "standings" ? "tables" : requestedRoute;
-  const allowed = new Set(["home", "submit", "tables", "season-stats", "drivers", "results", "news", "pitstop", "questionnaire", "admin"]);
+  const allowed = new Set(["home", "submit", "tables", "season-stats", "drivers", "results", "news", "pitstop", "vote", "admin"]);
 
   if (route === "tables" && !window.isChampionshipRevealUnlocked?.()) {
     if (window.location.hash !== "#home") {

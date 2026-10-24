@@ -34,11 +34,9 @@ describe("questionnaire Admin view", () => {
       documentSnapshot("player-b", { status: "draft", questionnaireVersion: "2026.1", reachedQuestion: 4, startedAt: timestamp, updatedAt: timestamp, submittedAt: null, answers: { q1_return: "2" } }),
     ]);
     const config = documentSnapshot("2026-end-of-season", { enabled: true, version: "2026.1" });
-    let savedConfiguration = null;
     const questionnaireRef = {
       get: async () => config,
       collection: () => ({ get: async () => responses }),
-      set: async (value) => { savedConfiguration = value; },
     };
     window.btccDb = { collection: (name) => name === "questionnaires" ? { doc: () => questionnaireRef } : { get: async () => players } };
     window.firebase = {
@@ -48,7 +46,7 @@ describe("questionnaire Admin view", () => {
     window.eval(questionnaireSource);
     window.eval(adminSource);
     await window.setupAdminQuestionnaire(root);
-    assert.match(root.querySelector("#admin-questionnaire-status").textContent, /1 \/ 3 submitted · 1 in progress · 1 not started/);
+    assert.match(root.querySelector("#admin-questionnaire-status").textContent, /Archive warning: still enabled · 1 \/ 3 submitted · 1 drafts · 1 not started/);
     const buttons = root.querySelectorAll("[data-questionnaire-player]");
     assert.equal(buttons.length, 3);
     buttons[0].click();
@@ -56,10 +54,7 @@ describe("questionnaire Admin view", () => {
     assert.match(root.querySelector("#admin-questionnaire-detail").textContent, /Yes/);
     assert.match(root.querySelector("#admin-questionnaire-detail").textContent, /Standings/);
     assert.match(root.querySelector("#admin-questionnaire-aggregates").textContent, /Play again in 2027/);
-    root.querySelector("#admin-questionnaire-config-save").click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    assert.equal(savedConfiguration.updatedBy, "admin");
-    assert.equal(Object.values(savedConfiguration).includes("admin@example.com"), false);
+    assert.match(root.querySelector("#admin-questionnaire-status").textContent, /Archive warning: still enabled/);
     dom.window.close();
   });
 

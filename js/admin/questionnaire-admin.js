@@ -1,6 +1,5 @@
 (function () {
   const QUESTIONNAIRE_ID = "2026-end-of-season";
-  const DEFAULT_VERSION = "2026.1";
   const fieldLabels = {
     q1_return: "Q1 — Play again in 2027",
     q2_enjoyment: "Q2 — Enjoyment",
@@ -82,7 +81,6 @@
     const playersElement = root.querySelector("#admin-questionnaire-players");
     const detail = root.querySelector("#admin-questionnaire-detail");
     const aggregates = root.querySelector("#admin-questionnaire-aggregates");
-    const saveButton = root.querySelector("#admin-questionnaire-config-save");
     const reloadButton = root.querySelector("#admin-questionnaire-reload");
 
     try {
@@ -103,9 +101,6 @@
           responsesRef.get(),
         ]);
         const questionnaireConfig = configSnapshot.exists ? configSnapshot.data() : {};
-        root.querySelector("#admin-questionnaire-enabled").checked = questionnaireConfig.enabled === true;
-        root.querySelector("#admin-questionnaire-version").value = questionnaireConfig.version || DEFAULT_VERSION;
-
         const responses = new Map(responsesSnapshot.docs.map((doc) => [doc.id, { uid: doc.id, ...doc.data() }]));
         const players = playersSnapshot.docs
           .map((doc) => ({
@@ -118,7 +113,7 @@
 
         const submitted = players.filter((player) => responses.get(player.uid)?.status === "submitted").length;
         const drafts = players.filter((player) => responses.get(player.uid)?.status === "draft").length;
-        status.textContent = `${submitted} / ${players.length} submitted · ${drafts} in progress · ${players.length - submitted - drafts} not started`;
+        status.textContent = `Archive ${questionnaireConfig.enabled === true ? "warning: still enabled" : "closed"} · ${submitted} / ${players.length} submitted · ${drafts} drafts · ${players.length - submitted - drafts} not started`;
 
         playersElement.innerHTML = `
           <div class="tableWrap"><table>
@@ -174,25 +169,6 @@
           }).join("");
       }
 
-      saveButton.addEventListener("click", async () => {
-        try {
-          saveButton.disabled = true;
-          const version = root.querySelector("#admin-questionnaire-version").value.trim();
-          if (!version) throw new Error("A questionnaire version is required.");
-          await questionnaireRef.set({
-            title: "BTCC Fantasy League 2026 End of Season Questionnaire",
-            version,
-            enabled: root.querySelector("#admin-questionnaire-enabled").checked,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedBy: currentUser.uid,
-          }, { merge: true });
-          await load();
-        } catch (error) {
-          status.textContent = error?.message || "Questionnaire configuration could not be saved.";
-        } finally {
-          saveButton.disabled = false;
-        }
-      });
       reloadButton.addEventListener("click", load);
       await load();
     } catch (error) {

@@ -23,7 +23,7 @@ service cloud.firestore {
       return questionnaireConfig(questionnaireId).enabled == true;
     }
 
-    function validQuestionnaireAnswers() {
+    function valid2026QuestionnaireAnswers() {
       return request.resource.data.answers is map
         && request.resource.data.answers.keys().hasOnly([
           'q1_return',
@@ -67,7 +67,54 @@ service cloud.firestore {
         && request.resource.data.reachedQuestion <= 12
         && request.resource.data.startedAt is timestamp
         && request.resource.data.updatedAt == request.time
-        && validQuestionnaireAnswers()
+        && valid2026QuestionnaireAnswers()
+        && (
+          (request.resource.data.status == 'draft' && request.resource.data.submittedAt == null)
+          || (request.resource.data.status == 'submitted' && request.resource.data.submittedAt is timestamp)
+        );
+    }
+
+    function validPlayerVoteAnswers() {
+      return request.resource.data.answers is map
+        && request.resource.data.answers.keys().hasOnly([
+          'p1_minimum_budget',
+          'p2_sld_premium',
+          'p3_sld_star_pricing',
+          'p4_form_driver',
+          'p5_team_names',
+          'p6_team_weekend_bonus',
+          'p7_team_captain',
+          'p8_qualifying_format',
+          'p9_extra_competitions',
+          'p10_pit_stop_pot'
+        ])
+        && (
+          !request.resource.data.answers.keys().hasAny(['p9_extra_competitions'])
+          || (
+            request.resource.data.answers.p9_extra_competitions is list
+            && request.resource.data.answers.p9_extra_competitions.size() <= 3
+            && (
+              !('4' in request.resource.data.answers.p9_extra_competitions)
+              || request.resource.data.answers.p9_extra_competitions.size() == 1
+            )
+          )
+        );
+    }
+
+    function validPlayerVoteResponse(questionnaireId, uid) {
+      let config = questionnaireConfig(questionnaireId);
+      return request.resource.data.keys().hasOnly([
+          'uid', 'playerName', 'voteVersion', 'status', 'answers',
+          'startedAt', 'updatedAt', 'submittedAt'
+        ])
+        && request.resource.data.uid == uid
+        && request.resource.data.playerName is string
+        && validPlayerName(uid)
+        && request.resource.data.voteVersion == config.version
+        && request.resource.data.status in ['draft', 'submitted']
+        && request.resource.data.startedAt is timestamp
+        && request.resource.data.updatedAt == request.time
+        && validPlayerVoteAnswers()
         && (
           (request.resource.data.status == 'draft' && request.resource.data.submittedAt == null)
           || (request.resource.data.status == 'submitted' && request.resource.data.submittedAt is timestamp)
@@ -149,7 +196,12 @@ service cloud.firestore {
 
         allow create: if owner(uid)
           && questionnaireOpen(questionnaireId)
-          && validQuestionnaireResponse(questionnaireId, uid)
+          && (
+            (questionnaireId == '2026-end-of-season'
+              && validQuestionnaireResponse(questionnaireId, uid))
+            || (questionnaireId == '2027-player-vote'
+              && validPlayerVoteResponse(questionnaireId, uid))
+          )
           && request.resource.data.startedAt == request.time
           && (
             request.resource.data.status == 'draft'
@@ -158,18 +210,20 @@ service cloud.firestore {
 
         allow update: if owner(uid)
           && questionnaireOpen(questionnaireId)
-          && validQuestionnaireResponse(questionnaireId, uid)
           && request.resource.data.startedAt == resource.data.startedAt
-          && request.resource.data.reachedQuestion >= resource.data.reachedQuestion
           && (
-            (resource.data.status == 'draft'
-              && request.resource.data.status == 'draft'
+            (questionnaireId == '2026-end-of-season'
+              && validQuestionnaireResponse(questionnaireId, uid)
+              && request.resource.data.reachedQuestion >= resource.data.reachedQuestion)
+            || (questionnaireId == '2027-player-vote'
+              && validPlayerVoteResponse(questionnaireId, uid))
+          )
+          && (
+            (resource.data.status == 'draft' && request.resource.data.status == 'draft'
               && request.resource.data.submittedAt == null)
-            || (resource.data.status == 'draft'
-              && request.resource.data.status == 'submitted'
+            || (resource.data.status == 'draft' && request.resource.data.status == 'submitted'
               && request.resource.data.submittedAt == request.time)
-            || (resource.data.status == 'submitted'
-              && request.resource.data.status == 'submitted'
+            || (resource.data.status == 'submitted' && request.resource.data.status == 'submitted'
               && request.resource.data.submittedAt == resource.data.submittedAt)
           );
       }

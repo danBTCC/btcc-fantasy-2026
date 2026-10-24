@@ -2824,7 +2824,7 @@ th {
   }
 }
 
-/* 2026 end-of-season questionnaire */
+/* 2026 questionnaire archive and 2027 Player Vote */
 .questionnaireShell {
   width: min(100%, 920px);
   margin: 0 auto;
@@ -3170,6 +3170,103 @@ th {
   margin: 0;
 }
 
+.playerVoteShell {
+  display: grid;
+  gap: 14px;
+}
+
+.playerVoteIntro h1 {
+  margin: 7px 0 14px;
+  font-size: clamp(27px, 5vw, 39px);
+}
+
+.playerVoteIntro > p,
+.playerVoteProposal__description p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.playerVoteConfirmed {
+  margin-top: 22px;
+  padding: 17px;
+  border: 1px solid rgba(56, 189, 248, .3);
+  border-radius: 13px;
+  background: rgba(14, 165, 233, .07);
+}
+
+.playerVoteConfirmed h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.playerVoteConfirmed p {
+  margin: 7px 0;
+}
+
+.playerVoteProgress {
+  position: sticky;
+  z-index: 5;
+  top: 8px;
+  padding: 14px 18px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .25);
+}
+
+.playerVoteProgress > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.playerVoteProgress span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.playerVoteProgress .questionnaireProgress {
+  margin: 10px 0 0;
+}
+
+.playerVoteSectionTitle {
+  margin: 26px 0 0;
+  color: #bae6fd;
+  font-size: clamp(22px, 4vw, 29px);
+}
+
+.playerVoteProposal {
+  margin-top: 14px;
+}
+
+.playerVoteProposal__number {
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.playerVoteProposal h2 {
+  margin: 6px 0 10px;
+}
+
+.playerVoteProposal .questionnaireGroup {
+  margin: 18px 0 0;
+}
+
+.playerVoteSubmit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding: 18px;
+}
+
+.playerVoteSubmit .questionnaireSaveStatus {
+  flex: 1 1 230px;
+  margin: 0;
+}
+
 @media (max-width: 620px) {
   .questionnaireCard {
     padding: 17px 13px;
@@ -3215,6 +3312,19 @@ th {
 
   .questionnaireButton--primary {
     justify-self: stretch;
+  }
+
+  .playerVoteProgress {
+    position: static;
+  }
+
+  .playerVoteProgress > div:first-child {
+    display: grid;
+    gap: 5px;
+  }
+
+  .playerVoteSubmit .questionnaireButton {
+    width: 100%;
   }
 }
 

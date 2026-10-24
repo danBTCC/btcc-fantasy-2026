@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npm run test:rules && npm run test:questionnaire",
     "test:rules": "firebase emulators:exec --only firestore --project btcc-fantasy-2026-rules-test \"mocha tests/firestore.rules.test.js\"",
-    "test:questionnaire": "mocha tests/questionnaire-*.test.js tests/existing-site-regression.test.js"
+    "test:questionnaire": "mocha tests/questionnaire-*.test.js tests/player-vote-*.test.js tests/existing-site-regression.test.js"
   },
   "repository": {
     "type": "git",

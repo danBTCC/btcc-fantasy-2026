@@ -253,26 +253,41 @@ const ADMIN_EMAILS = [
       </div>
 
       <div class="card" style="margin-top:12px;">
+        <button type="button" class="admin-collapse-toggle" data-target="admin-player-vote-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
+          <h2 style="margin:0;">2027 Player Vote</h2>
+          <span class="tiny muted" data-chevron>▸</span>
+        </button>
+        <div id="admin-player-vote-body" hidden style="margin-top:10px;">
+          <p class="tiny muted" style="margin:0; line-height:1.5;">Open or close the Player Vote, monitor participation, review individual votes and see aggregate proposal results.</p>
+          <div class="note" style="margin-top:10px; display:grid; gap:10px;">
+            <label class="questionnaireAdminToggle"><input id="admin-player-vote-enabled" type="checkbox"> Player Vote enabled and open</label>
+            <label class="tiny muted">Player Vote version
+              <input id="admin-player-vote-version" type="text" value="2027.1" style="display:block; width:100%; margin-top:5px; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
+            </label>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <button id="admin-player-vote-config-save" class="tile" type="button">Save Player Vote Settings</button>
+              <button id="admin-player-vote-reload" class="tile tinyBtn" type="button">Reload</button>
+            </div>
+          </div>
+          <div id="admin-player-vote-status" class="tiny muted" role="status" aria-live="polite" style="margin-top:10px;">Loading…</div>
+          <div id="admin-player-vote-players" style="margin-top:10px;"></div>
+          <div id="admin-player-vote-detail" style="margin-top:12px;"></div>
+          <details class="note" style="margin-top:12px;"><summary style="cursor:pointer; font-weight:800;">Aggregate proposal results</summary><div id="admin-player-vote-aggregates" class="questionnaireAggregates" style="margin-top:10px;"></div></details>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
         <button type="button" class="admin-collapse-toggle" data-target="admin-questionnaire-body" aria-expanded="false" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--text); padding:0; cursor:pointer;">
-          <h2 style="margin:0;">Questionnaire</h2>
+          <h2 style="margin:0;">Archived 2026 Questionnaire</h2>
           <span class="tiny muted" data-chevron>▸</span>
         </button>
         <div id="admin-questionnaire-body" hidden style="margin-top:10px;">
-          <p class="tiny muted" style="margin:0; line-height:1.5;">Open or close the questionnaire, monitor player progress, review responses and see simple submitted-answer totals.</p>
-          <div class="note" style="margin-top:10px; display:grid; gap:10px;">
-            <label class="questionnaireAdminToggle"><input id="admin-questionnaire-enabled" type="checkbox"> Questionnaire enabled and open</label>
-            <label class="tiny muted">Questionnaire version
-              <input id="admin-questionnaire-version" type="text" value="2026.1" style="display:block; width:100%; margin-top:5px; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text);">
-            </label>
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <button id="admin-questionnaire-config-save" class="tile" type="button">Save Questionnaire Settings</button>
-              <button id="admin-questionnaire-reload" class="tile tinyBtn" type="button">Reload</button>
-            </div>
-          </div>
+          <p class="tiny muted" style="margin:0; line-height:1.5;">Historical end-of-season responses retained for review and export. This archive is read-only in Admin.</p>
           <div id="admin-questionnaire-status" class="tiny muted" role="status" aria-live="polite" style="margin-top:10px;">Loading…</div>
+          <button id="admin-questionnaire-reload" class="tile tinyBtn" type="button" style="margin-top:10px;">Reload archive</button>
           <div id="admin-questionnaire-players" style="margin-top:10px;"></div>
           <div id="admin-questionnaire-detail" style="margin-top:12px;"></div>
-          <details class="note" style="margin-top:12px;"><summary style="cursor:pointer; font-weight:800;">Aggregate submitted answers</summary><div id="admin-questionnaire-aggregates" class="questionnaireAggregates" style="margin-top:10px;"></div></details>
+          <details class="note" style="margin-top:12px;"><summary style="cursor:pointer; font-weight:800;">Aggregate questionnaire results</summary><div id="admin-questionnaire-aggregates" class="questionnaireAggregates" style="margin-top:10px;"></div></details>
         </div>
       </div>
 
@@ -291,6 +306,7 @@ const ADMIN_EMAILS = [
             <button id="admin-export-current-drivers" class="tile" type="button">Export Current Drivers</button>
             <button id="admin-export-current-players" class="tile" type="button">Export Current Players</button>
             <button id="admin-export-questionnaire" class="tile" type="button">Export Questionnaire Responses</button>
+            <button id="admin-export-player-vote" class="tile" type="button">Export 2027 Player Votes</button>
           </div>
           <div id="admin-data-export-msg" class="tiny muted" role="status" aria-live="polite" style="margin-top:10px;">Ready.</div>
         </div>
@@ -539,6 +555,9 @@ const ADMIN_EMAILS = [
     }
     if (typeof window.setupAdminQuestionnaire === "function") {
       window.setupAdminQuestionnaire(root);
+    }
+    if (typeof window.setupAdminPlayerVote === "function") {
+      window.setupAdminPlayerVote(root);
     }
     renderQualifyingForm(root);
     renderRaceForms(root);
