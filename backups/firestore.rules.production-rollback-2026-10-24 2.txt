@@ -1,0 +1,184 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function admin() {
+      return signedIn()
+        && request.auth.token.keys().hasAny(['admin'])
+        && request.auth.token.admin == true;
+    }
+
+    function owner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function questionnaireConfig(questionnaireId) {
+      return get(/databases/$(database)/documents/questionnaires/$(questionnaireId)).data;
+    }
+
+    function questionnaireOpen(questionnaireId) {
+      return questionnaireConfig(questionnaireId).enabled == true;
+    }
+
+    function validQuestionnaireAnswers() {
+      return request.resource.data.answers is map
+        && request.resource.data.answers.keys().hasOnly([
+          'q1_return',
+          'q2_enjoyment', 'q2_rules', 'q2_website', 'q2_submission', 'q2_competitive', 'q2_fair',
+          'q3_budget', 'q3_influence', 'q3_values', 'q3_values_comment',
+          'q4_tiers', 'q4_repetition', 'q4_size', 'q4_rules_comment',
+          'q5_strategy', 'q5_action', 'q5_action_comment',
+          'q6_notice', 'q6_competitive', 'q6_action', 'q6_action_comment',
+          'q7_underdog', 'q7_form', 'q7_action_comment',
+          'q8_wingfoot', 'q8_manufacturer', 'q8_independent', 'q8_jack_sears',
+          'q8_race_1', 'q8_race_2', 'q8_race_3', 'q8_teams', 'q8_comment',
+          'q9_use', 'q9_amount', 'q9_value', 'q9_structure', 'q9_structure_comment',
+          'q10_use', 'q10_reason', 'q10_reason_other', 'q10_continue',
+          'q11_feeling', 'q11_system', 'q11_system_other',
+          'q12_keep', 'q12_change', 'q12_add', 'q12_other'
+        ]);
+    }
+
+    function validPlayerName(uid) {
+      let player = get(/databases/$(database)/documents/players/$(uid)).data;
+      return (player.keys().hasAny(['displayName']) && request.resource.data.playerName == player.displayName)
+        || (player.keys().hasAny(['name']) && request.resource.data.playerName == player.name);
+    }
+
+    function validQuestionnaireResponse(questionnaireId, uid) {
+      let config = questionnaireConfig(questionnaireId);
+      return request.resource.data.keys().hasOnly([
+          'uid', 'playerName', 'questionnaireVersion', 'status', 'currentQuestion',
+          'reachedQuestion', 'answers', 'startedAt', 'updatedAt', 'submittedAt'
+        ])
+        && request.resource.data.uid == uid
+        && request.resource.data.playerName is string
+        && validPlayerName(uid)
+        && request.resource.data.questionnaireVersion == config.version
+        && request.resource.data.status in ['draft', 'submitted']
+        && request.resource.data.currentQuestion is int
+        && request.resource.data.currentQuestion >= 1
+        && request.resource.data.currentQuestion <= 12
+        && request.resource.data.reachedQuestion is int
+        && request.resource.data.reachedQuestion >= request.resource.data.currentQuestion
+        && request.resource.data.reachedQuestion <= 12
+        && request.resource.data.startedAt is timestamp
+        && request.resource.data.updatedAt == request.time
+        && validQuestionnaireAnswers()
+        && (
+          (request.resource.data.status == 'draft' && request.resource.data.submittedAt == null)
+          || (request.resource.data.status == 'submitted' && request.resource.data.submittedAt is timestamp)
+        );
+    }
+
+    // These collections are already consumed by public 2026 league pages. Listing
+    // them explicitly preserves that behaviour while removing the old recursive
+    // public-read rule that would also expose questionnaire responses.
+    match /meta/{document=**} { allow read: if true; }
+    match /events/{document=**} { allow read: if true; }
+    match /drivers/{document=**} { allow read: if true; }
+    match /results/{document=**} { allow read: if true; }
+    match /event_scores/{document=**} { allow read: if true; }
+    match /engine_runs/{document=**} { allow read: if true; }
+    match /driver_value_runs/{document=**} { allow read: if true; }
+    match /driver_tier_runs/{document=**} { allow read: if true; }
+    match /player_budget_runs/{document=**} { allow read: if true; }
+    match /budget_boost_runs/{document=**} { allow read: if true; }
+    match /standings_players/{document=**} { allow read: if true; }
+    match /standings_drivers/{document=**} { allow read: if true; }
+    match /standings_teams/{document=**} { allow read: if true; }
+    match /standings_wingfoot/{document=**} { allow read: if true; }
+    match /standings_manufacturer/{document=**} { allow read: if true; }
+    match /standings_independent/{document=**} { allow read: if true; }
+    match /standings_jacksears/{document=**} { allow read: if true; }
+    match /standings_race1/{document=**} { allow read: if true; }
+    match /standings_race2/{document=**} { allow read: if true; }
+    match /standings_race3/{document=**} { allow read: if true; }
+    match /pitstop/{document=**} { allow read: if true; }
+    match /pitstop_rounds/{document=**} { allow read: if true; }
+    match /teams/{document=**} { allow read: if true; }
+
+    match /players/{uid} {
+      allow read: if true;
+      // Existing profile behaviour is intentionally unchanged by this task.
+      allow write: if admin() || owner(uid);
+    }
+
+    match /news/{newsId} {
+      allow read: if true;
+
+      match /reactions/{userId} {
+        allow read: if true;
+        allow create, update: if owner(userId)
+          && exists(/databases/$(database)/documents/news/$(newsId))
+          && exists(/databases/$(database)/documents/players/$(request.auth.uid))
+          && request.resource.data.keys().hasOnly(['type', 'updatedAt'])
+          && request.resource.data.type in ['like', 'love', 'funny', 'wow']
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if owner(userId);
+      }
+    }
+
+    // Historical submissions deliberately retain their existing public-read
+    // behaviour because Drivers and other completed-season pages still use them.
+    match /submissions/{document=**} {
+      allow read: if true;
+    }
+
+    match /submissions/{eventId}/entries/{uid} {
+      allow write: if admin() || (owner(uid) && request.resource.data.uid == uid);
+    }
+
+    match /entries/{document=**} {
+      allow read: if true;
+    }
+
+    match /entries/{eventId}/entries/{uid} {
+      allow write: if admin() || (owner(uid) && request.resource.data.uid == uid);
+    }
+
+    match /questionnaires/{questionnaireId} {
+      allow read: if true;
+      allow write: if admin();
+
+      match /responses/{uid} {
+        allow read: if admin() || owner(uid);
+
+        allow create: if owner(uid)
+          && questionnaireOpen(questionnaireId)
+          && validQuestionnaireResponse(questionnaireId, uid)
+          && request.resource.data.startedAt == request.time
+          && (
+            request.resource.data.status == 'draft'
+            || request.resource.data.submittedAt == request.time
+          );
+
+        allow update: if owner(uid)
+          && questionnaireOpen(questionnaireId)
+          && validQuestionnaireResponse(questionnaireId, uid)
+          && request.resource.data.startedAt == resource.data.startedAt
+          && request.resource.data.reachedQuestion >= resource.data.reachedQuestion
+          && (
+            (resource.data.status == 'draft'
+              && request.resource.data.status == 'draft'
+              && request.resource.data.submittedAt == null)
+            || (resource.data.status == 'draft'
+              && request.resource.data.status == 'submitted'
+              && request.resource.data.submittedAt == request.time)
+            || (resource.data.status == 'submitted'
+              && request.resource.data.status == 'submitted'
+              && request.resource.data.submittedAt == resource.data.submittedAt)
+          );
+      }
+    }
+
+    // Admin retains the existing ability to manage all league data. Unlisted or
+    // future collections are no longer accidentally readable to the public.
+    match /{document=**} {
+      allow read, write: if admin();
+    }
+  }
+}
